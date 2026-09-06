@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Src\Post\Domain\Factory;
+namespace Src\Shared\Domain\Factory;
 
 use Src\Post\Domain\Entity\Post;
 use Src\Shared\Domain\ValueObject\Identifier\RoutineExecutionIdentifier;

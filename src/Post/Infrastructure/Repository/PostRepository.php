@@ -6,10 +6,10 @@ namespace Src\Post\Infrastructure\Repository;
 
 use App\Models\PostModel;
 use Src\Post\Domain\Entity\Post;
-use Src\Post\Domain\Repository\PostRepositoryInterface;
 use Src\Post\Domain\ValueObject\PostCategory;
 use Src\Post\Domain\ValueObject\PostLikeCount;
 use Src\Post\Domain\ValueObject\PostSupportCount;
+use Src\Shared\Domain\Repository\PostRepositoryInterface;
 use Src\Shared\Domain\ValueObject\Identifier\PostIdentifier;
 use Src\Shared\Domain\ValueObject\Identifier\RoutineExecutionIdentifier;
 use Src\Shared\Domain\ValueObject\Identifier\RoutineIdentifier;

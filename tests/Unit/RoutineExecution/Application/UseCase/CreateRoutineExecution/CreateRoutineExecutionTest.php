@@ -7,8 +7,6 @@ namespace Tests\Unit\RoutineExecution\Application\UseCase\CreateRoutineExecution
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 use Src\Post\Domain\Entity\Post;
-use Src\Post\Domain\Factory\PostFactoryInterface;
-use Src\Post\Domain\Repository\PostRepositoryInterface;
 use Src\Post\Domain\ValueObject\PostCategory;
 use Src\Post\Domain\ValueObject\PostLikeCount;
 use Src\Post\Domain\ValueObject\PostSupportCount;
@@ -26,6 +24,8 @@ use Src\RoutineExecution\Domain\Repository\RoutineExecutionRepositoryInterface;
 use Src\RoutineExecution\Domain\ValueObject\ExecutedAt;
 use Src\RoutineExecution\Domain\ValueObject\RoutineExecutionMemo;
 use Src\Shared\Application\Transaction\TransactionManagerInterface;
+use Src\Shared\Domain\Factory\PostFactoryInterface;
+use Src\Shared\Domain\Repository\PostRepositoryInterface;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Src\Shared\Domain\ValueObject\Identifier\PostIdentifier;
 use Src\Shared\Domain\ValueObject\Identifier\RoutineActionIdentifier;

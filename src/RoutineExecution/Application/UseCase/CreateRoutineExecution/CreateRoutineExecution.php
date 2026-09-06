@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Src\RoutineExecution\Application\UseCase\CreateRoutineExecution;
 
-use Src\Post\Domain\Factory\PostFactoryInterface;
-use Src\Post\Domain\Repository\PostRepositoryInterface;
 use Src\Routine\Domain\Repository\RoutineActionRepositoryInterface;
 use Src\RoutineExecution\Domain\Factory\RoutineExecutionActionFactoryInterface;
 use Src\RoutineExecution\Domain\Factory\RoutineExecutionFactoryInterface;
 use Src\RoutineExecution\Domain\Repository\RoutineExecutionActionRepositoryInterface;
 use Src\RoutineExecution\Domain\Repository\RoutineExecutionRepositoryInterface;
 use Src\Shared\Application\Transaction\TransactionManagerInterface;
+use Src\Shared\Domain\Factory\PostFactoryInterface;
+use Src\Shared\Domain\Repository\PostRepositoryInterface;
 
 final readonly class CreateRoutineExecution implements CreateRoutineExecutionInterface
 {
