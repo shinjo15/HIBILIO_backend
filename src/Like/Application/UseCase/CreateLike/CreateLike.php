@@ -8,8 +8,8 @@ use Src\Like\Domain\Exception\AlreadyLikedException;
 use Src\Like\Domain\Exception\PostNotFoundForLikeException;
 use Src\Like\Domain\Factory\LikeFactoryInterface;
 use Src\Like\Domain\Repository\LikeRepositoryInterface;
-use Src\Post\Domain\Repository\PostRepositoryInterface;
 use Src\Shared\Application\Transaction\TransactionManagerInterface;
+use Src\Shared\Domain\Repository\PostRepositoryInterface;
 
 final readonly class CreateLike implements CreateLikeInterface
 {

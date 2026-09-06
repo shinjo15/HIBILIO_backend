@@ -12,31 +12,63 @@ use Src\Post\Domain\ValueObject\PostCategory;
 use Src\Post\Domain\ValueObject\PostLikeCount;
 use Src\Post\Domain\ValueObject\PostSupportCount;
 use Src\Shared\Domain\ValueObject\Identifier\PostIdentifier;
+use Src\Shared\Domain\ValueObject\Identifier\RoutineExecutionIdentifier;
 use Src\Shared\Domain\ValueObject\Identifier\RoutineIdentifier;
 
 final class PostTest extends TestCase
 {
-    public function test_retains_the_values_of_a_created_post(): void
+    public function test_retains_the_values_of_a_created_routine_post(): void
     {
         $postIdentifier = new PostIdentifier('f6ca9f4c-169b-4b2d-a717-4a4f40d1490f');
         $routineIdentifier = new RoutineIdentifier('34b8d590-07cb-49ca-bfd9-cb9f40e26bd3');
-        $postCategory = PostCategory::ROUTINE;
         $postLikeCount = new PostLikeCount(3);
         $postSupportCount = new PostSupportCount(0);
 
         $post = Post::create(
             postIdentifier: $postIdentifier,
             routineIdentifier: $routineIdentifier,
-            postCategory: $postCategory,
+            routineExecutionIdentifier: null,
+            postCategory: PostCategory::ROUTINE,
             postLikeCount: $postLikeCount,
             postSupportCount: $postSupportCount,
         );
 
         $this->assertSame($postIdentifier, $post->postIdentifier());
         $this->assertSame($routineIdentifier, $post->routineIdentifier());
-        $this->assertSame($postCategory, $post->postCategory());
+        $this->assertNull($post->routineExecutionIdentifier());
+        $this->assertSame(PostCategory::ROUTINE, $post->postCategory());
         $this->assertSame($postLikeCount, $post->postLikeCount());
         $this->assertSame($postSupportCount, $post->postSupportCount());
+    }
+
+    public function test_rejects_an_action_post_without_a_routine_execution(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('実行投稿にはルーティン実行が必要です。');
+
+        Post::create(
+            new PostIdentifier('f6ca9f4c-169b-4b2d-a717-4a4f40d1490f'),
+            new RoutineIdentifier('34b8d590-07cb-49ca-bfd9-cb9f40e26bd3'),
+            null,
+            PostCategory::ACTION,
+            new PostLikeCount(0),
+            new PostSupportCount(0),
+        );
+    }
+
+    public function test_rejects_a_routine_post_with_a_routine_execution(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('ルーティン投稿にはルーティン実行を指定できません。');
+
+        Post::create(
+            new PostIdentifier('f6ca9f4c-169b-4b2d-a717-4a4f40d1490f'),
+            new RoutineIdentifier('34b8d590-07cb-49ca-bfd9-cb9f40e26bd3'),
+            new RoutineExecutionIdentifier('2fd8d590-07cb-49ca-bfd9-cb9f40e26bd3'),
+            PostCategory::ROUTINE,
+            new PostLikeCount(0),
+            new PostSupportCount(0),
+        );
     }
 
     public function test_rejects_a_negative_like_count(): void
@@ -57,13 +89,7 @@ final class PostTest extends TestCase
 
     public function test_increments_support_count_for_an_action_post(): void
     {
-        $post = Post::create(
-            postIdentifier: new PostIdentifier('f6ca9f4c-169b-4b2d-a717-4a4f40d1490f'),
-            routineIdentifier: new RoutineIdentifier('34b8d590-07cb-49ca-bfd9-cb9f40e26bd3'),
-            postCategory: PostCategory::ACTION,
-            postLikeCount: new PostLikeCount(0),
-            postSupportCount: new PostSupportCount(0),
-        );
+        $post = $this->actionPost();
 
         $supportedPost = $post->incrementSupportCount();
 
@@ -75,26 +101,12 @@ final class PostTest extends TestCase
         $this->expectException(UnsupportedPostSupportException::class);
         $this->expectExceptionMessage('応援できるのは実行投稿のみです。');
 
-        Post::create(
-            postIdentifier: new PostIdentifier('f6ca9f4c-169b-4b2d-a717-4a4f40d1490f'),
-            routineIdentifier: new RoutineIdentifier('34b8d590-07cb-49ca-bfd9-cb9f40e26bd3'),
-            postCategory: PostCategory::ROUTINE,
-            postLikeCount: new PostLikeCount(0),
-            postSupportCount: new PostSupportCount(0),
-        )->incrementSupportCount();
+        $this->routinePost()->incrementSupportCount();
     }
 
     public function test_increments_like_count_for_a_routine_post(): void
     {
-        $post = Post::create(
-            postIdentifier: new PostIdentifier('f6ca9f4c-169b-4b2d-a717-4a4f40d1490f'),
-            routineIdentifier: new RoutineIdentifier('34b8d590-07cb-49ca-bfd9-cb9f40e26bd3'),
-            postCategory: PostCategory::ROUTINE,
-            postLikeCount: new PostLikeCount(0),
-            postSupportCount: new PostSupportCount(0),
-        );
-
-        $likedPost = $post->incrementLikeCount();
+        $likedPost = $this->routinePost()->incrementLikeCount();
 
         $this->assertSame(1, $likedPost->postLikeCount()->value());
     }
@@ -103,12 +115,30 @@ final class PostTest extends TestCase
     {
         $this->expectException(UnsupportedPostLikeException::class);
 
-        Post::create(
-            postIdentifier: new PostIdentifier('f6ca9f4c-169b-4b2d-a717-4a4f40d1490f'),
-            routineIdentifier: new RoutineIdentifier('34b8d590-07cb-49ca-bfd9-cb9f40e26bd3'),
-            postCategory: PostCategory::ACTION,
-            postLikeCount: new PostLikeCount(0),
-            postSupportCount: new PostSupportCount(0),
-        )->incrementLikeCount();
+        $this->actionPost()->incrementLikeCount();
+    }
+
+    private function routinePost(): Post
+    {
+        return Post::create(
+            new PostIdentifier('f6ca9f4c-169b-4b2d-a717-4a4f40d1490f'),
+            new RoutineIdentifier('34b8d590-07cb-49ca-bfd9-cb9f40e26bd3'),
+            null,
+            PostCategory::ROUTINE,
+            new PostLikeCount(0),
+            new PostSupportCount(0),
+        );
+    }
+
+    private function actionPost(): Post
+    {
+        return Post::create(
+            new PostIdentifier('f6ca9f4c-169b-4b2d-a717-4a4f40d1490f'),
+            new RoutineIdentifier('34b8d590-07cb-49ca-bfd9-cb9f40e26bd3'),
+            new RoutineExecutionIdentifier('2fd8d590-07cb-49ca-bfd9-cb9f40e26bd3'),
+            PostCategory::ACTION,
+            new PostLikeCount(0),
+            new PostSupportCount(0),
+        );
     }
 }

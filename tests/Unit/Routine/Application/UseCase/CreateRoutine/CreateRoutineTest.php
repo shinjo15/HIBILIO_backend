@@ -6,8 +6,6 @@ namespace Tests\Unit\Routine\Application\UseCase\CreateRoutine;
 
 use PHPUnit\Framework\TestCase;
 use Src\Post\Domain\Entity\Post;
-use Src\Post\Domain\Factory\PostFactoryInterface;
-use Src\Post\Domain\Repository\PostRepositoryInterface;
 use Src\Post\Domain\ValueObject\PostCategory;
 use Src\Post\Domain\ValueObject\PostLikeCount;
 use Src\Post\Domain\ValueObject\PostSupportCount;
@@ -30,9 +28,12 @@ use Src\Routine\Domain\ValueObject\RoutineName;
 use Src\Routine\Domain\ValueObject\RoutineTagIdentifiers;
 use Src\Shared\Application\Service\UuidServiceInterface;
 use Src\Shared\Application\Transaction\TransactionManagerInterface;
+use Src\Shared\Domain\Factory\PostFactoryInterface;
+use Src\Shared\Domain\Repository\PostRepositoryInterface;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Src\Shared\Domain\ValueObject\Identifier\PostIdentifier;
 use Src\Shared\Domain\ValueObject\Identifier\RoutineActionIdentifier;
+use Src\Shared\Domain\ValueObject\Identifier\RoutineExecutionIdentifier;
 use Src\Shared\Domain\ValueObject\Identifier\RoutineIdentifier;
 use Src\Shared\Domain\ValueObject\Identifier\TagIdentifier;
 
@@ -53,6 +54,11 @@ final class CreateRoutineTest extends TestCase
         {
             /** @var list<RoutineAction> */
             public array $savedRoutineActions = [];
+
+            public function findByIdentifiers(array $routineActionIdentifiers): array
+            {
+                return [];
+            }
 
             public function save(RoutineAction $routineAction): void
             {
@@ -91,10 +97,18 @@ final class CreateRoutineTest extends TestCase
                 return Post::create(
                     postIdentifier: new PostIdentifier('e1954b83-b532-40ae-8b9e-49d488040d0f'),
                     routineIdentifier: $routineIdentifier,
+                    routineExecutionIdentifier: null,
                     postCategory: PostCategory::ROUTINE,
                     postLikeCount: new PostLikeCount(0),
                     postSupportCount: new PostSupportCount(0),
                 );
+            }
+
+            public function createActionPost(
+                RoutineIdentifier $routineIdentifier,
+                RoutineExecutionIdentifier $routineExecutionIdentifier,
+            ): Post {
+                throw new \LogicException('ルーティン作成では実行投稿を作成しません。');
             }
         };
         $creationOrder = new \ArrayObject;

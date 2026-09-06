@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Src\Post\Domain\Repository;
+namespace Src\Shared\Domain\Repository;
 
 use Src\Post\Domain\Entity\Post;
 use Src\Shared\Domain\ValueObject\Identifier\PostIdentifier;

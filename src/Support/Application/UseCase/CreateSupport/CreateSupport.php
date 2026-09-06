@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Src\Support\Application\UseCase\CreateSupport;
 
-use Src\Post\Domain\Repository\PostRepositoryInterface;
 use Src\Shared\Application\Transaction\TransactionManagerInterface;
+use Src\Shared\Domain\Repository\PostRepositoryInterface;
 use Src\Support\Domain\Exception\AlreadySupportedException;
 use Src\Support\Domain\Exception\PostNotFoundForSupportException;
 use Src\Support\Domain\Factory\SupportFactoryInterface;
