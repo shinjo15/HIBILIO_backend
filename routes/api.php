@@ -11,6 +11,7 @@ use App\Http\Actions\Authentication\VerifyLoginPasscodeAction;
 use App\Http\Actions\Like\GetMyLikesAction;
 use App\Http\Actions\Report\CreateReportAction;
 use App\Http\Actions\Routine\CreateRoutineAction;
+use App\Http\Actions\RoutineExecution\CreateRoutineExecutionAction;
 use App\Http\Actions\Support\GetMySupportsAction;
 use Illuminate\Support\Facades\Route;
 
@@ -19,6 +20,7 @@ Route::middleware('web')->group(static function (): void {
     Route::post('/login-passcodes', GenerateLoginPasscodeAction::class);
     Route::post('/login-passcodes/verification', VerifyLoginPasscodeAction::class);
     Route::post('/routines', CreateRoutineAction::class);
+    Route::post('/routine-executions', CreateRoutineExecutionAction::class);
     Route::post('/reports', CreateReportAction::class);
     Route::post('/follows', CreateFollowAction::class);
     Route::get('/following/posts', GetFollowingPostsAction::class);

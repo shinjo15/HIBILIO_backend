@@ -6,6 +6,12 @@ namespace Tests\Unit\RoutineExecution\Application\UseCase\CreateRoutineExecution
 
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
+use Src\Post\Domain\Entity\Post;
+use Src\Post\Domain\Factory\PostFactoryInterface;
+use Src\Post\Domain\Repository\PostRepositoryInterface;
+use Src\Post\Domain\ValueObject\PostCategory;
+use Src\Post\Domain\ValueObject\PostLikeCount;
+use Src\Post\Domain\ValueObject\PostSupportCount;
 use Src\Routine\Domain\Entity\RoutineAction;
 use Src\Routine\Domain\Repository\RoutineActionRepositoryInterface;
 use Src\Routine\Domain\ValueObject\RoutineActionName;
@@ -21,6 +27,7 @@ use Src\RoutineExecution\Domain\ValueObject\ExecutedAt;
 use Src\RoutineExecution\Domain\ValueObject\RoutineExecutionMemo;
 use Src\Shared\Application\Transaction\TransactionManagerInterface;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
+use Src\Shared\Domain\ValueObject\Identifier\PostIdentifier;
 use Src\Shared\Domain\ValueObject\Identifier\RoutineActionIdentifier;
 use Src\Shared\Domain\ValueObject\Identifier\RoutineExecutionIdentifier;
 use Src\Shared\Domain\ValueObject\Identifier\RoutineIdentifier;
@@ -82,6 +89,27 @@ final class CreateRoutineExecutionTest extends TestCase
 
             public function save(RoutineAction $routineAction): void {}
         };
+        $postFactory = new class implements PostFactoryInterface
+        {
+            public function createRoutinePost(RoutineIdentifier $routineIdentifier): Post
+            {
+                return Post::create(new PostIdentifier('dddddddd-dddd-4ddd-8ddd-dddddddddddd'), $routineIdentifier, null, PostCategory::ROUTINE, new PostLikeCount(0), new PostSupportCount(0));
+            }
+
+            public function createActionPost(RoutineIdentifier $routineIdentifier, RoutineExecutionIdentifier $routineExecutionIdentifier): Post
+            {
+                return Post::create(new PostIdentifier('dddddddd-dddd-4ddd-8ddd-dddddddddddd'), $routineIdentifier, $routineExecutionIdentifier, PostCategory::ACTION, new PostLikeCount(0), new PostSupportCount(0));
+            }
+        };
+        $postRepository = new class implements PostRepositoryInterface
+        {
+            public function find(PostIdentifier $postIdentifier): ?Post
+            {
+                return null;
+            }
+
+            public function save(Post $post): void {}
+        };
 
         $useCase = new CreateRoutineExecution(
             transactionManager: $transactionManager,
@@ -116,6 +144,8 @@ final class CreateRoutineExecutionTest extends TestCase
             routineExecutionRepository: $routineExecutionRepository,
             routineExecutionActionRepository: $routineExecutionActionRepository,
             routineActionRepository: $routineActionRepository,
+            postFactory: $postFactory,
+            postRepository: $postRepository,
         );
 
         $useCase->execute(new CreateRoutineExecutionInput(

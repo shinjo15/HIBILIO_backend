@@ -11,6 +11,7 @@ use Src\Post\Domain\ValueObject\PostLikeCount;
 use Src\Post\Domain\ValueObject\PostSupportCount;
 use Src\Shared\Application\Service\UuidServiceInterface;
 use Src\Shared\Domain\ValueObject\Identifier\PostIdentifier;
+use Src\Shared\Domain\ValueObject\Identifier\RoutineExecutionIdentifier;
 use Src\Shared\Domain\ValueObject\Identifier\RoutineIdentifier;
 
 final readonly class PostFactory implements PostFactoryInterface
@@ -24,7 +25,22 @@ final readonly class PostFactory implements PostFactoryInterface
         return Post::create(
             new PostIdentifier($this->uuidService->generate()),
             $routineIdentifier,
+            null,
             PostCategory::ROUTINE,
+            new PostLikeCount(0),
+            new PostSupportCount(0),
+        );
+    }
+
+    public function createActionPost(
+        RoutineIdentifier $routineIdentifier,
+        RoutineExecutionIdentifier $routineExecutionIdentifier,
+    ): Post {
+        return Post::create(
+            new PostIdentifier($this->uuidService->generate()),
+            $routineIdentifier,
+            $routineExecutionIdentifier,
+            PostCategory::ACTION,
             new PostLikeCount(0),
             new PostSupportCount(0),
         );

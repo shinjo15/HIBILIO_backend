@@ -19,6 +19,7 @@ final class PostModel extends Model
     protected $fillable = [
         'post_identifier',
         'routine_identifier',
+        'routine_execution_identifier',
         'post_category',
         'post_like_count',
         'post_support_count',

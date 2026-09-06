@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Support\Application\UseCase\CreateSupport;
 
+use App\Models\AccountModel;
 use App\Models\PostModel;
+use App\Models\RoutineExecutionModel;
 use App\Models\RoutineModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
@@ -56,7 +58,20 @@ final class CreateSupportPersistenceTest extends TestCase
 
     private function createActionPost(): void
     {
+        AccountModel::query()->create([
+            'account_identifier' => '3b5581e9-16df-4879-b7d2-5d88dca6ab87',
+            'account_name' => '実行者',
+            'email_address' => 'executor@hibilio.local',
+            'available' => true,
+            'status' => 'active',
+        ]);
         RoutineModel::query()->create(['routine_identifier' => '34b8d590-07cb-49ca-bfd9-cb9f40e26bd3', 'routine_name' => '朝活', 'account_identifier' => '3b5581e9-16df-4879-b7d2-5d88dca6ab87', 'routine_execution_minutes' => 1, 'available' => true]);
-        PostModel::query()->create(['post_identifier' => 'e1954b83-b532-40ae-8b9e-49d488040d0f', 'routine_identifier' => '34b8d590-07cb-49ca-bfd9-cb9f40e26bd3', 'post_category' => 'action', 'post_like_count' => 0, 'post_support_count' => 0, 'available' => true]);
+        RoutineExecutionModel::query()->create([
+            'routine_execution_identifier' => '64b8d590-07cb-49ca-bfd9-cb9f40e26bd3',
+            'executor_account_identifier' => '3b5581e9-16df-4879-b7d2-5d88dca6ab87',
+            'routine_identifier' => '34b8d590-07cb-49ca-bfd9-cb9f40e26bd3',
+            'executed_at' => now(),
+        ]);
+        PostModel::query()->create(['post_identifier' => 'e1954b83-b532-40ae-8b9e-49d488040d0f', 'routine_identifier' => '34b8d590-07cb-49ca-bfd9-cb9f40e26bd3', 'routine_execution_identifier' => '64b8d590-07cb-49ca-bfd9-cb9f40e26bd3', 'post_category' => 'action', 'post_like_count' => 0, 'post_support_count' => 0, 'available' => true]);
     }
 }
