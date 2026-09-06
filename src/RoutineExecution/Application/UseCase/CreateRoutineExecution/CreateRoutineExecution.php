@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Src\RoutineExecution\Application\UseCase\CreateRoutineExecution;
 
-use Src\Post\Domain\Factory\PostFactoryInterface;
-use Src\Post\Domain\Repository\PostRepositoryInterface;
 use Src\Routine\Domain\Repository\RoutineActionRepositoryInterface;
 use Src\RoutineExecution\Domain\Factory\RoutineExecutionActionFactoryInterface;
 use Src\RoutineExecution\Domain\Factory\RoutineExecutionFactoryInterface;
@@ -22,8 +20,7 @@ final readonly class CreateRoutineExecution implements CreateRoutineExecutionInt
         private RoutineExecutionRepositoryInterface $routineExecutionRepository,
         private RoutineExecutionActionRepositoryInterface $routineExecutionActionRepository,
         private RoutineActionRepositoryInterface $routineActionRepository,
-        private PostFactoryInterface $postFactory,
-        private PostRepositoryInterface $postRepository,
+
     ) {}
 
     public function execute(CreateRoutineExecutionInputPort $input): void
@@ -46,10 +43,6 @@ final readonly class CreateRoutineExecution implements CreateRoutineExecutionInt
                 );
             }
 
-            $this->postRepository->save($this->postFactory->createActionPost(
-                $routineExecution->routineIdentifier(),
-                $routineExecution->routineExecutionIdentifier(),
-            ));
         });
     }
 
