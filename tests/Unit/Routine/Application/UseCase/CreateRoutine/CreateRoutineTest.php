@@ -54,6 +54,11 @@ final class CreateRoutineTest extends TestCase
             /** @var list<RoutineAction> */
             public array $savedRoutineActions = [];
 
+            public function findByIdentifiers(array $routineActionIdentifiers): array
+            {
+                return [];
+            }
+
             public function save(RoutineAction $routineAction): void
             {
                 $this->savedRoutineActions[] = $routineAction;
