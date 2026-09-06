@@ -55,6 +55,35 @@ final class CreateAccountActionTest extends TestCase
         self::assertFalse(Schema::hasTable('account_credentials'));
     }
 
+    public function test_registers_an_account_when_social_links_and_favorite_tags_are_empty(): void
+    {
+        Mail::fake();
+        $payload = $this->validPayload();
+        $payload['social_links'] = [];
+        $payload['favorite_tag_identifiers'] = [];
+
+        $response = $this->postJson('/api/accounts', $payload);
+
+        $response->assertCreated();
+        $accountIdentifier = $this->app['db']->table('accounts')
+            ->where('email_address', 'user@example.com')
+            ->value('account_identifier');
+        $this->assertDatabaseCount('account_social_links', 0);
+        $this->assertDatabaseCount('favorite_tags', 0);
+        self::assertNotNull($accountIdentifier);
+    }
+
+    public function test_requires_social_links_and_favorite_tags_to_be_present(): void
+    {
+        $this->postJson('/api/accounts', [
+            'account_name' => '朝活ユーザー',
+            'email_address' => 'user@example.com',
+        ])->assertUnprocessable()->assertJsonValidationErrors([
+            'social_links',
+            'favorite_tag_identifiers',
+        ]);
+    }
+
     public function test_uploads_optional_account_images_as_webp(): void
     {
         Mail::fake();
