@@ -97,6 +97,22 @@ final class Post
         );
     }
 
+    public function decrementLikeCount(): self
+    {
+        if ($this->postCategory !== PostCategory::ROUTINE) {
+            throw new UnsupportedPostLikeException;
+        }
+
+        return new self(
+            $this->postIdentifier,
+            $this->routineIdentifier,
+            $this->routineExecutionIdentifier,
+            $this->postCategory,
+            new PostLikeCount($this->postLikeCount->value() - 1),
+            $this->postSupportCount,
+        );
+    }
+
     public function incrementSupportCount(): self
     {
         if ($this->postCategory !== PostCategory::ACTION) {
@@ -110,6 +126,22 @@ final class Post
             $this->postCategory,
             $this->postLikeCount,
             new PostSupportCount($this->postSupportCount->value() + 1),
+        );
+    }
+
+    public function decrementSupportCount(): self
+    {
+        if ($this->postCategory !== PostCategory::ACTION) {
+            throw new UnsupportedPostSupportException;
+        }
+
+        return new self(
+            $this->postIdentifier,
+            $this->routineIdentifier,
+            $this->routineExecutionIdentifier,
+            $this->postCategory,
+            $this->postLikeCount,
+            new PostSupportCount($this->postSupportCount->value() - 1),
         );
     }
 }
