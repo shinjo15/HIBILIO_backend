@@ -46,6 +46,7 @@ final class GetCustomizedRoutinesActionTest extends TestCase
             ->assertExactJson([
                 'items' => [
                     [
+                        'routine_identifier' => '99999999-9999-4999-8999-999999999999',
                         'account_identifier' => $secondChildAccountIdentifier,
                         'account_name' => '二番目作成者',
                         'routine_name' => '同時刻で識別子が先',
@@ -56,6 +57,7 @@ final class GetCustomizedRoutinesActionTest extends TestCase
                         'like_count' => 0,
                     ],
                     [
+                        'routine_identifier' => 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
                         'account_identifier' => $firstChildAccountIdentifier,
                         'account_name' => '一番目作成者',
                         'routine_name' => '同時刻で識別子が後',
