@@ -84,8 +84,8 @@ final class GetFavoriteTagPosts implements GetFavoriteTagPostsInterface
     private function scoreExpression(): string
     {
         return match (DB::connection()->getDriverName()) {
-            'sqlite' => "posts.post_like_count + posts.post_support_count - CAST((strftime('%s', 'now') - strftime('%s', posts.created_at)) / 3600 AS INTEGER)",
-            'mysql' => 'posts.post_like_count + posts.post_support_count - TIMESTAMPDIFF(HOUR, posts.created_at, NOW())',
+            'sqlite' => "(posts.post_like_count + posts.post_support_count) * 0.5 - CAST((strftime('%s', 'now') - strftime('%s', posts.created_at)) / 3600 AS INTEGER)",
+            'mysql' => '(posts.post_like_count + posts.post_support_count) * 0.5 - TIMESTAMPDIFF(HOUR, posts.created_at, NOW())',
             default => throw new \RuntimeException('未対応のデータベースドライバーです。'),
         };
     }

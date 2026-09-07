@@ -38,8 +38,8 @@ final class GetFavoriteTagPostsActionTest extends TestCase
         $this->insertRoutineTag('dddddddd-dddd-4ddd-8ddd-dddddddddddd', $tagOneIdentifier);
         $this->insertRoutineTag('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', $tagOneIdentifier);
         $this->insertRoutineTag('ffffffff-ffff-4fff-8fff-ffffffffffff', $tagOneIdentifier);
-        $this->insertPost('12121212-1212-4121-8121-121212121212', 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'routine', 5, 3, now()->subHours(2));
-        $this->insertPost('13131313-1313-4131-8131-131313131313', 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', 'routine', 1, 0, now()->subHours(1));
+        $this->insertPost('12121212-1212-4121-8121-121212121212', 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'routine', 25, 0, now()->subHours(24));
+        $this->insertPost('13131313-1313-4131-8131-131313131313', 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', 'routine', 0, 0, now());
         $this->insertPost('14141414-1414-4141-8141-141414141414', 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', 'action', 100, 100, now());
         $this->insertPost('15151515-1515-4151-8151-151515151515', 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', 'routine', 100, 100, now());
         $this->insertPost('16161616-1616-4161-8161-161616161616', 'ffffffff-ffff-4fff-8fff-ffffffffffff', 'routine', 100, 100, now());
@@ -49,9 +49,9 @@ final class GetFavoriteTagPostsActionTest extends TestCase
             ->getJson('/api/posts/favorite_tags?page=1&number_of_items_per_page=20')
             ->assertOk()
             ->assertJsonPath('total', 2)
-            ->assertJsonPath('posts.0.post_identifier', '12121212-1212-4121-8121-121212121212')
-            ->assertJsonPath('posts.0.post_support_count', 3)
-            ->assertJsonPath('posts.1.post_identifier', '13131313-1313-4131-8131-131313131313')
+            ->assertJsonPath('posts.0.post_identifier', '13131313-1313-4131-8131-131313131313')
+            ->assertJsonPath('posts.0.post_support_count', 0)
+            ->assertJsonPath('posts.1.post_identifier', '12121212-1212-4121-8121-121212121212')
             ->assertJsonCount(2, 'posts');
     }
 
