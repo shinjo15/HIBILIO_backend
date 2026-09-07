@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\DB;
 
 final class DemoDataSeeder extends Seeder
 {
+    private const int CHUNK_SIZE = 250;
+
     public function run(): void
     {
         $timestamp = now();
@@ -20,9 +22,12 @@ final class DemoDataSeeder extends Seeder
             $this->seedRoutineActions($timestamp);
             $this->seedRoutineTags($timestamp);
             $this->seedPosts($timestamp);
+            $this->seedRoutineExecutions($timestamp);
+            $this->seedRoutineExecutionPosts($timestamp);
             $this->seedFollows($timestamp);
             $this->seedLikes($timestamp);
             $this->seedSupports($timestamp);
+            $this->refreshPostReactionCounts();
         });
     }
 
@@ -34,6 +39,20 @@ final class DemoDataSeeder extends Seeder
             $this->account('10000000-0000-4000-8000-000000000003', '蓮見そうた', 'sota@hibilio.local', $timestamp),
             $this->account('10000000-0000-4000-8000-000000000004', '美香', 'mika@hibilio.local', $timestamp),
         ], ['account_identifier'], ['account_name', 'account_bio', 'email_address', 'available', 'status', 'ban_until', 'updated_at']);
+
+        $accounts = [];
+
+        for ($number = 5; $number <= 500; $number++) {
+            $accounts[] = $this->account(
+                $this->accountIdentifier($number),
+                sprintf('デモユーザー%03d', $number),
+                sprintf('demo-user-%03d@hibilio.local', $number),
+                $timestamp,
+            );
+            $this->upsertChunk('accounts', $accounts, ['account_identifier'], ['account_name', 'account_bio', 'email_address', 'available', 'status', 'ban_until', 'updated_at']);
+        }
+
+        $this->upsertChunk('accounts', $accounts, ['account_identifier'], ['account_name', 'account_bio', 'email_address', 'available', 'status', 'ban_until', 'updated_at'], true);
     }
 
     private function seedTags(mixed $timestamp): void
@@ -131,6 +150,66 @@ final class DemoDataSeeder extends Seeder
             $this->post('60000000-0000-4000-8000-000000000005', '30000000-0000-4000-8000-000000000003', 'routine', 0, 0, $timestamp),
             $this->post('60000000-0000-4000-8000-000000000006', '30000000-0000-4000-8000-000000000004', 'routine', 0, 0, $timestamp),
         ], ['post_identifier'], ['routine_identifier', 'post_category', 'post_like_count', 'post_support_count', 'available', 'updated_at']);
+
+        $posts = [];
+
+        for ($number = 1; $number <= 996; $number++) {
+            $posts[] = $this->post($this->identifier('61000000', $number), $this->routineIdentifier($number), 'routine', 0, 0, $timestamp);
+            $this->upsertChunk('posts', $posts, ['post_identifier'], ['routine_identifier', 'routine_execution_identifier', 'post_category', 'post_like_count', 'post_support_count', 'available', 'updated_at']);
+        }
+
+        $this->upsertChunk('posts', $posts, ['post_identifier'], ['routine_identifier', 'routine_execution_identifier', 'post_category', 'post_like_count', 'post_support_count', 'available', 'updated_at'], true);
+    }
+
+    private function seedRoutineExecutions(mixed $timestamp): void
+    {
+        $executions = [];
+        $executionActions = [];
+
+        for ($number = 1; $number <= 1_500; $number++) {
+            $routineIdentifier = $this->routineIdentifier($number);
+            $executionIdentifier = $this->identifier('70000000', $number);
+            $executions[] = [
+                'routine_execution_identifier' => $executionIdentifier,
+                'executor_account_identifier' => $this->accountIdentifier((($number - 1) % 500) + 1),
+                'routine_identifier' => $routineIdentifier,
+                'executed_at' => $timestamp,
+                'routine_execution_memo' => sprintf('デモ実行 %d', $number),
+                'created_at' => $timestamp,
+                'updated_at' => $timestamp,
+            ];
+            $executionActions[] = [
+                'routine_execution_identifier' => $executionIdentifier,
+                'routine_action_identifier' => $this->routineActionIdentifier($number, $routineIdentifier),
+                'created_at' => $timestamp,
+                'updated_at' => $timestamp,
+            ];
+            $this->upsertChunk('routine_executions', $executions, ['routine_execution_identifier'], ['executor_account_identifier', 'routine_identifier', 'executed_at', 'routine_execution_memo', 'updated_at']);
+            $this->upsertChunk('routine_execution_actions', $executionActions, ['routine_execution_identifier', 'routine_action_identifier'], ['updated_at']);
+        }
+
+        $this->upsertChunk('routine_executions', $executions, ['routine_execution_identifier'], ['executor_account_identifier', 'routine_identifier', 'executed_at', 'routine_execution_memo', 'updated_at'], true);
+        $this->upsertChunk('routine_execution_actions', $executionActions, ['routine_execution_identifier', 'routine_action_identifier'], ['updated_at'], true);
+    }
+
+    private function seedRoutineExecutionPosts(mixed $timestamp): void
+    {
+        $posts = [];
+
+        for ($number = 1; $number <= 1_500; $number++) {
+            $posts[] = $this->post(
+                $this->identifier('62000000', $number),
+                $this->routineIdentifier($number),
+                'action',
+                0,
+                0,
+                $timestamp,
+                $this->identifier('70000000', $number),
+            );
+            $this->upsertChunk('posts', $posts, ['post_identifier'], ['routine_identifier', 'routine_execution_identifier', 'post_category', 'post_like_count', 'post_support_count', 'available', 'updated_at']);
+        }
+
+        $this->upsertChunk('posts', $posts, ['post_identifier'], ['routine_identifier', 'routine_execution_identifier', 'post_category', 'post_like_count', 'post_support_count', 'available', 'updated_at'], true);
     }
 
     private function seedFollows(mixed $timestamp): void
@@ -140,6 +219,19 @@ final class DemoDataSeeder extends Seeder
             $this->follow('10000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000003', $timestamp),
             $this->follow('10000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000004', $timestamp),
         ], ['following_account_identifier', 'followed_account_identifier'], ['updated_at']);
+
+        $follows = [];
+
+        for ($number = 5; $number <= 500; $number++) {
+            $follows[] = $this->follow(
+                $this->accountIdentifier($number),
+                $this->accountIdentifier($number === 500 ? 1 : $number + 1),
+                $timestamp,
+            );
+            $this->upsertChunk('follows', $follows, ['following_account_identifier', 'followed_account_identifier'], ['updated_at']);
+        }
+
+        $this->upsertChunk('follows', $follows, ['following_account_identifier', 'followed_account_identifier'], ['updated_at'], true);
     }
 
     private function seedLikes(mixed $timestamp): void
@@ -149,6 +241,15 @@ final class DemoDataSeeder extends Seeder
             $this->reaction('10000000-0000-4000-8000-000000000003', '60000000-0000-4000-8000-000000000001', $timestamp),
             $this->reaction('10000000-0000-4000-8000-000000000004', '60000000-0000-4000-8000-000000000003', $timestamp),
         ], ['account_identifier', 'post_identifier'], ['updated_at']);
+
+        $likes = [];
+
+        for ($number = 1; $number <= 1_500; $number++) {
+            $likes[] = $this->reaction($this->accountIdentifier((($number - 1) % 500) + 1), $this->identifier('62000000', $number), $timestamp);
+            $this->upsertChunk('likes', $likes, ['account_identifier', 'post_identifier'], ['updated_at']);
+        }
+
+        $this->upsertChunk('likes', $likes, ['account_identifier', 'post_identifier'], ['updated_at'], true);
     }
 
     private function seedSupports(mixed $timestamp): void
@@ -156,6 +257,93 @@ final class DemoDataSeeder extends Seeder
         DB::table('supports')->upsert([
             $this->reaction('10000000-0000-4000-8000-000000000001', '60000000-0000-4000-8000-000000000002', $timestamp),
         ], ['account_identifier', 'post_identifier'], ['updated_at']);
+
+        $supports = [];
+
+        for ($number = 1; $number <= 1_500; $number++) {
+            $supports[] = $this->reaction($this->accountIdentifier((($number - 1) % 500) + 1), $this->identifier('62000000', $number), $timestamp);
+            $this->upsertChunk('supports', $supports, ['account_identifier', 'post_identifier'], ['updated_at']);
+        }
+
+        $this->upsertChunk('supports', $supports, ['account_identifier', 'post_identifier'], ['updated_at'], true);
+    }
+
+    private function refreshPostReactionCounts(): void
+    {
+        DB::table('posts')->update([
+            'post_like_count' => 0,
+            'post_support_count' => 0,
+        ]);
+
+        $this->refreshPostReactionCount('likes', 'post_like_count');
+        $this->refreshPostReactionCount('supports', 'post_support_count');
+    }
+
+    private function refreshPostReactionCount(string $reactionTable, string $countColumn): void
+    {
+        foreach (DB::table($reactionTable)
+            ->select('post_identifier')
+            ->selectRaw('COUNT(*) AS reaction_count')
+            ->groupBy('post_identifier')
+            ->get() as $reaction) {
+            DB::table('posts')
+                ->where('post_identifier', $reaction->post_identifier)
+                ->update([$countColumn => $reaction->reaction_count]);
+        }
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $rows
+     * @param  array<int, string>  $uniqueBy
+     * @param  array<int, string>  $update
+     */
+    private function upsertChunk(string $table, array &$rows, array $uniqueBy, array $update, bool $force = false): void
+    {
+        if ($rows === [] || (count($rows) < self::CHUNK_SIZE && ! $force)) {
+            return;
+        }
+
+        DB::table($table)->upsert($rows, $uniqueBy, $update);
+        $rows = [];
+    }
+
+    private function identifier(string $prefix, int $number): string
+    {
+        return sprintf('%s-0000-4000-8000-%012d', $prefix, $number);
+    }
+
+    private function accountIdentifier(int $number): string
+    {
+        return $number <= 4
+            ? $this->identifier('10000000', $number)
+            : $this->identifier('11000000', $number);
+    }
+
+    private function routineIdentifier(int $number): string
+    {
+        return $this->identifier('30000000', (($number - 1) % 4) + 1);
+    }
+
+    private function routineActionIdentifier(int $number, string $routineIdentifier): string
+    {
+        $identifiers = match ($routineIdentifier) {
+            '30000000-0000-4000-8000-000000000001' => [
+                $this->identifier('40000000', 1),
+                $this->identifier('40000000', 2),
+                $this->identifier('40000000', 3),
+            ],
+            '30000000-0000-4000-8000-000000000002' => [
+                $this->identifier('40000000', 4),
+                $this->identifier('40000000', 5),
+            ],
+            '30000000-0000-4000-8000-000000000003' => [
+                $this->identifier('40000000', 6),
+                $this->identifier('40000000', 7),
+            ],
+            default => [$this->identifier('40000000', 8)],
+        };
+
+        return $identifiers[($number - 1) % count($identifiers)];
     }
 
     /** @return array<string, mixed> */
@@ -246,10 +434,12 @@ final class DemoDataSeeder extends Seeder
         int $likeCount,
         int $supportCount,
         mixed $timestamp,
+        ?string $routineExecutionIdentifier = null,
     ): array {
         return [
             'post_identifier' => $identifier,
             'routine_identifier' => $routineIdentifier,
+            'routine_execution_identifier' => $routineExecutionIdentifier,
             'post_category' => $category,
             'post_like_count' => $likeCount,
             'post_support_count' => $supportCount,
