@@ -15,6 +15,7 @@ use Src\Account\Application\UseCase\CreateBlock\CreateBlock;
 use Src\Account\Application\UseCase\CreateBlock\CreateBlockInterface;
 use Src\Account\Application\UseCase\CreateFollow\CreateFollow;
 use Src\Account\Application\UseCase\CreateFollow\CreateFollowInterface;
+use Src\Account\Application\Usecase\Query\GetFavoriteTagPosts\GetFavoriteTagPostsInterface;
 use Src\Account\Application\Usecase\Query\GetFollowingPosts\GetFollowingPostsInterface;
 use Src\Account\Domain\Factory\AccountFactoryInterface;
 use Src\Account\Domain\Factory\BlockFactoryInterface;
@@ -25,6 +26,7 @@ use Src\Account\Domain\Repository\FollowRepositoryInterface;
 use Src\Account\Infrastructure\Factory\AccountFactory;
 use Src\Account\Infrastructure\Factory\BlockFactory;
 use Src\Account\Infrastructure\Factory\FollowFactory;
+use Src\Account\Infrastructure\Query\GetFavoriteTagPosts\GetFavoriteTagPosts;
 use Src\Account\Infrastructure\Query\GetFollowingPosts\GetFollowingPosts;
 use Src\Account\Infrastructure\Repository\AccountRepository;
 use Src\Account\Infrastructure\Repository\BlockRepository;
@@ -151,6 +153,7 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->bind(CreateFollowInterface::class, CreateFollow::class);
         $this->app->bind(GetFollowingPostsInterface::class, GetFollowingPosts::class);
+        $this->app->bind(GetFavoriteTagPostsInterface::class, GetFavoriteTagPosts::class);
         $this->app->bind(BlockFactoryInterface::class, BlockFactory::class);
         $this->app->bind(BlockRepositoryInterface::class, BlockRepository::class);
         $this->app->bind(CreateBlockInterface::class, CreateBlock::class);
