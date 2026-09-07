@@ -7,6 +7,7 @@ use App\Http\Actions\Account\CreateBlockAction;
 use App\Http\Actions\Account\CreateFollowAction;
 use App\Http\Actions\Account\GetFavoriteTagPostsAction;
 use App\Http\Actions\Account\GetFollowingPostsAction;
+use App\Http\Actions\Account\GetPopularRoutinePostsAction;
 use App\Http\Actions\Authentication\GenerateLoginPasscodeAction;
 use App\Http\Actions\Authentication\VerifyLoginPasscodeAction;
 use App\Http\Actions\Like\GetMyLikesAction;
@@ -25,6 +26,7 @@ Route::middleware('web')->group(static function (): void {
     Route::post('/reports', CreateReportAction::class);
     Route::post('/follows', CreateFollowAction::class);
     Route::get('/following/posts', GetFollowingPostsAction::class);
+    Route::get('/posts/popular', GetPopularRoutinePostsAction::class);
     Route::get('/posts/favorite_tags', GetFavoriteTagPostsAction::class);
     Route::post('/blocks', CreateBlockAction::class);
     Route::get('/my/likes', GetMyLikesAction::class);
