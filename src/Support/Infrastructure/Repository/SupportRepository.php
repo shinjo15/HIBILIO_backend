@@ -17,6 +17,11 @@ final class SupportRepository implements SupportRepositoryInterface
         return SupportModel::query()->where('account_identifier', $accountIdentifier->value())->where('post_identifier', $postIdentifier->value())->exists();
     }
 
+    public function delete(AccountIdentifier $accountIdentifier, PostIdentifier $postIdentifier): void
+    {
+        SupportModel::query()->where('account_identifier', $accountIdentifier->value())->where('post_identifier', $postIdentifier->value())->delete();
+    }
+
     public function save(Support $support): void
     {
         SupportModel::query()->create(['account_identifier' => $support->accountIdentifier()->value(), 'post_identifier' => $support->postIdentifier()->value()]);

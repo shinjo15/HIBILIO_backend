@@ -17,6 +17,11 @@ final class LikeRepository implements LikeRepositoryInterface
         return LikeModel::query()->where('account_identifier', $accountIdentifier->value())->where('post_identifier', $postIdentifier->value())->exists();
     }
 
+    public function delete(AccountIdentifier $accountIdentifier, PostIdentifier $postIdentifier): void
+    {
+        LikeModel::query()->where('account_identifier', $accountIdentifier->value())->where('post_identifier', $postIdentifier->value())->delete();
+    }
+
     public function save(Like $like): void
     {
         LikeModel::query()->create(['account_identifier' => $like->accountIdentifier()->value(), 'post_identifier' => $like->postIdentifier()->value()]);

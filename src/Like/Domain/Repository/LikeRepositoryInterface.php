@@ -12,5 +12,7 @@ interface LikeRepositoryInterface
 {
     public function exists(AccountIdentifier $accountIdentifier, PostIdentifier $postIdentifier): bool;
 
+    public function delete(AccountIdentifier $accountIdentifier, PostIdentifier $postIdentifier): void;
+
     public function save(Like $like): void;
 }
