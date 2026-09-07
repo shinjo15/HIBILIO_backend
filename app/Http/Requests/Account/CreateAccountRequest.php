@@ -30,7 +30,6 @@ final class CreateAccountRequest extends FormRequest
         return [
             'account_name' => ['required', 'string', 'max:50'],
             'account_bio' => ['nullable', 'string', 'max:300'],
-            'email_address' => ['required', 'email'],
             'social_links' => ['present', 'array'],
             'social_links.*.social_type' => ['required', Rule::enum(SocialType::class)],
             'social_links.*.social_url' => ['required', 'url'],
@@ -41,14 +40,14 @@ final class CreateAccountRequest extends FormRequest
         ];
     }
 
-    public function toInput(?AccountIcon $icon, ?AccountHeader $header): CreateAccountInput
+    public function toInput(EmailAddress $emailAddress, ?AccountIcon $icon, ?AccountHeader $header): CreateAccountInput
     {
         $validated = $this->validated();
 
         return new CreateAccountInput(
             new AccountName($validated['account_name']),
             isset($validated['account_bio']) ? new AccountBio($validated['account_bio']) : null,
-            new EmailAddress($validated['email_address']),
+            $emailAddress,
             array_map(
                 static fn (array $link): SocialLink => new SocialLink(
                     SocialType::from($link['social_type']),
