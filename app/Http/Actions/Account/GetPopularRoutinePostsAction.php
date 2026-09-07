@@ -23,8 +23,14 @@ final readonly class GetPopularRoutinePostsAction
     public function __invoke(GetPopularRoutinePostsRequest $request): JsonResponse
     {
         try {
+            $accountIdentifier = $this->authService->accountIdentifier();
+        } catch (RuntimeException) {
+            $accountIdentifier = null;
+        }
+
+        try {
             $result = $this->getPopularRoutinePosts->execute(
-                $request->toInput($this->authService->accountIdentifier()),
+                $request->toInput($accountIdentifier),
             );
 
             return new JsonResponse([

@@ -15,7 +15,7 @@ final class GetPopularRoutinePosts implements GetPopularRoutinePostsInterface
 {
     public function execute(GetPopularRoutinePostsInputPort $input): GetPopularRoutinePostsOutputPort
     {
-        $paginator = DB::table('posts')
+        $query = DB::table('posts')
             ->join('routines', 'posts.routine_identifier', '=', 'routines.routine_identifier')
             ->join('accounts', 'routines.account_identifier', '=', 'accounts.account_identifier')
             ->where('posts.available', true)
@@ -24,7 +24,6 @@ final class GetPopularRoutinePosts implements GetPopularRoutinePostsInterface
             ->where('routines.available', true)
             ->where('accounts.available', true)
             ->where('accounts.status', 'active')
-            ->whereNotExists($this->blockExists($input->accountIdentifier()))
             ->select([
                 'posts.post_identifier',
                 'posts.routine_identifier',
@@ -37,13 +36,21 @@ final class GetPopularRoutinePosts implements GetPopularRoutinePostsInterface
                 'routines.routine_execution_minutes',
                 'accounts.account_name',
             ])
-            ->selectSub($this->liked($input->accountIdentifier()), 'liked')
             ->selectSub($this->executionCount(), 'execution_count')
             ->selectSub($this->customizationCount(), 'customization_count')
             ->orderByDesc('posts.post_like_count')
             ->orderByDesc('posts.created_at')
-            ->orderBy('posts.post_identifier')
-            ->paginate($input->numberOfItemsPerPage(), ['*'], 'page', $input->page());
+            ->orderBy('posts.post_identifier');
+
+        if ($input->accountIdentifier() !== null) {
+            $query
+                ->whereNotExists($this->blockExists($input->accountIdentifier()))
+                ->selectSub($this->liked($input->accountIdentifier()), 'liked');
+        } else {
+            $query->selectRaw('0 as liked');
+        }
+
+        $paginator = $query->paginate($input->numberOfItemsPerPage(), ['*'], 'page', $input->page());
 
         $routineIdentifiers = $paginator->getCollection()
             ->pluck('routine_identifier')

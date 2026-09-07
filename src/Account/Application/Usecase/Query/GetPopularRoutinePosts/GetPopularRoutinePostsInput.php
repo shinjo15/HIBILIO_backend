@@ -7,12 +7,12 @@ namespace Src\Account\Application\Usecase\Query\GetPopularRoutinePosts;
 final readonly class GetPopularRoutinePostsInput implements GetPopularRoutinePostsInputPort
 {
     public function __construct(
-        private string $accountIdentifier,
+        private ?string $accountIdentifier,
         private int $page,
         private int $numberOfItemsPerPage,
     ) {}
 
-    public function accountIdentifier(): string
+    public function accountIdentifier(): ?string
     {
         return $this->accountIdentifier;
     }
