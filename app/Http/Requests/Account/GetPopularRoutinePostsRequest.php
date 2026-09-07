@@ -23,7 +23,7 @@ final class GetPopularRoutinePostsRequest extends FormRequest
         ];
     }
 
-    public function toInput(string $accountIdentifier): GetPopularRoutinePostsInput
+    public function toInput(?string $accountIdentifier): GetPopularRoutinePostsInput
     {
         return new GetPopularRoutinePostsInput(
             accountIdentifier: $accountIdentifier,

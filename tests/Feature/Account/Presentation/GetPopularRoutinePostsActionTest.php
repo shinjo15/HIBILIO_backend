@@ -52,9 +52,24 @@ final class GetPopularRoutinePostsActionTest extends TestCase
             ->assertJsonCount(3, 'posts');
     }
 
-    public function test_returns_unauthorized_without_an_authenticated_account(): void
+    public function test_returns_popular_routine_posts_to_anonymous_users_with_liked_false(): void
     {
-        $this->getJson('/api/posts/popular?page=1&number_of_items_per_page=20')->assertUnauthorized();
+        $authorIdentifier = '22222222-2222-4222-8222-222222222222';
+        $blockedAccountIdentifier = '33333333-3333-4333-8333-333333333333';
+        $postIdentifier = '12121212-1212-4121-8121-121212121212';
+
+        $this->insertAccount($authorIdentifier, '投稿者', 'active');
+        $this->insertAccount($blockedAccountIdentifier, 'Block対象', 'active');
+        $this->insertRoutine('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', $authorIdentifier, '人気Routine', 30);
+        $this->insertPost($postIdentifier, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'routine', 20, now());
+        $this->insertBlock($authorIdentifier, $blockedAccountIdentifier);
+        $this->insertLike($blockedAccountIdentifier, $postIdentifier);
+
+        $this->getJson('/api/posts/popular?page=1&number_of_items_per_page=20')
+            ->assertOk()
+            ->assertJsonPath('total', 1)
+            ->assertJsonPath('posts.0.post_identifier', $postIdentifier)
+            ->assertJsonPath('posts.0.liked', false);
     }
 
     public function test_requires_pagination_parameters(): void
