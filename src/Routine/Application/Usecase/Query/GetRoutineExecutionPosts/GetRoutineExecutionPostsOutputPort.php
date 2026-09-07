@@ -8,4 +8,6 @@ interface GetRoutineExecutionPostsOutputPort
 {
     /** @return list<array{accountIdentifier: string, accountName: string, executedActionCount: int, postedAt: string, routineExecutionMemo: ?string, supportCount: int}> */
     public function items(): array;
+
+    public function total(): int;
 }
