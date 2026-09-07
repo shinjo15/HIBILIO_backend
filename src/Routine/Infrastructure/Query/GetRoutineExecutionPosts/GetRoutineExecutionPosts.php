@@ -29,6 +29,7 @@ final class GetRoutineExecutionPosts implements GetRoutineExecutionPostsInterfac
             ->select([
                 'accounts.account_identifier',
                 'accounts.account_name',
+                'routine_executions.routine_execution_identifier',
                 'routine_executions.routine_execution_memo',
                 'posts.created_at as posted_at',
                 'posts.post_support_count',
@@ -49,6 +50,7 @@ final class GetRoutineExecutionPosts implements GetRoutineExecutionPostsInterfac
                 'accountName' => (string) $record->account_name,
                 'executedActionCount' => (int) $record->executed_action_count,
                 'postedAt' => (new DateTimeImmutable((string) $record->posted_at))->format(DATE_ATOM),
+                'routineExecutionIdentifier' => (string) $record->routine_execution_identifier,
                 'routineExecutionMemo' => $record->routine_execution_memo === null ? null : (string) $record->routine_execution_memo,
                 'supportCount' => (int) $record->post_support_count,
             ])

@@ -6,7 +6,7 @@ namespace Src\Routine\Application\Usecase\Query\GetRoutineExecutionPosts;
 
 final readonly class GetRoutineExecutionPostsOutput implements GetRoutineExecutionPostsOutputPort
 {
-    /** @param list<array{accountIdentifier: string, accountName: string, executedActionCount: int, postedAt: string, routineExecutionMemo: ?string, supportCount: int}> $items */
+    /** @param list<array{accountIdentifier: string, accountName: string, executedActionCount: int, postedAt: string, routineExecutionIdentifier: string, routineExecutionMemo: ?string, supportCount: int}> $items */
     public function __construct(
         private array $items,
         private int $total,
