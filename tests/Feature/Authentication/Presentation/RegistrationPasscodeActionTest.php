@@ -44,13 +44,14 @@ final class RegistrationPasscodeActionTest extends TestCase
         self::assertNull($this->app['session.store']->get('registration_passcode_challenge_identifier'));
     }
 
-    public function test_does_not_issue_a_registration_passcode_for_an_existing_account_email_address(): void
+    public function test_rejects_a_registration_passcode_request_for_an_existing_account_email_address(): void
     {
         Mail::fake();
         $this->insertAccount('existing@example.com');
 
         $this->postJson('/api/registration-passcodes', ['email_address' => 'existing@example.com'])
-            ->assertNoContent();
+            ->assertUnprocessable()
+            ->assertExactJson(['message' => 'このメールアドレスはすでに登録されています。']);
 
         Mail::assertNothingSent();
         self::assertNull($this->app['session.store']->get('registration_passcode_challenge_identifier'));
