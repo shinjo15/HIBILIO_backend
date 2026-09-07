@@ -9,6 +9,7 @@ use Src\Authentication\Application\Service\LoginPasscodeGeneratorServiceInterfac
 use Src\Authentication\Application\Service\LoginPasscodeHashServiceInterface;
 use Src\Authentication\Application\Service\RegistrationPasscodeMailServiceInterface;
 use Src\Authentication\Application\Service\RegistrationPasscodeStateServiceInterface;
+use Src\Authentication\Domain\Exception\RegistrationEmailAddressAlreadyRegisteredException;
 use Src\Authentication\Domain\Factory\RegistrationPasscodeChallengeFactoryInterface;
 use Src\Authentication\Domain\ValueObject\LoginPasscode;
 
@@ -26,7 +27,7 @@ final readonly class GenerateRegistrationPasscode implements GenerateRegistratio
     public function execute(GenerateRegistrationPasscodeInputPort $input): GenerateRegistrationPasscodeOutputPort
     {
         if ($this->accountRepository->findByEmailAddress($input->emailAddress()) !== null) {
-            return new GenerateRegistrationPasscodeOutput(null);
+            throw new RegistrationEmailAddressAlreadyRegisteredException;
         }
 
         $passcode = new LoginPasscode($this->generator->generate());
