@@ -87,12 +87,14 @@ use Src\Report\Infrastructure\Repository\AccountRepository as ReportAccountRepos
 use Src\Report\Infrastructure\Repository\ReportRepository;
 use Src\Routine\Application\UseCase\CreateRoutine\CreateRoutine;
 use Src\Routine\Application\UseCase\CreateRoutine\CreateRoutineInterface;
+use Src\Routine\Application\Usecase\Query\GetRoutineDetails\GetRoutineDetailsInterface;
 use Src\Routine\Domain\Factory\RoutineActionFactoryInterface;
 use Src\Routine\Domain\Factory\RoutineFactoryInterface;
 use Src\Routine\Domain\Repository\RoutineActionRepositoryInterface;
 use Src\Routine\Domain\Repository\RoutineRepositoryInterface;
 use Src\Routine\Infrastructure\Factory\RoutineActionFactory;
 use Src\Routine\Infrastructure\Factory\RoutineFactory;
+use Src\Routine\Infrastructure\Query\GetRoutineDetails\GetRoutineDetails;
 use Src\Routine\Infrastructure\Repository\RoutineActionRepository;
 use Src\Routine\Infrastructure\Repository\RoutineRepository;
 use Src\RoutineExecution\Application\UseCase\CreateRoutineExecution\CreateRoutineExecution;
@@ -201,6 +203,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(PostFactoryInterface::class, PostFactory::class);
         $this->app->bind(PostRepositoryInterface::class, PostRepository::class);
         $this->app->bind(CreateRoutineInterface::class, CreateRoutine::class);
+        $this->app->bind(GetRoutineDetailsInterface::class, GetRoutineDetails::class);
         $this->app->bind(RoutineExecutionFactoryInterface::class, RoutineExecutionFactory::class);
         $this->app->bind(RoutineExecutionActionFactoryInterface::class, RoutineExecutionActionFactory::class);
         $this->app->bind(RoutineExecutionRepositoryInterface::class, RoutineExecutionRepository::class);
