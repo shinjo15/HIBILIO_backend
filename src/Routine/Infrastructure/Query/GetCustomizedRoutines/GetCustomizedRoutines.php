@@ -33,6 +33,7 @@ final class GetCustomizedRoutines implements GetCustomizedRoutinesInterface
             ->where('accounts.available', true)
             ->where('accounts.status', 'active')
             ->select([
+                'routines.routine_identifier',
                 'routines.account_identifier',
                 'accounts.account_name',
                 'routines.routine_name',
@@ -48,6 +49,7 @@ final class GetCustomizedRoutines implements GetCustomizedRoutinesInterface
 
         $items = $paginator->getCollection()
             ->map(static fn (object $routine): array => [
+                'routineIdentifier' => (string) $routine->routine_identifier,
                 'accountIdentifier' => (string) $routine->account_identifier,
                 'accountName' => (string) $routine->account_name,
                 'routineName' => (string) $routine->routine_name,

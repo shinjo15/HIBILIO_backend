@@ -24,6 +24,7 @@ final readonly class GetCustomizedRoutinesAction
 
         return new JsonResponse([
             'items' => array_map(static fn (array $routine): array => [
+                'routine_identifier' => $routine['routineIdentifier'],
                 'account_identifier' => $routine['accountIdentifier'],
                 'account_name' => $routine['accountName'],
                 'routine_name' => $routine['routineName'],
