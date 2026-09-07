@@ -15,6 +15,7 @@ use App\Http\Actions\Authentication\VerifyRegistrationPasscodeAction;
 use App\Http\Actions\Like\GetMyLikesAction;
 use App\Http\Actions\Report\CreateReportAction;
 use App\Http\Actions\Routine\CreateRoutineAction;
+use App\Http\Actions\Routine\GetCustomizedRoutinesAction;
 use App\Http\Actions\Routine\GetRoutineDetailsAction;
 use App\Http\Actions\RoutineExecution\CreateRoutineExecutionAction;
 use App\Http\Actions\Support\GetMySupportsAction;
@@ -35,6 +36,7 @@ Route::middleware('web')->group(static function (): void {
     Route::post('/registration-passcodes', GenerateRegistrationPasscodeAction::class);
     Route::post('/registration-passcodes/verification', VerifyRegistrationPasscodeAction::class);
     Route::post('/routines', CreateRoutineAction::class);
+    Route::get('/routines/{routine_identifier}/customized', GetCustomizedRoutinesAction::class);
     Route::get('/routines/{routine_identifier}', GetRoutineDetailsAction::class);
     Route::post('/routine-executions', CreateRoutineExecutionAction::class);
     Route::get('/tags', GetTagsAction::class);
