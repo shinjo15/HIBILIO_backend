@@ -39,11 +39,47 @@ final class DemoDataSeeder extends Seeder
     private function seedTags(mixed $timestamp): void
     {
         DB::table('tags')->upsert([
-            $this->tag('20000000-0000-4000-8000-000000000001', '朝活', $timestamp),
-            $this->tag('20000000-0000-4000-8000-000000000002', '集中', $timestamp),
-            $this->tag('20000000-0000-4000-8000-000000000003', '運動', $timestamp),
-            $this->tag('20000000-0000-4000-8000-000000000004', 'リラックス', $timestamp),
-        ], ['tag_identifier'], ['tag_name', 'available', 'updated_at']);
+            $this->tag('20000000-0000-4000-8000-000000000001', '朝活', true, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000002', '集中', true, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000003', '運動', true, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000004', 'リラックス', true, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000005', '読書', true, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000006', '勉強', true, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000007', '瞑想', true, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000008', 'ストレッチ', true, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000009', '散歩', true, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000010', '睡眠', true, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000011', '食事', true, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000012', '料理', true, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000013', '掃除', true, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000014', '片付け', true, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000015', '家計管理', true, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000016', '日記', false, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000017', '写真', false, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000018', '音楽', false, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000019', '映画鑑賞', false, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000020', '植物の手入れ', false, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000021', '手帳', false, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000022', '語学', false, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000023', 'プログラミング', false, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000024', '創作', false, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000025', '絵を描く', false, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000026', '編み物', false, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000027', '旅行計画', false, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000028', '身だしなみ', false, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000029', 'スキンケア', false, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000030', '入浴', false, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000031', '水分補給', false, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000032', 'ランニング', false, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000033', '筋トレ', false, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000034', 'ヨガ', false, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000035', '自転車', false, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000036', '早起き', false, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000037', '振り返り', false, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000038', '目標設定', false, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000039', '休憩', false, $timestamp),
+            $this->tag('20000000-0000-4000-8000-000000000040', '深呼吸', false, $timestamp),
+        ], ['tag_identifier'], ['tag_name', 'available', 'pickup', 'updated_at']);
     }
 
     private function seedRoutines(mixed $timestamp): void
@@ -139,12 +175,13 @@ final class DemoDataSeeder extends Seeder
     }
 
     /** @return array<string, mixed> */
-    private function tag(string $identifier, string $name, mixed $timestamp): array
+    private function tag(string $identifier, string $name, bool $pickup, mixed $timestamp): array
     {
         return [
             'tag_identifier' => $identifier,
             'tag_name' => $name,
             'available' => true,
+            'pickup' => $pickup,
             'created_at' => $timestamp,
             'updated_at' => $timestamp,
         ];

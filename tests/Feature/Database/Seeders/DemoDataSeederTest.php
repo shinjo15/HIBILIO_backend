@@ -23,7 +23,7 @@ final class DemoDataSeederTest extends TestCase
 
         $this->assertSame(4, DB::table('accounts')->count());
         $this->assertSame(3, DB::table('follows')->count());
-        $this->assertSame(4, DB::table('tags')->count());
+        $this->assertSame(40, DB::table('tags')->count());
         $this->assertSame(4, DB::table('routines')->count());
         $this->assertSame(8, DB::table('routine_actions')->count());
         $this->assertSame(6, DB::table('posts')->count());
