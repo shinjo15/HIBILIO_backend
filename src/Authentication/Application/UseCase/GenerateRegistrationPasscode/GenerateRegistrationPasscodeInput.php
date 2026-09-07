@@ -6,7 +6,7 @@ namespace Src\Authentication\Application\UseCase\GenerateRegistrationPasscode;
 
 use Src\Account\Domain\ValueObject\EmailAddress;
 
-final readonly class GenerateRegistrationPasscodeInput
+final readonly class GenerateRegistrationPasscodeInput implements GenerateRegistrationPasscodeInputPort
 {
     public function __construct(private EmailAddress $emailAddress) {}
 

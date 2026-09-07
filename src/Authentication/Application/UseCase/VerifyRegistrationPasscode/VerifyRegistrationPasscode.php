@@ -14,7 +14,7 @@ final readonly class VerifyRegistrationPasscode implements VerifyRegistrationPas
         private LoginPasscodeHashServiceInterface $hashService,
     ) {}
 
-    public function execute(VerifyRegistrationPasscodeInput $input): VerifyRegistrationPasscodeOutput
+    public function execute(VerifyRegistrationPasscodeInputPort $input): VerifyRegistrationPasscodeOutputPort
     {
         $challenge = $this->stateService->find($input->challengeIdentifier());
         if ($challenge === null) {

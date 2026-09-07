@@ -6,5 +6,5 @@ namespace Src\Authentication\Application\UseCase\GenerateRegistrationPasscode;
 
 interface GenerateRegistrationPasscodeInterface
 {
-    public function execute(GenerateRegistrationPasscodeInput $input): GenerateRegistrationPasscodeOutput;
+    public function execute(GenerateRegistrationPasscodeInputPort $input): GenerateRegistrationPasscodeOutputPort;
 }

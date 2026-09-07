@@ -23,7 +23,7 @@ final readonly class GenerateRegistrationPasscode implements GenerateRegistratio
         private RegistrationPasscodeMailServiceInterface $mailService,
     ) {}
 
-    public function execute(GenerateRegistrationPasscodeInput $input): GenerateRegistrationPasscodeOutput
+    public function execute(GenerateRegistrationPasscodeInputPort $input): GenerateRegistrationPasscodeOutputPort
     {
         if ($this->accountRepository->findByEmailAddress($input->emailAddress()) !== null) {
             return new GenerateRegistrationPasscodeOutput(null);

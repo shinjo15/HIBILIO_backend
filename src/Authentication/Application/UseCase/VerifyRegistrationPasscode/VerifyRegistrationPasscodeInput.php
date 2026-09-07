@@ -7,7 +7,7 @@ namespace Src\Authentication\Application\UseCase\VerifyRegistrationPasscode;
 use Src\Authentication\Domain\ValueObject\LoginPasscode;
 use Src\Authentication\Domain\ValueObject\RegistrationPasscodeChallengeIdentifier;
 
-final readonly class VerifyRegistrationPasscodeInput
+final readonly class VerifyRegistrationPasscodeInput implements VerifyRegistrationPasscodeInputPort
 {
     public function __construct(
         private RegistrationPasscodeChallengeIdentifier $challengeIdentifier,

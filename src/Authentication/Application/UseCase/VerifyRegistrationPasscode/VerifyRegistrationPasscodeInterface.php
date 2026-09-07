@@ -6,5 +6,5 @@ namespace Src\Authentication\Application\UseCase\VerifyRegistrationPasscode;
 
 interface VerifyRegistrationPasscodeInterface
 {
-    public function execute(VerifyRegistrationPasscodeInput $input): VerifyRegistrationPasscodeOutput;
+    public function execute(VerifyRegistrationPasscodeInputPort $input): VerifyRegistrationPasscodeOutputPort;
 }

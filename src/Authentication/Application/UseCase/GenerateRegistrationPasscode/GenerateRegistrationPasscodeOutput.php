@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Src\Authentication\Application\UseCase\GenerateRegistrationPasscode;
 
-final readonly class GenerateRegistrationPasscodeOutput
+final readonly class GenerateRegistrationPasscodeOutput implements GenerateRegistrationPasscodeOutputPort
 {
     public function __construct(private ?string $challengeIdentifier) {}
 

@@ -6,7 +6,7 @@ namespace Src\Authentication\Application\UseCase\VerifyRegistrationPasscode;
 
 use Src\Account\Domain\ValueObject\EmailAddress;
 
-final readonly class VerifyRegistrationPasscodeOutput
+final readonly class VerifyRegistrationPasscodeOutput implements VerifyRegistrationPasscodeOutputPort
 {
     private function __construct(private ?EmailAddress $emailAddress) {}
 
