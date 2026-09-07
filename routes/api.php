@@ -17,6 +17,7 @@ use App\Http\Actions\Report\CreateReportAction;
 use App\Http\Actions\Routine\CreateRoutineAction;
 use App\Http\Actions\RoutineExecution\CreateRoutineExecutionAction;
 use App\Http\Actions\Support\GetMySupportsAction;
+use App\Http\Actions\Tag\GetPickupTagsAction;
 use App\Http\Actions\Tag\GetTagsAction;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -35,6 +36,7 @@ Route::middleware('web')->group(static function (): void {
     Route::post('/routines', CreateRoutineAction::class);
     Route::post('/routine-executions', CreateRoutineExecutionAction::class);
     Route::get('/tags', GetTagsAction::class);
+    Route::get('/tags/pickup', GetPickupTagsAction::class);
     Route::post('/reports', CreateReportAction::class);
     Route::post('/follows', CreateFollowAction::class);
     Route::get('/following/posts', GetFollowingPostsAction::class);
