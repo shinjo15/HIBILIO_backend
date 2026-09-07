@@ -20,12 +20,14 @@ final class TagModel extends Model
         'tag_identifier',
         'tag_name',
         'available',
+        'pickup',
     ];
 
     protected function casts(): array
     {
         return [
             'available' => 'boolean',
+            'pickup' => 'boolean',
         ];
     }
 }

@@ -124,10 +124,12 @@ use Src\Support\Infrastructure\Query\GetMySupports\GetMySupports;
 use Src\Support\Infrastructure\Repository\SupportRepository;
 use Src\Tag\Application\UseCase\CreateTag\CreateTag;
 use Src\Tag\Application\UseCase\CreateTag\CreateTagInterface;
+use Src\Tag\Application\Usecase\Query\GetPickupTags\GetPickupTagsInterface;
 use Src\Tag\Application\Usecase\Query\GetTags\GetTagsInterface;
 use Src\Tag\Domain\Factory\TagFactoryInterface;
 use Src\Tag\Domain\Repository\TagRepositoryInterface;
 use Src\Tag\Infrastructure\Factory\TagFactory;
+use Src\Tag\Infrastructure\Query\GetPickupTags\GetPickupTags;
 use Src\Tag\Infrastructure\Query\GetTags\GetTags;
 use Src\Tag\Infrastructure\Repository\TagRepository;
 
@@ -169,6 +171,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(TagFactoryInterface::class, TagFactory::class);
         $this->app->bind(TagRepositoryInterface::class, TagRepository::class);
         $this->app->bind(CreateTagInterface::class, CreateTag::class);
+        $this->app->bind(GetPickupTagsInterface::class, GetPickupTags::class);
         $this->app->bind(GetTagsInterface::class, GetTags::class);
         $this->app->bind(TransactionManagerInterface::class, LaravelTransactionManager::class);
         $this->app->bind(LikeFactoryInterface::class, LikeFactory::class);
