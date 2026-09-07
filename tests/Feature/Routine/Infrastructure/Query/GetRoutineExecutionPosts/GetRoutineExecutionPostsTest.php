@@ -37,6 +37,7 @@ final class GetRoutineExecutionPostsTest extends TestCase
             'accountName' => '実行者',
             'executedActionCount' => 2,
             'postedAt' => '2026-09-07T10:00:00+00:00',
+            'routineExecutionIdentifier' => $routineExecutionIdentifier,
             'routineExecutionMemo' => '振り返りメモ',
             'supportCount' => 7,
         ]], $result->items());

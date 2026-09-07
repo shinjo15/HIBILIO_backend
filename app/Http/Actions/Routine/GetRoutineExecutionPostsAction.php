@@ -24,6 +24,7 @@ final readonly class GetRoutineExecutionPostsAction
                 'account_name' => $post['accountName'],
                 'executed_action_count' => $post['executedActionCount'],
                 'posted_at' => $post['postedAt'],
+                'routine_execution_identifier' => $post['routineExecutionIdentifier'],
                 'routine_execution_memo' => $post['routineExecutionMemo'],
                 'support_count' => $post['supportCount'],
             ], $result->items()),
