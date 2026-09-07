@@ -9,10 +9,16 @@ final readonly class GetRoutineExecutionPostsOutput implements GetRoutineExecuti
     /** @param list<array{accountIdentifier: string, accountName: string, executedActionCount: int, postedAt: string, routineExecutionMemo: ?string, supportCount: int}> $items */
     public function __construct(
         private array $items,
+        private int $total,
     ) {}
 
     public function items(): array
     {
         return $this->items;
+    }
+
+    public function total(): int
+    {
+        return $this->total;
     }
 }

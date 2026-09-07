@@ -15,7 +15,7 @@ final class GetRoutineExecutionPosts implements GetRoutineExecutionPostsInterfac
 {
     public function execute(GetRoutineExecutionPostsInputPort $input): GetRoutineExecutionPostsOutputPort
     {
-        $items = DB::table('posts')
+        $paginator = DB::table('posts')
             ->join('routine_executions', 'posts.routine_execution_identifier', '=', 'routine_executions.routine_execution_identifier')
             ->join('routines', 'routine_executions.routine_identifier', '=', 'routines.routine_identifier')
             ->join('accounts', 'routine_executions.executor_account_identifier', '=', 'accounts.account_identifier')
@@ -41,7 +41,9 @@ final class GetRoutineExecutionPosts implements GetRoutineExecutionPostsInterfac
             )
             ->orderByDesc('posts.created_at')
             ->orderBy('posts.post_identifier')
-            ->get()
+            ->paginate($input->numberOfItemsPerPage(), ['*'], 'page', $input->page());
+
+        $items = $paginator->getCollection()
             ->map(static fn (object $record): array => [
                 'accountIdentifier' => (string) $record->account_identifier,
                 'accountName' => (string) $record->account_name,
@@ -52,6 +54,6 @@ final class GetRoutineExecutionPosts implements GetRoutineExecutionPostsInterfac
             ])
             ->all();
 
-        return new GetRoutineExecutionPostsOutput($items);
+        return new GetRoutineExecutionPostsOutput($items, $paginator->total());
     }
 }
