@@ -33,6 +33,7 @@ final class GetFollowingPosts implements GetFollowingPostsInterface
                 'routines.routine_execution_minutes',
                 'accounts.account_name',
             ])
+            ->selectSub($this->liked($input->accountIdentifier()), 'liked')
             ->selectSub($this->executionCount(), 'execution_count')
             ->selectSub($this->customizationCount(), 'customization_count')
             ->orderByDesc('posts.created_at')
@@ -64,6 +65,7 @@ final class GetFollowingPosts implements GetFollowingPostsInterface
                 'tags' => $tagsByRoutineIdentifier[(string) $record->routine_identifier] ?? [],
                 'routineActions' => $actionsByRoutineIdentifier[(string) $record->routine_identifier] ?? [],
                 'postLikeCount' => (int) $record->post_like_count,
+                'liked' => (bool) $record->liked,
                 'executionCount' => (int) $record->execution_count,
                 'customizationCount' => (int) $record->customization_count,
             ])
@@ -71,6 +73,14 @@ final class GetFollowingPosts implements GetFollowingPostsInterface
             ->all();
 
         return new GetFollowingPostsOutput($posts, $paginator->total());
+    }
+
+    private function liked(string $accountIdentifier): mixed
+    {
+        return DB::table('likes')
+            ->selectRaw('count(*) > 0')
+            ->where('likes.account_identifier', $accountIdentifier)
+            ->whereColumn('likes.post_identifier', 'posts.post_identifier');
     }
 
     private function executionCount(): mixed

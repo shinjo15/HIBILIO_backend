@@ -37,6 +37,7 @@ final class GetFavoriteTagPosts implements GetFavoriteTagPostsInterface
                 'routines.routine_execution_minutes',
                 'accounts.account_name',
             ])
+            ->selectSub($this->liked($input->accountIdentifier()), 'liked')
             ->selectSub($this->executionCount(), 'execution_count')
             ->selectSub($this->customizationCount(), 'customization_count')
             ->selectRaw($this->scoreExpression().' as recommendation_score')
@@ -71,6 +72,7 @@ final class GetFavoriteTagPosts implements GetFavoriteTagPostsInterface
                 'tags' => $tagsByRoutineIdentifier[(string) $record->routine_identifier] ?? [],
                 'routineActions' => $actionsByRoutineIdentifier[(string) $record->routine_identifier] ?? [],
                 'postLikeCount' => (int) $record->post_like_count,
+                'liked' => (bool) $record->liked,
                 'postSupportCount' => (int) $record->post_support_count,
                 'executionCount' => (int) $record->execution_count,
                 'customizationCount' => (int) $record->customization_count,
@@ -97,6 +99,14 @@ final class GetFavoriteTagPosts implements GetFavoriteTagPostsInterface
             ->where('favorite_tags.account_identifier', $accountIdentifier)
             ->where('routine_tags.available', true)
             ->select('routine_tags.routine_identifier');
+    }
+
+    private function liked(string $accountIdentifier): mixed
+    {
+        return DB::table('likes')
+            ->selectRaw('count(*) > 0')
+            ->where('likes.account_identifier', $accountIdentifier)
+            ->whereColumn('likes.post_identifier', 'posts.post_identifier');
     }
 
     private function blockExists(string $accountIdentifier): \Closure

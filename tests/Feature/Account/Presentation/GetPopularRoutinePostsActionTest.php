@@ -37,6 +37,7 @@ final class GetPopularRoutinePostsActionTest extends TestCase
         $this->insertPost('17171717-1717-4171-8171-171717171717', 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', 'routine', 100, now());
         $this->insertPost('18181818-1818-4181-8181-181818181818', 'ffffffff-ffff-4fff-8fff-ffffffffffff', 'routine', 100, now());
         $this->insertBlock($viewerIdentifier, $blockedAuthorIdentifier);
+        $this->insertLike($viewerIdentifier, '12121212-1212-4121-8121-121212121212');
 
         $this->withSession(['account_identifier' => $viewerIdentifier])
             ->getJson('/api/posts/popular?page=1&number_of_items_per_page=20')
@@ -46,6 +47,8 @@ final class GetPopularRoutinePostsActionTest extends TestCase
             ->assertJsonPath('posts.1.post_identifier', '13131313-1313-4131-8131-131313131313')
             ->assertJsonPath('posts.2.post_identifier', '14141414-1414-4141-8141-141414141414')
             ->assertJsonPath('posts.0.post_like_count', 20)
+            ->assertJsonPath('posts.0.liked', true)
+            ->assertJsonPath('posts.1.liked', false)
             ->assertJsonCount(3, 'posts');
     }
 
@@ -80,5 +83,10 @@ final class GetPopularRoutinePostsActionTest extends TestCase
     private function insertBlock(string $blockingAccountIdentifier, string $blockedAccountIdentifier): void
     {
         DB::table('blocks')->insert(['blocking_account_identifier' => $blockingAccountIdentifier, 'blocked_account_identifier' => $blockedAccountIdentifier, 'created_at' => now(), 'updated_at' => now()]);
+    }
+
+    private function insertLike(string $accountIdentifier, string $postIdentifier): void
+    {
+        DB::table('likes')->insert(['account_identifier' => $accountIdentifier, 'post_identifier' => $postIdentifier, 'created_at' => now(), 'updated_at' => now()]);
     }
 }

@@ -33,6 +33,7 @@ final class GetFollowingPostsActionTest extends TestCase
         $this->insertPost('12121212-1212-4121-8121-121212121212', $routineIdentifier, 'routine', 4, '2026-09-04 10:00:00');
         $this->insertPost('13131313-1313-4131-8131-131313131313', $routineIdentifier, 'action', 0, '2026-09-04 11:00:00');
         $this->insertPost('14141414-1414-4141-8141-141414141414', 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'routine', 9, '2026-09-04 12:00:00');
+        $this->insertLike($followingAccountIdentifier, '13131313-1313-4131-8131-131313131313');
 
         $this->withSession(['account_identifier' => $followingAccountIdentifier])
             ->getJson('/api/following/posts?page=1&number_of_items_per_page=20')
@@ -65,6 +66,7 @@ final class GetFollowingPostsActionTest extends TestCase
                             ],
                         ],
                         'post_like_count' => 0,
+                        'liked' => true,
                         'execution_count' => 1,
                         'customization_count' => 1,
                     ],
@@ -78,6 +80,7 @@ final class GetFollowingPostsActionTest extends TestCase
                         'routine_name' => '朝の集中ルーティン',
                         'routine_execution_minutes' => 40,
                         'post_like_count' => 4,
+                        'liked' => false,
                         'execution_count' => 1,
                         'customization_count' => 1,
                     ],
@@ -196,6 +199,16 @@ final class GetFollowingPostsActionTest extends TestCase
             'available' => true,
             'created_at' => $createdAt,
             'updated_at' => $createdAt,
+        ]);
+    }
+
+    private function insertLike(string $accountIdentifier, string $postIdentifier): void
+    {
+        DB::table('likes')->insert([
+            'account_identifier' => $accountIdentifier,
+            'post_identifier' => $postIdentifier,
+            'created_at' => '2026-09-04 09:00:00',
+            'updated_at' => '2026-09-04 09:00:00',
         ]);
     }
 }

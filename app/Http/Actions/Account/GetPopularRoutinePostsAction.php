@@ -47,6 +47,7 @@ final readonly class GetPopularRoutinePostsAction
                         'action_minutes' => $action['actionMinutes'],
                     ], $post['routineActions']),
                     'post_like_count' => $post['postLikeCount'],
+                    'liked' => $post['liked'],
                     'post_support_count' => $post['postSupportCount'],
                     'execution_count' => $post['executionCount'],
                     'customization_count' => $post['customizationCount'],
