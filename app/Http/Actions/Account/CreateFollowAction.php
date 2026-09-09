@@ -8,9 +8,9 @@ use App\Http\Requests\Account\CreateFollowRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 use RuntimeException;
-use Src\Account\Application\UseCase\CreateFollow\CreateFollowInterface;
-use Src\Account\Domain\Exception\DuplicateFollowException;
+use Src\Account\Application\Usecase\Command\CreateFollow\CreateFollowInterface;
 use Src\Account\Domain\Exception\AccountNotFoundException;
+use Src\Account\Domain\Exception\DuplicateFollowException;
 use Src\Account\Domain\Exception\SelfFollowException;
 use Src\Shared\Application\Service\AuthServiceInterface;
 

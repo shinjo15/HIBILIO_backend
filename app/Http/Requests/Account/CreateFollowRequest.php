@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Account;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Src\Account\Application\UseCase\CreateFollow\CreateFollowInput;
+use Src\Account\Application\Usecase\Command\CreateFollow\CreateFollowInput;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
 final class CreateFollowRequest extends FormRequest

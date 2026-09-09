@@ -6,7 +6,7 @@ namespace App\Http\Requests\Account;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Src\Account\Application\UseCase\ChangeAccountVisibility\ChangeAccountVisibilityInput;
+use Src\Account\Application\Usecase\Command\ChangeAccountVisibility\ChangeAccountVisibilityInput;
 use Src\Account\Domain\ValueObject\AccountVisibility;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
