@@ -5,8 +5,10 @@ declare(strict_types=1);
 use App\Http\Actions\Account\CreateAccountAction;
 use App\Http\Actions\Account\CreateBlockAction;
 use App\Http\Actions\Account\CreateFollowAction;
+use App\Http\Actions\Account\GetAccountDetailsAction;
 use App\Http\Actions\Account\GetFavoriteTagPostsAction;
 use App\Http\Actions\Account\GetFollowingPostsAction;
+use App\Http\Actions\Account\GetMyAccountAction;
 use App\Http\Actions\Account\GetPopularRoutinePostsAction;
 use App\Http\Actions\Authentication\GenerateLoginPasscodeAction;
 use App\Http\Actions\Authentication\GenerateRegistrationPasscodeAction;
@@ -32,6 +34,8 @@ Route::middleware('web')->group(static function (): void {
     ]));
 
     Route::post('/accounts', CreateAccountAction::class);
+    Route::get('/accounts/{account_identifier}', GetAccountDetailsAction::class);
+    Route::get('/my/account', GetMyAccountAction::class);
     Route::post('/login-passcodes', GenerateLoginPasscodeAction::class);
     Route::post('/login-passcodes/verification', VerifyLoginPasscodeAction::class);
     Route::post('/registration-passcodes', GenerateRegistrationPasscodeAction::class);
