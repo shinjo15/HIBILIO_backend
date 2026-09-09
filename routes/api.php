@@ -12,6 +12,7 @@ use App\Http\Actions\Account\GetFollowingPostsAction;
 use App\Http\Actions\Account\GetMyAccountAction;
 use App\Http\Actions\Account\GetMyRoutinePostsAction;
 use App\Http\Actions\Account\GetPopularRoutinePostsAction;
+use App\Http\Actions\Account\UpdateAccountProfileAction;
 use App\Http\Actions\Authentication\GenerateLoginPasscodeAction;
 use App\Http\Actions\Authentication\GenerateRegistrationPasscodeAction;
 use App\Http\Actions\Authentication\VerifyLoginPasscodeAction;
@@ -45,6 +46,7 @@ Route::middleware('web')->group(static function (): void {
     Route::get('/accounts/{account_identifier}/posts', GetAccountRoutinePostsAction::class);
     Route::get('/accounts/{account_identifier}/routine-executions', GetAccountRoutineExecutionsAction::class);
     Route::get('/my/account', GetMyAccountAction::class);
+    Route::patch('/my/account', UpdateAccountProfileAction::class);
     Route::get('/my/posts', GetMyRoutinePostsAction::class);
     Route::get('/my/routine-executions', GetMyRoutineExecutionsAction::class);
     Route::post('/login-passcodes', GenerateLoginPasscodeAction::class);

@@ -15,4 +15,6 @@ interface AccountRepositoryInterface
     public function findByEmailAddress(EmailAddress $emailAddress): ?Account;
 
     public function save(Account $account): void;
+
+    public function updateProfile(Account $account): void;
 }
