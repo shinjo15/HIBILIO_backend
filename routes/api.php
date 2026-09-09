@@ -13,6 +13,7 @@ use App\Http\Actions\Account\GetFollowingPostsAction;
 use App\Http\Actions\Account\GetMyAccountAction;
 use App\Http\Actions\Account\GetMyRoutinePostsAction;
 use App\Http\Actions\Account\GetPopularRoutinePostsAction;
+use App\Http\Actions\Account\RemoveBlockAction;
 use App\Http\Actions\Account\UpdateAccountProfileAction;
 use App\Http\Actions\Authentication\GenerateLoginPasscodeAction;
 use App\Http\Actions\Authentication\GenerateRegistrationPasscodeAction;
@@ -69,6 +70,7 @@ Route::middleware('web')->group(static function (): void {
     Route::get('/posts/popular', GetPopularRoutinePostsAction::class);
     Route::get('/posts/favorite_tags', GetFavoriteTagPostsAction::class);
     Route::post('/blocks', CreateBlockAction::class);
+    Route::delete('/blocks/{blocked_account_identifier}', RemoveBlockAction::class)->whereUuid('blocked_account_identifier');
     Route::post('/likes', CreateLikeAction::class);
     Route::delete('/likes/{post_identifier}', RemoveLikeAction::class)->whereUuid('post_identifier');
     Route::get('/my/likes', GetMyLikedRoutinePostsAction::class);

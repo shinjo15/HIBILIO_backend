@@ -37,6 +37,16 @@ final class BlockRepository implements BlockRepositoryInterface
         }
     }
 
+    public function delete(
+        AccountIdentifier $blockingAccountIdentifier,
+        AccountIdentifier $blockedAccountIdentifier,
+    ): void {
+        BlockModel::query()
+            ->where('blocking_account_identifier', $blockingAccountIdentifier->value())
+            ->where('blocked_account_identifier', $blockedAccountIdentifier->value())
+            ->delete();
+    }
+
     private function restore(BlockModel $model): Block
     {
         return new Block(

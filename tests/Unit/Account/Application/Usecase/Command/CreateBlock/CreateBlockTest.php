@@ -170,6 +170,11 @@ final class InMemoryBlockRepository implements BlockRepositoryInterface
     {
         $this->saved[] = $block;
     }
+
+    public function delete(
+        AccountIdentifier $blockingAccountIdentifier,
+        AccountIdentifier $blockedAccountIdentifier,
+    ): void {}
 }
 
 final class TestBlockFactory implements BlockFactoryInterface
