@@ -8,7 +8,7 @@ use App\Http\Requests\Account\UpdateAccountProfileRequest;
 use Illuminate\Http\Response;
 use RuntimeException;
 use Src\Account\Application\Service\AccountImageConverterServiceInterface;
-use Src\Account\Application\UseCase\UpdateAccountProfile\UpdateAccountProfileInterface;
+use Src\Account\Application\Usecase\Command\UpdateAccountProfile\UpdateAccountProfileInterface;
 use Src\Account\Domain\Exception\AccountNotFoundException;
 use Src\Shared\Application\Service\AuthServiceInterface;
 

@@ -7,7 +7,7 @@ namespace App\Http\Actions\Account;
 use App\Http\Requests\Account\ChangeAccountVisibilityRequest;
 use Illuminate\Http\Response;
 use RuntimeException;
-use Src\Account\Application\UseCase\ChangeAccountVisibility\ChangeAccountVisibilityInterface;
+use Src\Account\Application\Usecase\Command\ChangeAccountVisibility\ChangeAccountVisibilityInterface;
 use Src\Account\Domain\Exception\AccountNotFoundException;
 use Src\Shared\Application\Service\AuthServiceInterface;
 

@@ -9,7 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 use RuntimeException;
 use Src\Account\Application\Service\AccountImageConverterServiceInterface;
-use Src\Account\Application\UseCase\CreateAccount\CreateAccountInterface;
+use Src\Account\Application\Usecase\Command\CreateAccount\CreateAccountInterface;
 use Src\Account\Domain\Exception\DuplicateEmailAddressException;
 use Src\Authentication\Application\Service\RegistrationPasscodeSessionServiceInterface;
 

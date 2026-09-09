@@ -8,7 +8,7 @@ use App\Http\Requests\Account\CreateBlockRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 use RuntimeException;
-use Src\Account\Application\UseCase\CreateBlock\CreateBlockInterface;
+use Src\Account\Application\Usecase\Command\CreateBlock\CreateBlockInterface;
 use Src\Account\Domain\Exception\AccountNotFoundException;
 use Src\Account\Domain\Exception\DuplicateBlockException;
 use Src\Account\Domain\Exception\SelfBlockException;

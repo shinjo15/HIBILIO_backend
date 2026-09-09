@@ -7,7 +7,7 @@ namespace App\Http\Requests\Account;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
-use Src\Account\Application\UseCase\UpdateAccountProfile\UpdateAccountProfileInput;
+use Src\Account\Application\Usecase\Command\UpdateAccountProfile\UpdateAccountProfileInput;
 use Src\Account\Domain\ValueObject\AccountBio;
 use Src\Account\Domain\ValueObject\AccountHeader;
 use Src\Account\Domain\ValueObject\AccountIcon;

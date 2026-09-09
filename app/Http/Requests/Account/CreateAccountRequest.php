@@ -6,7 +6,7 @@ namespace App\Http\Requests\Account;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Src\Account\Application\UseCase\CreateAccount\CreateAccountInput;
+use Src\Account\Application\Usecase\Command\CreateAccount\CreateAccountInput;
 use Src\Account\Domain\ValueObject\AccountBio;
 use Src\Account\Domain\ValueObject\AccountHeader;
 use Src\Account\Domain\ValueObject\AccountIcon;
