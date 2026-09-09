@@ -98,6 +98,8 @@ final class InMemoryAccountRepository implements AccountRepositoryInterface
     {
         $this->savedAccount = $account;
     }
+
+    public function updateProfile(Account $account): void {}
 }
 final readonly class FakeAccountFactory implements AccountFactoryInterface
 {

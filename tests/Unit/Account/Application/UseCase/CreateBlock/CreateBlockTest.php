@@ -137,6 +137,8 @@ final class InMemoryAccountRepository implements AccountRepositoryInterface
     }
 
     public function save(Account $account): void {}
+
+    public function updateProfile(Account $account): void {}
 }
 
 final class InMemoryBlockRepository implements BlockRepositoryInterface

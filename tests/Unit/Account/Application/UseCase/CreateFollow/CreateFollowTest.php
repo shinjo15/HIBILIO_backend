@@ -9,8 +9,8 @@ use Src\Account\Application\UseCase\CreateFollow\CreateFollow;
 use Src\Account\Application\UseCase\CreateFollow\CreateFollowInput;
 use Src\Account\Domain\Entity\Account;
 use Src\Account\Domain\Entity\Follow;
-use Src\Account\Domain\Exception\DuplicateFollowException;
 use Src\Account\Domain\Exception\AccountNotFoundException;
+use Src\Account\Domain\Exception\DuplicateFollowException;
 use Src\Account\Domain\Exception\SelfFollowException;
 use Src\Account\Domain\Factory\FollowFactoryInterface;
 use Src\Account\Domain\Repository\AccountRepositoryInterface;
@@ -136,9 +136,9 @@ final class InMemoryAccountRepository implements AccountRepositoryInterface
         return null;
     }
 
-    public function save(Account $account): void
-    {
-    }
+    public function save(Account $account): void {}
+
+    public function updateProfile(Account $account): void {}
 }
 
 final class InMemoryFollowRepository implements FollowRepositoryInterface

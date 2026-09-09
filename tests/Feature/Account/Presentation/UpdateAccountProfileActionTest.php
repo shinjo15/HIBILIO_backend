@@ -59,6 +59,27 @@ final class UpdateAccountProfileActionTest extends TestCase
         $this->assertDatabaseCount('favorite_tags', 0);
     }
 
+    public function test_reconciles_submitted_profile_lists_without_recreating_the_account(): void
+    {
+        $this->insertAccount();
+        $this->insertTag('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+        $this->insertTag('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
+        $this->insertSocialLink();
+        $this->insertFavoriteTag();
+        $this->authenticateAsAccount();
+
+        $this->patchJson('/api/my/account', [
+            'social_links' => [['social_type' => 'instagram', 'social_url' => 'https://instagram.com/example']],
+            'favorite_tag_identifiers' => ['bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'],
+        ])->assertNoContent();
+
+        $this->assertDatabaseHas('accounts', ['account_identifier' => '11111111-1111-4111-8111-111111111111', 'email_address' => 'original@example.com']);
+        $this->assertDatabaseHas('account_social_links', ['account_identifier' => '11111111-1111-4111-8111-111111111111', 'type' => 'instagram', 'url' => 'https://instagram.com/example', 'position' => 0]);
+        $this->assertDatabaseMissing('account_social_links', ['account_identifier' => '11111111-1111-4111-8111-111111111111', 'type' => 'x']);
+        $this->assertDatabaseHas('favorite_tags', ['account_identifier' => '11111111-1111-4111-8111-111111111111', 'tag_identifier' => 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb']);
+        $this->assertDatabaseMissing('favorite_tags', ['account_identifier' => '11111111-1111-4111-8111-111111111111', 'tag_identifier' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa']);
+    }
+
     public function test_rejects_an_icon_file_with_an_icon_deletion_request(): void
     {
         $this->insertAccount();

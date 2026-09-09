@@ -33,7 +33,7 @@ final readonly class UpdateAccountProfile implements UpdateAccountProfileInterfa
         );
 
         $this->transactionManager->transaction(function () use ($account, $input): void {
-            $this->accountRepository->save($account);
+            $this->accountRepository->updateProfile($account);
 
             if ($input->deleteIcon()) {
                 $this->storageService->deleteIcon($account->accountIdentifier());
