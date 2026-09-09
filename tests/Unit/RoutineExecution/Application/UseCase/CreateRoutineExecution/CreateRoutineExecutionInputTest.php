@@ -12,6 +12,19 @@ use Src\Shared\Domain\ValueObject\Identifier\RoutineIdentifier;
 
 final class CreateRoutineExecutionInputTest extends TestCase
 {
+    public function test_rejects_an_empty_list_of_executed_routine_actions(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('実行した行動は1件以上指定する必要があります。');
+
+        new CreateRoutineExecutionInput(
+            new AccountIdentifier('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),
+            new RoutineIdentifier('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'),
+            [],
+            null,
+        );
+    }
+
     public function test_rejects_duplicate_executed_routine_actions(): void
     {
         $this->expectException(\InvalidArgumentException::class);

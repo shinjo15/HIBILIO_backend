@@ -22,7 +22,7 @@ final class CreateRoutineExecutionRequest extends FormRequest
     {
         return [
             'routine_identifier' => ['required', 'uuid'],
-            'executed_routine_action_identifiers' => ['present', 'array', 'distinct'],
+            'executed_routine_action_identifiers' => ['present', 'array', 'min:1', 'distinct'],
             'executed_routine_action_identifiers.*' => ['required', 'uuid'],
             'routine_execution_memo' => ['nullable', 'string', 'max:31'],
         ];
