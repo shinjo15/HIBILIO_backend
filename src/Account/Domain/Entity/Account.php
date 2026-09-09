@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use Src\Account\Domain\ValueObject\AccountBio;
 use Src\Account\Domain\ValueObject\AccountName;
 use Src\Account\Domain\ValueObject\AccountStatus;
+use Src\Account\Domain\ValueObject\AccountVisibility;
 use Src\Account\Domain\ValueObject\EmailAddress;
 use Src\Account\Domain\ValueObject\FavoriteTagIdentifiers;
 use Src\Account\Domain\ValueObject\SocialLink;
@@ -25,6 +26,7 @@ final class Account
         private FavoriteTagIdentifiers $favoriteTagIdentifiers,
         private AccountStatus $status,
         private ?DateTimeImmutable $banUntil,
+        private AccountVisibility $visibility,
     ) {}
 
     /** @param list<SocialLink> $socialLinks */
@@ -55,6 +57,7 @@ final class Account
             $favoriteTagIdentifiers,
             AccountStatus::ACTIVE,
             null,
+            AccountVisibility::PUBLIC,
         );
     }
 
@@ -68,8 +71,9 @@ final class Account
         FavoriteTagIdentifiers $favoriteTagIdentifiers,
         AccountStatus $status,
         ?DateTimeImmutable $banUntil,
+        AccountVisibility $visibility = AccountVisibility::PUBLIC,
     ): self {
-        return new self($accountIdentifier, $accountName, $accountBio, $emailAddress, $socialLinks, $favoriteTagIdentifiers, $status, $banUntil);
+        return new self($accountIdentifier, $accountName, $accountBio, $emailAddress, $socialLinks, $favoriteTagIdentifiers, $status, $banUntil, $visibility);
     }
 
     public function active(): void
@@ -88,6 +92,11 @@ final class Account
     {
         $this->status = AccountStatus::PERMANENTLY_BANNED;
         $this->banUntil = null;
+    }
+
+    public function changeVisibility(AccountVisibility $visibility): void
+    {
+        $this->visibility = $visibility;
     }
 
     /** @param list<SocialLink>|null $socialLinks */
@@ -154,5 +163,10 @@ final class Account
     public function banUntil(): ?DateTimeImmutable
     {
         return $this->banUntil;
+    }
+
+    public function visibility(): AccountVisibility
+    {
+        return $this->visibility;
     }
 }
