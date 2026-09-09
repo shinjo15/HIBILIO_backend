@@ -15,7 +15,7 @@ use App\Http\Actions\Authentication\GenerateRegistrationPasscodeAction;
 use App\Http\Actions\Authentication\VerifyLoginPasscodeAction;
 use App\Http\Actions\Authentication\VerifyRegistrationPasscodeAction;
 use App\Http\Actions\Like\GetAccountLikedRoutinePostsAction;
-use App\Http\Actions\Like\GetMyLikesAction;
+use App\Http\Actions\Like\GetMyLikedRoutinePostsAction;
 use App\Http\Actions\Report\CreateReportAction;
 use App\Http\Actions\Routine\CreateRoutineAction;
 use App\Http\Actions\Routine\GetCustomizedRoutinesAction;
@@ -55,6 +55,6 @@ Route::middleware('web')->group(static function (): void {
     Route::get('/posts/popular', GetPopularRoutinePostsAction::class);
     Route::get('/posts/favorite_tags', GetFavoriteTagPostsAction::class);
     Route::post('/blocks', CreateBlockAction::class);
-    Route::get('/my/likes', GetMyLikesAction::class);
+    Route::get('/my/likes', GetMyLikedRoutinePostsAction::class);
     Route::get('/my/supports', GetMySupportsAction::class);
 });

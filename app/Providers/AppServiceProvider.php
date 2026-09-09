@@ -70,14 +70,12 @@ use Src\Authentication\Infrastructure\Service\RegistrationPasscodeMailService;
 use Src\Like\Application\UseCase\CreateLike\CreateLike;
 use Src\Like\Application\UseCase\CreateLike\CreateLikeInterface;
 use Src\Like\Application\Usecase\Query\GetLikedRoutinePosts\GetLikedRoutinePostsInterface;
-use Src\Like\Application\Usecase\Query\GetMyLikes\GetMyLikesInterface;
 use Src\Like\Application\UseCase\RemoveLike\RemoveLike;
 use Src\Like\Application\UseCase\RemoveLike\RemoveLikeInterface;
 use Src\Like\Domain\Factory\LikeFactoryInterface;
 use Src\Like\Domain\Repository\LikeRepositoryInterface;
 use Src\Like\Infrastructure\Factory\LikeFactory;
 use Src\Like\Infrastructure\Query\GetLikedRoutinePosts\GetLikedRoutinePosts;
-use Src\Like\Infrastructure\Query\GetMyLikes\GetMyLikes;
 use Src\Like\Infrastructure\Repository\LikeRepository;
 use Src\Post\Infrastructure\Factory\PostFactory;
 use Src\Post\Infrastructure\Repository\PostRepository;
@@ -189,7 +187,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(LikeRepositoryInterface::class, LikeRepository::class);
         $this->app->bind(CreateLikeInterface::class, CreateLike::class);
         $this->app->bind(RemoveLikeInterface::class, RemoveLike::class);
-        $this->app->bind(GetMyLikesInterface::class, GetMyLikes::class);
+
         $this->app->bind(GetLikedRoutinePostsInterface::class, GetLikedRoutinePosts::class);
         $this->app->bind(FollowFactoryInterface::class, FollowFactory::class);
         $this->app->bind(FollowRepositoryInterface::class, FollowRepository::class);
