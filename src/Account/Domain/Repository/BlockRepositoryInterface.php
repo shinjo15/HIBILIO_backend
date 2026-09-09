@@ -15,4 +15,9 @@ interface BlockRepositoryInterface
     ): ?Block;
 
     public function save(Block $block): void;
+
+    public function delete(
+        AccountIdentifier $blockingAccountIdentifier,
+        AccountIdentifier $blockedAccountIdentifier,
+    ): void;
 }

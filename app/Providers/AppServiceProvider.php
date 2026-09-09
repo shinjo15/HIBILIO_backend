@@ -17,6 +17,8 @@ use Src\Account\Application\Usecase\Command\CreateBlock\CreateBlock;
 use Src\Account\Application\Usecase\Command\CreateBlock\CreateBlockInterface;
 use Src\Account\Application\Usecase\Command\CreateFollow\CreateFollow;
 use Src\Account\Application\Usecase\Command\CreateFollow\CreateFollowInterface;
+use Src\Account\Application\Usecase\Command\RemoveBlock\RemoveBlock;
+use Src\Account\Application\Usecase\Command\RemoveBlock\RemoveBlockInterface;
 use Src\Account\Application\Usecase\Command\UpdateAccountProfile\UpdateAccountProfile;
 use Src\Account\Application\Usecase\Command\UpdateAccountProfile\UpdateAccountProfileInterface;
 use Src\Account\Application\Usecase\Query\GetAccountDetails\GetAccountDetailsInterface;
@@ -210,6 +212,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(BlockFactoryInterface::class, BlockFactory::class);
         $this->app->bind(BlockRepositoryInterface::class, BlockRepository::class);
         $this->app->bind(CreateBlockInterface::class, CreateBlock::class);
+        $this->app->bind(RemoveBlockInterface::class, RemoveBlock::class);
         $this->app->bind(SupportFactoryInterface::class, SupportFactory::class);
         $this->app->bind(SupportRepositoryInterface::class, SupportRepository::class);
         $this->app->bind(CreateSupportInterface::class, CreateSupport::class);
