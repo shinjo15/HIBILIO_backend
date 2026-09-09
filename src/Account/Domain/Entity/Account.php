@@ -37,6 +37,7 @@ final class Account
         EmailAddress $emailAddress,
         array $socialLinks,
         FavoriteTagIdentifiers $favoriteTagIdentifiers,
+        AccountVisibility $visibility = AccountVisibility::PUBLIC,
     ): self {
         if (! array_is_list($socialLinks)) {
             throw new \InvalidArgumentException('SNSリンクは一覧で指定する必要があります。');
@@ -57,7 +58,7 @@ final class Account
             $favoriteTagIdentifiers,
             AccountStatus::ACTIVE,
             null,
-            AccountVisibility::PUBLIC,
+            $visibility,
         );
     }
 
