@@ -27,24 +27,35 @@ final class AccountRepository implements AccountRepositoryInterface
     {
         return $this->restore(AccountModel::query()->with(['socialLinks', 'favoriteTags'])->where('account_identifier', $accountIdentifier->value())->first());
     }
+
     public function findByEmailAddress(EmailAddress $emailAddress): ?Account
     {
         return $this->restore(AccountModel::query()->with(['socialLinks', 'favoriteTags'])->where('email_address', $emailAddress->value())->first());
     }
+
     public function save(Account $account): void
     {
         DB::transaction(function () use ($account): void {
             $values = ['account_name' => $account->accountName()->value(), 'account_bio' => $account->accountBio()?->value(), 'email_address' => $account->emailAddress()->value(), 'status' => $account->status()->value, 'ban_until' => $account->banUntil()];
             $model = AccountModel::query()->find($account->accountIdentifier()->value());
-            if ($model !== null) { $model->update($values); return; }
-            $model = AccountModel::query()->create(['account_identifier' => $account->accountIdentifier()->value(), 'available' => true, ...$values]);
+            if ($model !== null) {
+                $model->update($values);
+                $model->socialLinks()->delete();
+                $model->favoriteTags()->delete();
+            } else {
+                $model = AccountModel::query()->create(['account_identifier' => $account->accountIdentifier()->value(), 'available' => true, ...$values]);
+            }
             $model->socialLinks()->createMany(array_map(static fn (SocialLink $link, int $position): array => ['type' => $link->socialType()->value, 'url' => $link->socialUrl()->value(), 'position' => $position], $account->socialLinks(), array_keys($account->socialLinks())));
             $model->favoriteTags()->createMany(array_map(static fn (TagIdentifier $id): array => ['tag_identifier' => $id->value()], $account->favoriteTagIdentifiers()->values()));
         });
     }
+
     private function restore(?AccountModel $model): ?Account
     {
-        if ($model === null) return null;
+        if ($model === null) {
+            return null;
+        }
+
         return Account::restore(new AccountIdentifier($model->account_identifier), new AccountName($model->account_name), $model->account_bio === null ? null : new AccountBio($model->account_bio), new EmailAddress($model->email_address), $model->socialLinks->map(static fn (AccountSocialLinkModel $link): SocialLink => new SocialLink(SocialType::from($link->type), new SocialUrl($link->url)))->all(), new FavoriteTagIdentifiers($model->favoriteTags->map(static fn (FavoriteTagModel $tag): TagIdentifier => new TagIdentifier($tag->tag_identifier))->all()), AccountStatus::from($model->status), $model->ban_until);
     }
 }

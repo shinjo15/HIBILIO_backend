@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Src\Account\Domain\Entity;
 
 use DateTimeImmutable;
-
 use Src\Account\Domain\ValueObject\AccountBio;
 use Src\Account\Domain\ValueObject\AccountName;
 use Src\Account\Domain\ValueObject\AccountStatus;
@@ -18,12 +17,12 @@ final class Account
 {
     private function __construct(
         private readonly AccountIdentifier $accountIdentifier,
-        private readonly AccountName $accountName,
-        private readonly ?AccountBio $accountBio,
+        private AccountName $accountName,
+        private ?AccountBio $accountBio,
         private readonly EmailAddress $emailAddress,
         /** @var list<SocialLink> */
-        private readonly array $socialLinks,
-        private readonly FavoriteTagIdentifiers $favoriteTagIdentifiers,
+        private array $socialLinks,
+        private FavoriteTagIdentifiers $favoriteTagIdentifiers,
         private AccountStatus $status,
         private ?DateTimeImmutable $banUntil,
     ) {}
@@ -91,6 +90,30 @@ final class Account
         $this->banUntil = null;
     }
 
+    /** @param list<SocialLink>|null $socialLinks */
+    public function updateProfile(?AccountName $accountName, bool $hasAccountBio, ?AccountBio $accountBio, ?array $socialLinks, ?FavoriteTagIdentifiers $favoriteTagIdentifiers): void
+    {
+        if ($accountName !== null) {
+            $this->accountName = $accountName;
+        }
+        if ($hasAccountBio) {
+            $this->accountBio = $accountBio;
+        }
+        if ($socialLinks !== null) {
+            if (! array_is_list($socialLinks)) {
+                throw new \InvalidArgumentException('SNSリンクは一覧で指定する必要があります。');
+            }
+            foreach ($socialLinks as $socialLink) {
+                if (! $socialLink instanceof SocialLink) {
+                    throw new \InvalidArgumentException('SNSリンクにはSocialLinkのみ指定できます。');
+                }
+            }
+            $this->socialLinks = $socialLinks;
+        }
+        if ($favoriteTagIdentifiers !== null) {
+            $this->favoriteTagIdentifiers = $favoriteTagIdentifiers;
+        }
+    }
 
     public function accountIdentifier(): AccountIdentifier
     {
@@ -111,6 +134,7 @@ final class Account
     {
         return $this->emailAddress;
     }
+
     /** @return list<SocialLink> */
     public function socialLinks(): array
     {

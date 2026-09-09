@@ -20,6 +20,8 @@ use Src\Account\Application\Usecase\Query\GetAccountRoutinePosts\GetAccountRouti
 use Src\Account\Application\Usecase\Query\GetFavoriteTagPosts\GetFavoriteTagPostsInterface;
 use Src\Account\Application\Usecase\Query\GetFollowingPosts\GetFollowingPostsInterface;
 use Src\Account\Application\Usecase\Query\GetPopularRoutinePosts\GetPopularRoutinePostsInterface;
+use Src\Account\Application\UseCase\UpdateAccountProfile\UpdateAccountProfile;
+use Src\Account\Application\UseCase\UpdateAccountProfile\UpdateAccountProfileInterface;
 use Src\Account\Domain\Factory\AccountFactoryInterface;
 use Src\Account\Domain\Factory\BlockFactoryInterface;
 use Src\Account\Domain\Factory\FollowFactoryInterface;
@@ -179,6 +181,7 @@ class AppServiceProvider extends ServiceProvider
                 : LocalStorageService::class,
         );
         $this->app->bind(CreateAccountInterface::class, CreateAccount::class);
+        $this->app->bind(UpdateAccountProfileInterface::class, UpdateAccountProfile::class);
         $this->app->bind(ChangeAccountStatusInterface::class, ChangeAccountStatus::class);
         $this->app->bind(GetAccountDetailsInterface::class, GetAccountDetails::class);
         $this->app->bind(GetAccountRoutinePostsInterface::class, GetAccountRoutinePosts::class);

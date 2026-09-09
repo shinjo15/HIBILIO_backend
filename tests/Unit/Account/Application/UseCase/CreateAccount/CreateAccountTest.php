@@ -124,6 +124,10 @@ final class FakeStorageService implements StorageServiceInterface
     public function uploadIcon(AccountIdentifier $accountIdentifier, AccountIcon $icon): void {}
 
     public function uploadHeader(AccountIdentifier $accountIdentifier, AccountHeader $header): void {}
+
+    public function deleteIcon(AccountIdentifier $accountIdentifier): void {}
+
+    public function deleteHeader(AccountIdentifier $accountIdentifier): void {}
 }
 
 final class ImmediateTransactionManager implements TransactionManagerInterface

@@ -19,4 +19,8 @@ interface StorageServiceInterface
         AccountIdentifier $accountIdentifier,
         AccountHeader $header,
     ): void;
+
+    public function deleteIcon(AccountIdentifier $accountIdentifier): void;
+
+    public function deleteHeader(AccountIdentifier $accountIdentifier): void;
 }
