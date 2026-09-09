@@ -6,6 +6,7 @@ namespace Tests\Unit\Account\Infrastructure\Factory;
 
 use PHPUnit\Framework\TestCase;
 use Src\Account\Domain\ValueObject\AccountName;
+use Src\Account\Domain\ValueObject\AccountUiMode;
 use Src\Account\Domain\ValueObject\AccountVisibility;
 use Src\Account\Domain\ValueObject\EmailAddress;
 use Src\Account\Domain\ValueObject\FavoriteTagIdentifiers;
@@ -20,6 +21,7 @@ final class AccountFactoryTest extends TestCase
 
         self::assertSame('3b5581e9-16df-4879-b7d2-5d88dca6ab87', $account->accountIdentifier()->value());
         self::assertSame(AccountVisibility::PUBLIC, $account->visibility());
+        self::assertSame(AccountUiMode::SYSTEM, $account->uiMode());
     }
 }
 

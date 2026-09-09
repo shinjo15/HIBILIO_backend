@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use Src\Account\Domain\ValueObject\AccountBio;
 use Src\Account\Domain\ValueObject\AccountName;
 use Src\Account\Domain\ValueObject\AccountStatus;
+use Src\Account\Domain\ValueObject\AccountUiMode;
 use Src\Account\Domain\ValueObject\AccountVisibility;
 use Src\Account\Domain\ValueObject\EmailAddress;
 use Src\Account\Domain\ValueObject\FavoriteTagIdentifiers;
@@ -27,6 +28,7 @@ final class Account
         private AccountStatus $status,
         private ?DateTimeImmutable $banUntil,
         private AccountVisibility $visibility,
+        private AccountUiMode $uiMode,
     ) {}
 
     /** @param list<SocialLink> $socialLinks */
@@ -38,6 +40,7 @@ final class Account
         array $socialLinks,
         FavoriteTagIdentifiers $favoriteTagIdentifiers,
         AccountVisibility $visibility = AccountVisibility::PUBLIC,
+        AccountUiMode $uiMode = AccountUiMode::SYSTEM,
     ): self {
         if (! array_is_list($socialLinks)) {
             throw new \InvalidArgumentException('SNSリンクは一覧で指定する必要があります。');
@@ -59,6 +62,7 @@ final class Account
             AccountStatus::ACTIVE,
             null,
             $visibility,
+            $uiMode,
         );
     }
 
@@ -73,8 +77,9 @@ final class Account
         AccountStatus $status,
         ?DateTimeImmutable $banUntil,
         AccountVisibility $visibility = AccountVisibility::PUBLIC,
+        AccountUiMode $uiMode = AccountUiMode::SYSTEM,
     ): self {
-        return new self($accountIdentifier, $accountName, $accountBio, $emailAddress, $socialLinks, $favoriteTagIdentifiers, $status, $banUntil, $visibility);
+        return new self($accountIdentifier, $accountName, $accountBio, $emailAddress, $socialLinks, $favoriteTagIdentifiers, $status, $banUntil, $visibility, $uiMode);
     }
 
     public function active(): void
@@ -98,6 +103,11 @@ final class Account
     public function changeVisibility(AccountVisibility $visibility): void
     {
         $this->visibility = $visibility;
+    }
+
+    public function changeUiMode(AccountUiMode $uiMode): void
+    {
+        $this->uiMode = $uiMode;
     }
 
     /** @param list<SocialLink>|null $socialLinks */
@@ -169,5 +179,10 @@ final class Account
     public function visibility(): AccountVisibility
     {
         return $this->visibility;
+    }
+
+    public function uiMode(): AccountUiMode
+    {
+        return $this->uiMode;
     }
 }

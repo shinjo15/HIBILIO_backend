@@ -18,7 +18,7 @@ final class GetAccountDetails implements GetAccountDetailsInterface
             ->where('account_identifier', $input->accountIdentifier())
             ->where('available', true)
             ->where('status', 'active')
-            ->first(['account_identifier', 'account_name', 'account_bio']);
+            ->first(['account_identifier', 'account_name', 'account_bio', 'ui_mode']);
 
         if ($account === null) {
             return new GetAccountDetailsOutput(null);
@@ -50,6 +50,7 @@ final class GetAccountDetails implements GetAccountDetailsInterface
             'accountIdentifier' => (string) $account->account_identifier,
             'name' => (string) $account->account_name,
             'bio' => $account->account_bio === null ? null : (string) $account->account_bio,
+            'uiMode' => (string) $account->ui_mode,
             'favoriteTags' => $favoriteTags,
             'socialLinks' => $socialLinks,
         ]);

@@ -35,6 +35,7 @@ final class GetAccountDetailsTest extends TestCase
             'accountIdentifier' => $accountIdentifier,
             'name' => '公開アカウント',
             'bio' => '自己紹介',
+            'uiMode' => 'system',
             'favoriteTags' => [
                 ['tagIdentifier' => 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'tagName' => '朝活'],
                 ['tagIdentifier' => 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'tagName' => '朝活'],

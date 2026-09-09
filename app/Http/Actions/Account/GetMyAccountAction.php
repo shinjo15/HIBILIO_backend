@@ -35,6 +35,7 @@ final readonly class GetMyAccountAction
             'account_identifier' => $accountDetails['accountIdentifier'],
             'account_name' => $accountDetails['name'],
             'account_bio' => $accountDetails['bio'],
+            'ui_mode' => $accountDetails['uiMode'],
             'favorite_tags' => array_map(static fn (array $tag): array => [
                 'tag_identifier' => $tag['tagIdentifier'],
                 'tag_name' => $tag['tagName'],
