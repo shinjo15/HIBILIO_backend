@@ -22,6 +22,7 @@ use App\Http\Actions\Authentication\VerifyRegistrationPasscodeAction;
 use App\Http\Actions\Like\CreateLikeAction;
 use App\Http\Actions\Like\GetAccountLikedRoutinePostsAction;
 use App\Http\Actions\Like\GetMyLikedRoutinePostsAction;
+use App\Http\Actions\Like\RemoveLikeAction;
 use App\Http\Actions\Report\CreateReportAction;
 use App\Http\Actions\Routine\CreateRoutineAction;
 use App\Http\Actions\Routine\GetCustomizedRoutinesAction;
@@ -71,6 +72,7 @@ Route::middleware('web')->group(static function (): void {
     Route::post('/blocks', CreateBlockAction::class);
     Route::delete('/blocks/{blocked_account_identifier}', RemoveBlockAction::class)->whereUuid('blocked_account_identifier');
     Route::post('/likes', CreateLikeAction::class);
+    Route::delete('/likes/{post_identifier}', RemoveLikeAction::class)->whereUuid('post_identifier');
     Route::get('/my/likes', GetMyLikedRoutinePostsAction::class);
     Route::get('/my/supports', GetMySupportsAction::class);
 });
