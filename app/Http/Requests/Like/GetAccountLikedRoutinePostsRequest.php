@@ -7,16 +7,14 @@ namespace App\Http\Requests\Like;
 use Illuminate\Foundation\Http\FormRequest;
 use Src\Like\Application\Usecase\Query\GetLikedRoutinePosts\GetLikedRoutinePostsInput;
 
-final class GetMyLikesRequest extends FormRequest
+final class GetAccountLikedRoutinePostsRequest extends FormRequest
 {
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * @return array<string, list<string>>
-     */
+    /** @return array<string, list<string>> */
     public function rules(): array
     {
         return [
@@ -25,10 +23,10 @@ final class GetMyLikesRequest extends FormRequest
         ];
     }
 
-    public function toInput(string $accountIdentifier): GetLikedRoutinePostsInput
+    public function toInput(): GetLikedRoutinePostsInput
     {
         return new GetLikedRoutinePostsInput(
-            accountIdentifier: $accountIdentifier,
+            accountIdentifier: (string) $this->route('account_identifier'),
             page: $this->positiveInteger('page', 1),
             numberOfItemsPerPage: $this->positiveInteger('number_of_items_per_page', 20),
         );

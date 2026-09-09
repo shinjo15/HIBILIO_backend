@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Src\Like\Application\Usecase\Query\GetMyLikes;
+namespace Src\Like\Application\Usecase\Query\GetLikedRoutinePosts;
 
-interface GetMyLikesInputPort
+interface GetLikedRoutinePostsInputPort
 {
     public function accountIdentifier(): string;
 

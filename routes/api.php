@@ -14,6 +14,7 @@ use App\Http\Actions\Authentication\GenerateLoginPasscodeAction;
 use App\Http\Actions\Authentication\GenerateRegistrationPasscodeAction;
 use App\Http\Actions\Authentication\VerifyLoginPasscodeAction;
 use App\Http\Actions\Authentication\VerifyRegistrationPasscodeAction;
+use App\Http\Actions\Like\GetAccountLikedRoutinePostsAction;
 use App\Http\Actions\Like\GetMyLikesAction;
 use App\Http\Actions\Report\CreateReportAction;
 use App\Http\Actions\Routine\CreateRoutineAction;
@@ -35,6 +36,7 @@ Route::middleware('web')->group(static function (): void {
 
     Route::post('/accounts', CreateAccountAction::class);
     Route::get('/accounts/{account_identifier}', GetAccountDetailsAction::class);
+    Route::get('/accounts/{account_identifier}/likes', GetAccountLikedRoutinePostsAction::class);
     Route::get('/my/account', GetMyAccountAction::class);
     Route::post('/login-passcodes', GenerateLoginPasscodeAction::class);
     Route::post('/login-passcodes/verification', VerifyLoginPasscodeAction::class);

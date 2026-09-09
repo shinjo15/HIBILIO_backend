@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Src\Like\Application\Usecase\Query\GetMyLikes;
+namespace Src\Like\Application\Usecase\Query\GetLikedRoutinePosts;
 
-final readonly class GetMyLikesInput implements GetMyLikesInputPort
+final readonly class GetLikedRoutinePostsInput implements GetLikedRoutinePostsInputPort
 {
     public function __construct(
         private string $accountIdentifier,
