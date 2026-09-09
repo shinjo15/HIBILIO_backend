@@ -22,6 +22,10 @@ final readonly class CreateRoutineExecutionInput implements CreateRoutineExecuti
             throw new \InvalidArgumentException('実行した行動は一覧で指定する必要があります。');
         }
 
+        if ($executedRoutineActionIdentifiers === []) {
+            throw new \InvalidArgumentException('実行した行動は1件以上指定する必要があります。');
+        }
+
         $identifiers = [];
 
         foreach ($executedRoutineActionIdentifiers as $routineActionIdentifier) {
