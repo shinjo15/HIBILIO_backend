@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Actions\Account\ChangeAccountVisibilityAction;
 use App\Http\Actions\Account\CreateAccountAction;
 use App\Http\Actions\Account\CreateBlockAction;
 use App\Http\Actions\Account\CreateFollowAction;
@@ -47,6 +48,7 @@ Route::middleware('web')->group(static function (): void {
     Route::get('/accounts/{account_identifier}/routine-executions', GetAccountRoutineExecutionsAction::class);
     Route::get('/my/account', GetMyAccountAction::class);
     Route::patch('/my/account', UpdateAccountProfileAction::class);
+    Route::patch('/my/account/visibility', ChangeAccountVisibilityAction::class);
     Route::get('/my/posts', GetMyRoutinePostsAction::class);
     Route::get('/my/routine-executions', GetMyRoutineExecutionsAction::class);
     Route::post('/login-passcodes', GenerateLoginPasscodeAction::class);

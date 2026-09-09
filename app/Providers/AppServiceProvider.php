@@ -9,6 +9,8 @@ use Src\Account\Application\Service\AccountRegistrationMailServiceInterface;
 use Src\Account\Application\Service\StorageServiceInterface;
 use Src\Account\Application\UseCase\ChangeAccountStatus\ChangeAccountStatus;
 use Src\Account\Application\UseCase\ChangeAccountStatus\ChangeAccountStatusInterface;
+use Src\Account\Application\UseCase\ChangeAccountVisibility\ChangeAccountVisibility;
+use Src\Account\Application\UseCase\ChangeAccountVisibility\ChangeAccountVisibilityInterface;
 use Src\Account\Application\UseCase\CreateAccount\CreateAccount;
 use Src\Account\Application\UseCase\CreateAccount\CreateAccountInterface;
 use Src\Account\Application\UseCase\CreateBlock\CreateBlock;
@@ -183,6 +185,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(CreateAccountInterface::class, CreateAccount::class);
         $this->app->bind(UpdateAccountProfileInterface::class, UpdateAccountProfile::class);
         $this->app->bind(ChangeAccountStatusInterface::class, ChangeAccountStatus::class);
+        $this->app->bind(ChangeAccountVisibilityInterface::class, ChangeAccountVisibility::class);
         $this->app->bind(GetAccountDetailsInterface::class, GetAccountDetails::class);
         $this->app->bind(GetAccountRoutinePostsInterface::class, GetAccountRoutinePosts::class);
         $this->app->bind(TagFactoryInterface::class, TagFactory::class);

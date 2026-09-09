@@ -13,6 +13,7 @@ use Src\Account\Domain\Repository\AccountRepositoryInterface;
 use Src\Account\Domain\ValueObject\AccountBio;
 use Src\Account\Domain\ValueObject\AccountName;
 use Src\Account\Domain\ValueObject\AccountStatus;
+use Src\Account\Domain\ValueObject\AccountVisibility;
 use Src\Account\Domain\ValueObject\EmailAddress;
 use Src\Account\Domain\ValueObject\FavoriteTagIdentifiers;
 use Src\Account\Domain\ValueObject\SocialLink;
@@ -36,7 +37,7 @@ final class AccountRepository implements AccountRepositoryInterface
     public function save(Account $account): void
     {
         DB::transaction(function () use ($account): void {
-            $values = ['account_name' => $account->accountName()->value(), 'account_bio' => $account->accountBio()?->value(), 'email_address' => $account->emailAddress()->value(), 'status' => $account->status()->value, 'ban_until' => $account->banUntil()];
+            $values = ['account_name' => $account->accountName()->value(), 'account_bio' => $account->accountBio()?->value(), 'email_address' => $account->emailAddress()->value(), 'status' => $account->status()->value, 'ban_until' => $account->banUntil(), 'visibility' => $account->visibility()->value];
             $model = AccountModel::query()->find($account->accountIdentifier()->value());
             if ($model !== null) {
                 $model->update($values);
@@ -94,6 +95,6 @@ final class AccountRepository implements AccountRepositoryInterface
             return null;
         }
 
-        return Account::restore(new AccountIdentifier($model->account_identifier), new AccountName($model->account_name), $model->account_bio === null ? null : new AccountBio($model->account_bio), new EmailAddress($model->email_address), $model->socialLinks->map(static fn (AccountSocialLinkModel $link): SocialLink => new SocialLink(SocialType::from($link->type), new SocialUrl($link->url)))->all(), new FavoriteTagIdentifiers($model->favoriteTags->map(static fn (FavoriteTagModel $tag): TagIdentifier => new TagIdentifier($tag->tag_identifier))->all()), AccountStatus::from($model->status), $model->ban_until);
+        return Account::restore(new AccountIdentifier($model->account_identifier), new AccountName($model->account_name), $model->account_bio === null ? null : new AccountBio($model->account_bio), new EmailAddress($model->email_address), $model->socialLinks->map(static fn (AccountSocialLinkModel $link): SocialLink => new SocialLink(SocialType::from($link->type), new SocialUrl($link->url)))->all(), new FavoriteTagIdentifiers($model->favoriteTags->map(static fn (FavoriteTagModel $tag): TagIdentifier => new TagIdentifier($tag->tag_identifier))->all()), AccountStatus::from($model->status), $model->ban_until, AccountVisibility::from($model->visibility));
     }
 }
