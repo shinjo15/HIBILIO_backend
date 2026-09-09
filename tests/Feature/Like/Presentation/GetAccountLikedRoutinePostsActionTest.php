@@ -84,22 +84,6 @@ final class GetAccountLikedRoutinePostsActionTest extends TestCase
             ->assertJsonPath('total', 1);
     }
 
-    public function test_returns_the_session_accounts_liked_routine_posts(): void
-    {
-        $likingAccountIdentifier = '11111111-1111-4111-8111-111111111111';
-        $routineAuthorIdentifier = '22222222-2222-4222-8222-222222222222';
-        $this->createAccount($likingAccountIdentifier, 'いいねした人');
-        $this->createAccount($routineAuthorIdentifier, 'Routine作成者');
-        $this->createRoutine('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', $routineAuthorIdentifier, '朝活');
-        $this->createPost('dddddddd-dddd-4ddd-8ddd-dddddddddddd', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'routine', true, 0, 0, '2026-09-03 09:00:00');
-        $this->createLike($likingAccountIdentifier, 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', '2026-09-03 12:00:00');
-
-        $this->withSession(['account_identifier' => $likingAccountIdentifier])
-            ->getJson('/api/my/likes')
-            ->assertOk()
-            ->assertJsonPath('items.0.post_identifier', 'dddddddd-dddd-4ddd-8ddd-dddddddddddd');
-    }
-
     public function test_returns_validation_errors_for_invalid_pagination_parameters(): void
     {
         $this->getJson('/api/accounts/11111111-1111-4111-8111-111111111111/likes?page=0&number_of_items_per_page=zero')

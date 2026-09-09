@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Like;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Src\Like\Application\Usecase\Query\GetLikedRoutinePosts\GetLikedRoutinePostsInput;
+use Src\Like\Application\Usecase\Query\GetMyLikes\GetMyLikesInput;
 
 final class GetMyLikesRequest extends FormRequest
 {
@@ -25,9 +25,9 @@ final class GetMyLikesRequest extends FormRequest
         ];
     }
 
-    public function toInput(string $accountIdentifier): GetLikedRoutinePostsInput
+    public function toInput(string $accountIdentifier): GetMyLikesInput
     {
-        return new GetLikedRoutinePostsInput(
+        return new GetMyLikesInput(
             accountIdentifier: $accountIdentifier,
             page: $this->positiveInteger('page', 1),
             numberOfItemsPerPage: $this->positiveInteger('number_of_items_per_page', 20),
