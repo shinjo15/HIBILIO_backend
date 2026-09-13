@@ -35,4 +35,19 @@ return [
         ],
     ],
 
+    'social_login' => [
+        'google' => [
+            'client_id' => env('GOOGLE_OAUTH_CLIENT_ID'),
+            'client_secret' => env('GOOGLE_OAUTH_CLIENT_SECRET'),
+            'redirect_uri' => env('GOOGLE_OAUTH_REDIRECT_URI'),
+        ],
+        'apple' => [
+            'client_id' => env('APPLE_OAUTH_CLIENT_ID'),
+            'team_id' => env('APPLE_OAUTH_TEAM_ID'),
+            'key_id' => env('APPLE_OAUTH_KEY_ID'),
+            'private_key' => env('APPLE_OAUTH_PRIVATE_KEY'),
+            'redirect_uri' => env('APPLE_OAUTH_REDIRECT_URI'),
+        ],
+    ],
+
 ];
