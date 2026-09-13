@@ -6,7 +6,7 @@ namespace Src\Account\Application\Usecase\Query\GetMyBlocks;
 
 final readonly class GetMyBlocksOutput implements GetMyBlocksOutputPort
 {
-    /** @param list<array{accountIdentifier: string, accountName: string}> $blocks */
+    /** @param list<array{accountIdentifier: string, accountName: string, accountBio: ?string}> $blocks */
     public function __construct(private array $blocks) {}
 
     public function blocks(): array

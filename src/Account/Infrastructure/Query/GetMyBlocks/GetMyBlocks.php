@@ -19,8 +19,8 @@ final class GetMyBlocks implements GetMyBlocksInterface
             ->where('blocks.blocking_account_identifier', $input->accountIdentifier())
             ->orderBy('blocks.created_at')
             ->orderBy('blocks.blocked_account_identifier')
-            ->get(['accounts.account_identifier', 'accounts.account_name'])
-            ->map(static fn (object $account): array => ['accountIdentifier' => (string) $account->account_identifier, 'accountName' => (string) $account->account_name])
+            ->get(['accounts.account_identifier', 'accounts.account_name', 'accounts.account_bio'])
+            ->map(static fn (object $account): array => ['accountIdentifier' => (string) $account->account_identifier, 'accountName' => (string) $account->account_name, 'accountBio' => $account->account_bio === null ? null : (string) $account->account_bio])
             ->all();
 
         return new GetMyBlocksOutput($blocks);

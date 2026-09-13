@@ -22,6 +22,6 @@ final readonly class GetMyBlocksAction
             return new JsonResponse([], 401);
         }
 
-        return new JsonResponse(['blocks' => array_map(static fn (array $account): array => ['account_identifier' => $account['accountIdentifier'], 'account_name' => $account['accountName']], $output->blocks())]);
+        return new JsonResponse(['blocks' => array_map(static fn (array $account): array => ['account_identifier' => $account['accountIdentifier'], 'account_name' => $account['accountName'], 'account_bio' => $account['accountBio']], $output->blocks())]);
     }
 }
