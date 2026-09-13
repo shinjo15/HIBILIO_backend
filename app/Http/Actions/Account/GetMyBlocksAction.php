@@ -17,11 +17,11 @@ final readonly class GetMyBlocksAction
     public function __invoke(GetMyBlocksRequest $request): JsonResponse
     {
         try {
-            $blocks = $this->getMyBlocks->execute($request->toInput($this->authService->accountIdentifier()));
+            $output = $this->getMyBlocks->execute($request->toInput($this->authService->accountIdentifier()));
         } catch (RuntimeException) {
             return new JsonResponse([], 401);
         }
 
-        return new JsonResponse(['blocks' => array_map(static fn (array $account): array => ['account_identifier' => $account['accountIdentifier'], 'account_name' => $account['accountName']], $blocks)]);
+        return new JsonResponse(['blocks' => array_map(static fn (array $account): array => ['account_identifier' => $account['accountIdentifier'], 'account_name' => $account['accountName']], $output->blocks())]);
     }
 }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Src\Account\Application\Usecase\Query\GetMyBlocks;
 
-final readonly class GetMyBlocksInput
+final readonly class GetMyBlocksInput implements GetMyBlocksInputPort
 {
     public function __construct(private string $accountIdentifier) {}
 
