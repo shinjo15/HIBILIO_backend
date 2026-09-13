@@ -2,6 +2,8 @@
 
 return [
 
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:3000'),
+
     /*
     |--------------------------------------------------------------------------
     | Third Party Services
@@ -32,6 +34,21 @@ return [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
+        ],
+    ],
+
+    'social_login' => [
+        'google' => [
+            'client_id' => env('GOOGLE_OAUTH_CLIENT_ID'),
+            'client_secret' => env('GOOGLE_OAUTH_CLIENT_SECRET'),
+            'redirect_uri' => env('GOOGLE_OAUTH_REDIRECT_URI'),
+        ],
+        'apple' => [
+            'client_id' => env('APPLE_OAUTH_CLIENT_ID'),
+            'team_id' => env('APPLE_OAUTH_TEAM_ID'),
+            'key_id' => env('APPLE_OAUTH_KEY_ID'),
+            'private_key' => env('APPLE_OAUTH_PRIVATE_KEY'),
+            'redirect_uri' => env('APPLE_OAUTH_REDIRECT_URI'),
         ],
     ],
 

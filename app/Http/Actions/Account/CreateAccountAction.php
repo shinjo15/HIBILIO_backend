@@ -11,6 +11,7 @@ use RuntimeException;
 use Src\Account\Application\Service\AccountImageConverterServiceInterface;
 use Src\Account\Application\Usecase\Command\CreateAccount\CreateAccountInterface;
 use Src\Account\Domain\Exception\DuplicateEmailAddressException;
+use Src\Authentication\Application\Service\PendingSocialRegistrationSessionServiceInterface;
 use Src\Authentication\Application\Service\RegistrationPasscodeSessionServiceInterface;
 
 final readonly class CreateAccountAction
@@ -19,12 +20,15 @@ final readonly class CreateAccountAction
         private CreateAccountInterface $createAccount,
         private AccountImageConverterServiceInterface $accountImageConverter,
         private RegistrationPasscodeSessionServiceInterface $registrationPasscodeSessionService,
+        private PendingSocialRegistrationSessionServiceInterface $pendingSocialRegistrationSession,
     ) {}
 
     public function __invoke(CreateAccountRequest $request): Response|JsonResponse
     {
         try {
-            $emailAddress = $this->registrationPasscodeSessionService->verifiedEmailAddress();
+            $pendingRegistration = $this->pendingSocialRegistrationSession->pending();
+            $emailAddress = $pendingRegistration?->emailAddress()
+                ?? $this->registrationPasscodeSessionService->verifiedEmailAddress();
             $icon = $request->iconImageContents();
             $header = $request->headerImageContents();
 
@@ -32,9 +36,11 @@ final readonly class CreateAccountAction
                 $emailAddress,
                 $icon === null ? null : $this->accountImageConverter->convertToIcon($icon),
                 $header === null ? null : $this->accountImageConverter->convertToHeader($header),
+                $pendingRegistration,
             ));
 
             $this->registrationPasscodeSessionService->clearVerifiedEmailAddress();
+            $this->pendingSocialRegistrationSession->clear();
 
             return new Response('', 201);
         } catch (RuntimeException) {

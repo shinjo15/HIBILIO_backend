@@ -16,6 +16,7 @@ use Src\Account\Domain\ValueObject\FavoriteTagIdentifiers;
 use Src\Account\Domain\ValueObject\SocialLink;
 use Src\Account\Domain\ValueObject\SocialType;
 use Src\Account\Domain\ValueObject\SocialUrl;
+use Src\Authentication\Domain\ValueObject\PendingSocialRegistration;
 use Src\Shared\Domain\ValueObject\Identifier\TagIdentifier;
 
 final class CreateAccountRequest extends FormRequest
@@ -40,8 +41,12 @@ final class CreateAccountRequest extends FormRequest
         ];
     }
 
-    public function toInput(EmailAddress $emailAddress, ?AccountIcon $icon, ?AccountHeader $header): CreateAccountInput
-    {
+    public function toInput(
+        EmailAddress $emailAddress,
+        ?AccountIcon $icon,
+        ?AccountHeader $header,
+        ?PendingSocialRegistration $pendingSocialRegistration = null,
+    ): CreateAccountInput {
         $validated = $this->validated();
 
         return new CreateAccountInput(
@@ -61,6 +66,7 @@ final class CreateAccountRequest extends FormRequest
             ),
             $icon,
             $header,
+            $pendingSocialRegistration,
         );
     }
 
