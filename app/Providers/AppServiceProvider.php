@@ -27,6 +27,7 @@ use Src\Account\Application\Usecase\Query\GetAccountDetails\GetAccountDetailsInt
 use Src\Account\Application\Usecase\Query\GetAccountRoutinePosts\GetAccountRoutinePostsInterface;
 use Src\Account\Application\Usecase\Query\GetFavoriteTagPosts\GetFavoriteTagPostsInterface;
 use Src\Account\Application\Usecase\Query\GetFollowingPosts\GetFollowingPostsInterface;
+use Src\Account\Application\Usecase\Query\GetMyBlocks\GetMyBlocksInterface;
 use Src\Account\Application\Usecase\Query\GetPopularRoutinePosts\GetPopularRoutinePostsInterface;
 use Src\Account\Domain\Factory\AccountFactoryInterface;
 use Src\Account\Domain\Factory\BlockFactoryInterface;
@@ -41,6 +42,7 @@ use Src\Account\Infrastructure\Query\GetAccountDetails\GetAccountDetails;
 use Src\Account\Infrastructure\Query\GetAccountRoutinePosts\GetAccountRoutinePosts;
 use Src\Account\Infrastructure\Query\GetFavoriteTagPosts\GetFavoriteTagPosts;
 use Src\Account\Infrastructure\Query\GetFollowingPosts\GetFollowingPosts;
+use Src\Account\Infrastructure\Query\GetMyBlocks\GetMyBlocks;
 use Src\Account\Infrastructure\Query\GetPopularRoutinePosts\GetPopularRoutinePosts;
 use Src\Account\Infrastructure\Repository\AccountRepository;
 use Src\Account\Infrastructure\Repository\BlockRepository;
@@ -193,6 +195,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ChangeAccountUiModeInterface::class, ChangeAccountUiMode::class);
         $this->app->bind(GetAccountDetailsInterface::class, GetAccountDetails::class);
         $this->app->bind(GetAccountRoutinePostsInterface::class, GetAccountRoutinePosts::class);
+        $this->app->bind(GetMyBlocksInterface::class, GetMyBlocks::class);
         $this->app->bind(TagFactoryInterface::class, TagFactory::class);
         $this->app->bind(TagRepositoryInterface::class, TagRepository::class);
         $this->app->bind(CreateTagInterface::class, CreateTag::class);

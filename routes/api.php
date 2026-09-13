@@ -12,6 +12,7 @@ use App\Http\Actions\Account\GetAccountRoutinePostsAction;
 use App\Http\Actions\Account\GetFavoriteTagPostsAction;
 use App\Http\Actions\Account\GetFollowingPostsAction;
 use App\Http\Actions\Account\GetMyAccountAction;
+use App\Http\Actions\Account\GetMyBlocksAction;
 use App\Http\Actions\Account\GetMyRoutinePostsAction;
 use App\Http\Actions\Account\GetPopularRoutinePostsAction;
 use App\Http\Actions\Account\RemoveBlockAction;
@@ -50,6 +51,7 @@ Route::middleware('web')->group(static function (): void {
     Route::get('/accounts/{account_identifier}/posts', GetAccountRoutinePostsAction::class);
     Route::get('/accounts/{account_identifier}/routine-executions', GetAccountRoutineExecutionsAction::class);
     Route::get('/my/account', GetMyAccountAction::class);
+    Route::get('/my/blocks', GetMyBlocksAction::class);
     Route::patch('/my/account', UpdateAccountProfileAction::class);
     Route::patch('/my/account/visibility', ChangeAccountVisibilityAction::class);
     Route::patch('/my/account/ui-mode', ChangeAccountUiModeAction::class);
