@@ -8,11 +8,13 @@ use App\Http\Actions\Account\CreateAccountAction;
 use App\Http\Actions\Account\CreateBlockAction;
 use App\Http\Actions\Account\CreateFollowAction;
 use App\Http\Actions\Account\GetAccountDetailsAction;
+use App\Http\Actions\Account\GetAccountFollowingAccountsAction;
 use App\Http\Actions\Account\GetAccountRoutinePostsAction;
 use App\Http\Actions\Account\GetFavoriteTagPostsAction;
 use App\Http\Actions\Account\GetFollowingPostsAction;
 use App\Http\Actions\Account\GetMyAccountAction;
 use App\Http\Actions\Account\GetMyBlocksAction;
+use App\Http\Actions\Account\GetMyFollowingAccountsAction;
 use App\Http\Actions\Account\GetMyRoutinePostsAction;
 use App\Http\Actions\Account\GetPopularRoutinePostsAction;
 use App\Http\Actions\Account\RemoveBlockAction;
@@ -47,10 +49,12 @@ Route::middleware('web')->group(static function (): void {
 
     Route::post('/accounts', CreateAccountAction::class);
     Route::get('/accounts/{account_identifier}', GetAccountDetailsAction::class);
+    Route::get('/accounts/{account_identifier}/following', GetAccountFollowingAccountsAction::class)->whereUuid('account_identifier');
     Route::get('/accounts/{account_identifier}/likes', GetAccountLikedRoutinePostsAction::class);
     Route::get('/accounts/{account_identifier}/posts', GetAccountRoutinePostsAction::class);
     Route::get('/accounts/{account_identifier}/routine-executions', GetAccountRoutineExecutionsAction::class);
     Route::get('/my/account', GetMyAccountAction::class);
+    Route::get('/my/following', GetMyFollowingAccountsAction::class);
     Route::get('/my/blocks', GetMyBlocksAction::class);
     Route::patch('/my/account', UpdateAccountProfileAction::class);
     Route::patch('/my/account/visibility', ChangeAccountVisibilityAction::class);

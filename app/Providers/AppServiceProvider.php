@@ -26,6 +26,7 @@ use Src\Account\Application\Usecase\Command\UpdateAccountProfile\UpdateAccountPr
 use Src\Account\Application\Usecase\Query\GetAccountDetails\GetAccountDetailsInterface;
 use Src\Account\Application\Usecase\Query\GetAccountRoutinePosts\GetAccountRoutinePostsInterface;
 use Src\Account\Application\Usecase\Query\GetFavoriteTagPosts\GetFavoriteTagPostsInterface;
+use Src\Account\Application\Usecase\Query\GetFollowingAccounts\GetFollowingAccountsInterface;
 use Src\Account\Application\Usecase\Query\GetFollowingPosts\GetFollowingPostsInterface;
 use Src\Account\Application\Usecase\Query\GetMyBlocks\GetMyBlocksInterface;
 use Src\Account\Application\Usecase\Query\GetPopularRoutinePosts\GetPopularRoutinePostsInterface;
@@ -41,6 +42,7 @@ use Src\Account\Infrastructure\Factory\FollowFactory;
 use Src\Account\Infrastructure\Query\GetAccountDetails\GetAccountDetails;
 use Src\Account\Infrastructure\Query\GetAccountRoutinePosts\GetAccountRoutinePosts;
 use Src\Account\Infrastructure\Query\GetFavoriteTagPosts\GetFavoriteTagPosts;
+use Src\Account\Infrastructure\Query\GetFollowingAccounts\GetFollowingAccounts;
 use Src\Account\Infrastructure\Query\GetFollowingPosts\GetFollowingPosts;
 use Src\Account\Infrastructure\Query\GetMyBlocks\GetMyBlocks;
 use Src\Account\Infrastructure\Query\GetPopularRoutinePosts\GetPopularRoutinePosts;
@@ -213,6 +215,7 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->bind(CreateFollowInterface::class, CreateFollow::class);
         $this->app->bind(GetFollowingPostsInterface::class, GetFollowingPosts::class);
+        $this->app->bind(GetFollowingAccountsInterface::class, GetFollowingAccounts::class);
         $this->app->bind(GetPopularRoutinePostsInterface::class, GetPopularRoutinePosts::class);
         $this->app->bind(GetFavoriteTagPostsInterface::class, GetFavoriteTagPosts::class);
         $this->app->bind(BlockFactoryInterface::class, BlockFactory::class);
