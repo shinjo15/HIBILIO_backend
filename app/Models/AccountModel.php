@@ -17,7 +17,7 @@ final class AccountModel extends Model
 
     protected $keyType = 'string';
 
-    protected $fillable = ['account_identifier', 'account_name', 'account_bio', 'email_address', 'available', 'status', 'ban_until', 'visibility'];
+    protected $fillable = ['account_identifier', 'account_name', 'account_bio', 'email_address', 'available', 'status', 'ban_until', 'visibility', 'ui_mode'];
 
     protected function casts(): array
     {

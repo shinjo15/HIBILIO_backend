@@ -8,6 +8,7 @@ use Src\Account\Domain\Entity\Account;
 use Src\Account\Domain\Factory\AccountFactoryInterface;
 use Src\Account\Domain\ValueObject\AccountBio;
 use Src\Account\Domain\ValueObject\AccountName;
+use Src\Account\Domain\ValueObject\AccountUiMode;
 use Src\Account\Domain\ValueObject\AccountVisibility;
 use Src\Account\Domain\ValueObject\EmailAddress;
 use Src\Account\Domain\ValueObject\FavoriteTagIdentifiers;
@@ -20,6 +21,6 @@ final readonly class AccountFactory implements AccountFactoryInterface
 
     public function create(AccountName $accountName, ?AccountBio $accountBio, EmailAddress $emailAddress, array $socialLinks, FavoriteTagIdentifiers $favoriteTagIdentifiers): Account
     {
-        return Account::create(new AccountIdentifier($this->uuidService->generate()), $accountName, $accountBio, $emailAddress, $socialLinks, $favoriteTagIdentifiers, AccountVisibility::PUBLIC);
+        return Account::create(new AccountIdentifier($this->uuidService->generate()), $accountName, $accountBio, $emailAddress, $socialLinks, $favoriteTagIdentifiers, AccountVisibility::PUBLIC, AccountUiMode::SYSTEM);
     }
 }
