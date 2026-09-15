@@ -74,7 +74,7 @@ final readonly class CompleteSocialLoginAction
 
     private function registerRedirect(): RedirectResponse
     {
-        return redirect()->away($this->frontendUrl().'/register?social_registration=1');
+        return redirect()->away($this->frontendUrl().'/sign-up?social_registration=1');
     }
 
     private function failureRedirect(): RedirectResponse

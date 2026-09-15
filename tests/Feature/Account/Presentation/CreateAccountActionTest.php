@@ -86,6 +86,7 @@ final class CreateAccountActionTest extends TestCase
             'provider' => 'apple',
             'provider_user_identifier' => 'apple-user',
         ]);
+        self::assertNotNull(session('account_identifier'));
         self::assertNull(session(LaravelPendingSocialRegistrationSessionService::SESSION_KEY));
     }
 

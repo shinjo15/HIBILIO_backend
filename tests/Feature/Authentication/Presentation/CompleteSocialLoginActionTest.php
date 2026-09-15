@@ -50,7 +50,7 @@ final class CompleteSocialLoginActionTest extends TestCase
 
         $response = $this->get('/auth/social/google/callback?code=provider-code&state=state-value');
 
-        $response->assertRedirect('https://frontend.example/register?social_registration=1');
+        $response->assertRedirect('https://frontend.example/sign-up?social_registration=1');
         $location = $response->headers->get('Location');
         self::assertIsString($location);
         self::assertStringNotContainsString('provider-user', $location);
