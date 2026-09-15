@@ -9,6 +9,8 @@ use Src\Account\Application\Service\StorageServiceInterface;
 use Src\Account\Domain\Exception\DuplicateEmailAddressException;
 use Src\Account\Domain\Factory\AccountFactoryInterface;
 use Src\Account\Domain\Repository\AccountRepositoryInterface;
+use Src\Authentication\Domain\Entity\SocialLoginConnection;
+use Src\Authentication\Domain\Repository\SocialLoginConnectionRepositoryInterface;
 use Src\Shared\Application\Transaction\TransactionManagerInterface;
 
 final readonly class CreateAccount implements CreateAccountInterface
@@ -19,9 +21,10 @@ final readonly class CreateAccount implements CreateAccountInterface
         private AccountRegistrationMailServiceInterface $accountRegistrationMailService,
         private TransactionManagerInterface $transactionManager,
         private StorageServiceInterface $storageService,
+        private ?SocialLoginConnectionRepositoryInterface $socialLoginConnectionRepository = null,
     ) {}
 
-    public function execute(CreateAccountInputPort $input): void
+    public function execute(CreateAccountInputPort $input): CreateAccountOutputPort
     {
         if ($this->accountRepository->findByEmailAddress($input->emailAddress()) !== null) {
             throw new DuplicateEmailAddressException;
@@ -46,8 +49,26 @@ final readonly class CreateAccount implements CreateAccountInterface
                     $input->header(),
                 );
             }
+
+            if ($input->pendingSocialRegistration() !== null) {
+                if ($this->socialLoginConnectionRepository === null) {
+                    throw new \LogicException('ソーシャルログイン接続リポジトリが設定されていません。');
+                }
+
+                $registration = $input->pendingSocialRegistration();
+                $saved = $this->socialLoginConnectionRepository->save(new SocialLoginConnection(
+                    $account->accountIdentifier(),
+                    $registration->provider(),
+                    $registration->providerUserIdentifier(),
+                ));
+                if (! $saved) {
+                    throw new \RuntimeException('ソーシャルログイン接続を保存できませんでした。');
+                }
+            }
         });
 
         $this->accountRegistrationMailService->send($account->emailAddress(), $account->accountName());
+
+        return new CreateAccountOutput($account->accountIdentifier());
     }
 }

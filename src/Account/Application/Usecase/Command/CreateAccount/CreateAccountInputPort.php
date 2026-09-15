@@ -11,6 +11,7 @@ use Src\Account\Domain\ValueObject\AccountName;
 use Src\Account\Domain\ValueObject\EmailAddress;
 use Src\Account\Domain\ValueObject\FavoriteTagIdentifiers;
 use Src\Account\Domain\ValueObject\SocialLink;
+use Src\Authentication\Domain\ValueObject\PendingSocialRegistration;
 
 interface CreateAccountInputPort
 {
@@ -28,4 +29,6 @@ interface CreateAccountInputPort
     public function icon(): ?AccountIcon;
 
     public function header(): ?AccountHeader;
+
+    public function pendingSocialRegistration(): ?PendingSocialRegistration;
 }

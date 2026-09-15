@@ -7,7 +7,9 @@ namespace Tests\Feature\Account\Presentation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Src\Authentication\Domain\ValueObject\SocialLoginProvider;
 use Src\Authentication\Infrastructure\Mail\RegistrationPasscodeMail;
+use Src\Authentication\Infrastructure\Service\LaravelPendingSocialRegistrationSessionService;
 use Tests\TestCase;
 
 final class CreateAccountActionTest extends TestCase
@@ -65,6 +67,27 @@ final class CreateAccountActionTest extends TestCase
         $this->postJson('/api/accounts', $this->validPayload())->assertUnauthorized();
 
         $this->assertDatabaseCount('accounts', 1);
+    }
+
+    public function test_creates_and_links_an_account_from_a_pending_social_registration_without_a_passcode(): void
+    {
+        Mail::fake();
+        $this->insertFavoriteTag();
+        session()->put(LaravelPendingSocialRegistrationSessionService::SESSION_KEY, [
+            'provider' => SocialLoginProvider::APPLE->value,
+            'provider_user_identifier' => 'apple-user',
+            'email_address' => 'private@example.com',
+        ]);
+
+        $this->postJson('/api/accounts', $this->validPayload())->assertCreated();
+
+        $this->assertDatabaseHas('accounts', ['email_address' => 'private@example.com']);
+        $this->assertDatabaseHas('social_login_connections', [
+            'provider' => 'apple',
+            'provider_user_identifier' => 'apple-user',
+        ]);
+        self::assertNotNull(session('account_identifier'));
+        self::assertNull(session(LaravelPendingSocialRegistrationSessionService::SESSION_KEY));
     }
 
     /** @return array<string, mixed> */

@@ -11,6 +11,7 @@ use Src\Account\Domain\ValueObject\AccountName;
 use Src\Account\Domain\ValueObject\EmailAddress;
 use Src\Account\Domain\ValueObject\FavoriteTagIdentifiers;
 use Src\Account\Domain\ValueObject\SocialLink;
+use Src\Authentication\Domain\ValueObject\PendingSocialRegistration;
 
 final readonly class CreateAccountInput implements CreateAccountInputPort
 {
@@ -23,6 +24,7 @@ final readonly class CreateAccountInput implements CreateAccountInputPort
         private FavoriteTagIdentifiers $favoriteTagIdentifiers,
         private ?AccountIcon $icon = null,
         private ?AccountHeader $header = null,
+        private ?PendingSocialRegistration $pendingSocialRegistration = null,
     ) {}
 
     public function accountName(): AccountName
@@ -58,5 +60,10 @@ final readonly class CreateAccountInput implements CreateAccountInputPort
     public function header(): ?AccountHeader
     {
         return $this->header;
+    }
+
+    public function pendingSocialRegistration(): ?PendingSocialRegistration
+    {
+        return $this->pendingSocialRegistration;
     }
 }
