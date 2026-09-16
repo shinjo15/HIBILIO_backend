@@ -16,6 +16,17 @@ final readonly class GetAccountRoutineExecutionsAction
     {
         $result = $this->query->execute($request->toInput());
 
-        return new JsonResponse(['items' => $result->items(), 'total' => $result->total()]);
+        return new JsonResponse(['items' => array_map(static fn (array $item): array => [
+            'routine_execution_identifier' => $item['routineExecutionIdentifier'],
+            'routine_identifier' => $item['routineIdentifier'],
+            'routine_name' => $item['routineName'],
+            'account_identifier' => $item['accountIdentifier'],
+            'account_name' => $item['accountName'],
+            'icon_image_url' => $item['iconImageUrl'],
+            'executed_action_count' => $item['executedActionCount'],
+            'posted_at' => $item['postedAt'],
+            'routine_execution_memo' => $item['routineExecutionMemo'],
+            'support_count' => $item['supportCount'],
+        ], $result->items()), 'total' => $result->total()]);
     }
 }

@@ -6,10 +6,12 @@ namespace Tests\Feature\Like\Presentation;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Tests\Support\InteractsWithAccountImageUrlService;
 use Tests\TestCase;
 
 final class GetAccountLikedRoutinePostsActionTest extends TestCase
 {
+    use InteractsWithAccountImageUrlService;
     use RefreshDatabase;
 
     public function test_returns_requested_accounts_liked_routine_posts_in_liked_at_descending_order(): void
@@ -36,6 +38,7 @@ final class GetAccountLikedRoutinePostsActionTest extends TestCase
                     'routine_identifier' => 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
                     'account_identifier' => $routineAuthorIdentifier,
                     'account_name' => 'Routine作成者',
+                    'icon_image_url' => "https://images.example/accounts/{$routineAuthorIdentifier}/icon",
                     'posted_at' => '2026-09-03T10:00:00+00:00',
                     'routine_name' => '夜のストレッチ',
                     'routine_execution_minutes' => 10,
@@ -104,7 +107,8 @@ final class GetAccountLikedRoutinePostsActionTest extends TestCase
         $this->withSession(['account_identifier' => $likingAccountIdentifier])
             ->getJson('/api/my/likes')
             ->assertOk()
-            ->assertJsonPath('items.0.post_identifier', 'dddddddd-dddd-4ddd-8ddd-dddddddddddd');
+            ->assertJsonPath('items.0.post_identifier', 'dddddddd-dddd-4ddd-8ddd-dddddddddddd')
+            ->assertJsonPath('items.0.icon_image_url', "https://images.example/accounts/{$routineAuthorIdentifier}/icon");
     }
 
     public function test_returns_unauthorized_when_not_logged_in(): void

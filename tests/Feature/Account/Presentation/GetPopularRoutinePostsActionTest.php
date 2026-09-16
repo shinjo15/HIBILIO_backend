@@ -6,10 +6,12 @@ namespace Tests\Feature\Account\Presentation;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Tests\Support\InteractsWithAccountImageUrlService;
 use Tests\TestCase;
 
 final class GetPopularRoutinePostsActionTest extends TestCase
 {
+    use InteractsWithAccountImageUrlService;
     use RefreshDatabase;
 
     public function test_returns_active_routine_posts_from_the_last_seven_days_in_like_count_order(): void
@@ -48,6 +50,7 @@ final class GetPopularRoutinePostsActionTest extends TestCase
             ->assertJsonPath('posts.2.post_identifier', '14141414-1414-4141-8141-141414141414')
             ->assertJsonPath('posts.0.post_like_count', 20)
             ->assertJsonPath('posts.0.liked', true)
+            ->assertJsonPath('posts.0.icon_image_url', "https://images.example/accounts/{$authorIdentifier}/icon")
             ->assertJsonPath('posts.1.liked', false)
             ->assertJsonCount(3, 'posts');
     }
@@ -69,6 +72,7 @@ final class GetPopularRoutinePostsActionTest extends TestCase
             ->assertOk()
             ->assertJsonPath('total', 1)
             ->assertJsonPath('posts.0.post_identifier', $postIdentifier)
+            ->assertJsonPath('posts.0.icon_image_url', "https://images.example/accounts/{$authorIdentifier}/icon")
             ->assertJsonPath('posts.0.liked', false);
     }
 

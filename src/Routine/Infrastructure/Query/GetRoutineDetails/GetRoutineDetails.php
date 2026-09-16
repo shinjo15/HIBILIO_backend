@@ -5,13 +5,17 @@ declare(strict_types=1);
 namespace Src\Routine\Infrastructure\Query\GetRoutineDetails;
 
 use Illuminate\Support\Facades\DB;
+use Src\Account\Application\Service\AccountImageUrlServiceInterface;
 use Src\Routine\Application\Usecase\Query\GetRoutineDetails\GetRoutineDetailsInputPort;
 use Src\Routine\Application\Usecase\Query\GetRoutineDetails\GetRoutineDetailsInterface;
 use Src\Routine\Application\Usecase\Query\GetRoutineDetails\GetRoutineDetailsOutput;
 use Src\Routine\Application\Usecase\Query\GetRoutineDetails\GetRoutineDetailsOutputPort;
+use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
 final class GetRoutineDetails implements GetRoutineDetailsInterface
 {
+    public function __construct(private AccountImageUrlServiceInterface $accountImageUrlService) {}
+
     public function execute(GetRoutineDetailsInputPort $input): GetRoutineDetailsOutputPort
     {
         $routine = DB::table('routines')
@@ -58,6 +62,7 @@ final class GetRoutineDetails implements GetRoutineDetailsInterface
         return new GetRoutineDetailsOutput([
             'accountIdentifier' => (string) $routine->account_identifier,
             'accountName' => (string) $routine->account_name,
+            'iconImageUrl' => $this->accountImageUrlService->iconImageUrl(new AccountIdentifier((string) $routine->account_identifier)),
             'routineName' => (string) $routine->routine_name,
             'routineMemo' => $routine->routine_memo === null ? null : (string) $routine->routine_memo,
             'routineExecutionMinutes' => $routine->routine_execution_minutes === null ? null : (int) $routine->routine_execution_minutes,

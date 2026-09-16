@@ -6,10 +6,12 @@ namespace Tests\Feature\Routine\Presentation;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Tests\Support\InteractsWithAccountImageUrlService;
 use Tests\TestCase;
 
 final class GetRoutineDetailsActionTest extends TestCase
 {
+    use InteractsWithAccountImageUrlService;
     use RefreshDatabase;
 
     public function test_returns_anonymous_public_routine_details_with_exact_json(): void
@@ -37,6 +39,7 @@ final class GetRoutineDetailsActionTest extends TestCase
             ->assertExactJson([
                 'account_identifier' => $accountIdentifier,
                 'account_name' => '作成者',
+                'icon_image_url' => "https://images.example/accounts/{$accountIdentifier}/icon",
                 'routine_name' => '朝の集中',
                 'routine_memo' => '仕事前のルーティン',
                 'routine_execution_minutes' => 45,

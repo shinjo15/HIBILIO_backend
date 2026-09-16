@@ -19,6 +19,7 @@ final readonly class GetAccountRoutinePostsAction
         return new JsonResponse(['items' => array_map(static fn (array $post): array => [
             'post_identifier' => $post['postIdentifier'], 'routine_identifier' => $post['routineIdentifier'],
             'account_identifier' => $post['accountIdentifier'], 'account_name' => $post['accountName'],
+            'icon_image_url' => $post['iconImageUrl'],
             'posted_at' => $post['postedAt'], 'routine_name' => $post['routineName'],
             'routine_execution_minutes' => $post['routineExecutionMinutes'],
             'tags' => array_map(static fn (array $tag): array => ['tag_identifier' => $tag['tagIdentifier'], 'tag_name' => $tag['tagName']], $post['tags']),

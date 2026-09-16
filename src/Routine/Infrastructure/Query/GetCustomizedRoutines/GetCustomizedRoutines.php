@@ -5,13 +5,17 @@ declare(strict_types=1);
 namespace Src\Routine\Infrastructure\Query\GetCustomizedRoutines;
 
 use Illuminate\Support\Facades\DB;
+use Src\Account\Application\Service\AccountImageUrlServiceInterface;
 use Src\Routine\Application\Usecase\Query\GetCustomizedRoutines\GetCustomizedRoutinesInputPort;
 use Src\Routine\Application\Usecase\Query\GetCustomizedRoutines\GetCustomizedRoutinesInterface;
 use Src\Routine\Application\Usecase\Query\GetCustomizedRoutines\GetCustomizedRoutinesOutput;
 use Src\Routine\Application\Usecase\Query\GetCustomizedRoutines\GetCustomizedRoutinesOutputPort;
+use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
 final class GetCustomizedRoutines implements GetCustomizedRoutinesInterface
 {
+    public function __construct(private AccountImageUrlServiceInterface $accountImageUrlService) {}
+
     public function execute(GetCustomizedRoutinesInputPort $input): GetCustomizedRoutinesOutputPort
     {
         $parentRoutineExists = DB::table('routines')
@@ -48,10 +52,11 @@ final class GetCustomizedRoutines implements GetCustomizedRoutinesInterface
             ->paginate($input->numberOfItemsPerPage(), ['*'], 'page', $input->page());
 
         $items = $paginator->getCollection()
-            ->map(static fn (object $routine): array => [
+            ->map(fn (object $routine): array => [
                 'routineIdentifier' => (string) $routine->routine_identifier,
                 'accountIdentifier' => (string) $routine->account_identifier,
                 'accountName' => (string) $routine->account_name,
+                'iconImageUrl' => $this->accountImageUrlService->iconImageUrl(new AccountIdentifier((string) $routine->account_identifier)),
                 'routineName' => (string) $routine->routine_name,
                 'routineMemo' => $routine->routine_memo === null ? null : (string) $routine->routine_memo,
                 'routineExecutionMinutes' => $routine->routine_execution_minutes === null ? null : (int) $routine->routine_execution_minutes,

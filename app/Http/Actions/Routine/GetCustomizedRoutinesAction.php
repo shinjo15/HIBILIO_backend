@@ -27,6 +27,7 @@ final readonly class GetCustomizedRoutinesAction
                 'routine_identifier' => $routine['routineIdentifier'],
                 'account_identifier' => $routine['accountIdentifier'],
                 'account_name' => $routine['accountName'],
+                'icon_image_url' => $routine['iconImageUrl'],
                 'routine_name' => $routine['routineName'],
                 'routine_memo' => $routine['routineMemo'],
                 'routine_execution_minutes' => $routine['routineExecutionMinutes'],

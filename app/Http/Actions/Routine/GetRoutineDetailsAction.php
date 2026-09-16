@@ -25,6 +25,7 @@ final readonly class GetRoutineDetailsAction
         return new JsonResponse([
             'account_identifier' => $routineDetails['accountIdentifier'],
             'account_name' => $routineDetails['accountName'],
+            'icon_image_url' => $routineDetails['iconImageUrl'],
             'routine_name' => $routineDetails['routineName'],
             'routine_memo' => $routineDetails['routineMemo'],
             'routine_execution_minutes' => $routineDetails['routineExecutionMinutes'],

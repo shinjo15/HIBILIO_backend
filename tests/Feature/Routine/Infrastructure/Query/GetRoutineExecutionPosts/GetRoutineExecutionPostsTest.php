@@ -30,11 +30,12 @@ final class GetRoutineExecutionPostsTest extends TestCase
         $this->createRoutineExecutionAction($routineExecutionIdentifier, '55555555-5555-4555-8555-555555555555');
         $this->createPost('66666666-6666-4666-8666-666666666666', $routineIdentifier, $routineExecutionIdentifier, 'action', true, 7, '2026-09-07 10:00:00');
 
-        $result = (new GetRoutineExecutionPosts)->execute(new GetRoutineExecutionPostsInput($routineIdentifier, 1, 20));
+        $result = $this->app->make(GetRoutineExecutionPosts::class)->execute(new GetRoutineExecutionPostsInput($routineIdentifier, 1, 20));
 
         self::assertSame([[
             'accountIdentifier' => $executorAccountIdentifier,
             'accountName' => '実行者',
+            'iconImageUrl' => null,
             'executedActionCount' => 2,
             'postedAt' => '2026-09-07T10:00:00+00:00',
             'routineExecutionIdentifier' => $routineExecutionIdentifier,
@@ -69,7 +70,7 @@ final class GetRoutineExecutionPostsTest extends TestCase
         $this->createPost('12121212-1212-4121-8121-121212121212', '55555555-5555-4555-8555-555555555555', '99999999-9999-4999-8999-999999999999', 'action', true, 0, '2026-09-07 10:00:00');
         $this->createPost('13131313-1313-4131-8131-131313131313', $routineIdentifier, '10101010-1010-4010-8010-101010101010', 'action', true, 0, '2026-09-07 10:00:00');
 
-        $result = (new GetRoutineExecutionPosts)->execute(new GetRoutineExecutionPostsInput($routineIdentifier, 1, 20));
+        $result = $this->app->make(GetRoutineExecutionPosts::class)->execute(new GetRoutineExecutionPostsInput($routineIdentifier, 1, 20));
 
         self::assertSame(['22222222-2222-4222-8222-222222222222'], array_column($result->items(), 'accountIdentifier'));
     }
@@ -89,7 +90,7 @@ final class GetRoutineExecutionPostsTest extends TestCase
         $this->createPost('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', $routineIdentifier, '66666666-6666-4666-8666-666666666666', 'action', true, 0, '2026-09-07 11:00:00');
         $this->createPost('cccccccc-cccc-4ccc-8ccc-cccccccccccc', $routineIdentifier, '77777777-7777-4777-8777-777777777777', 'action', true, 0, '2026-09-07 10:00:00');
 
-        $result = (new GetRoutineExecutionPosts)->execute(new GetRoutineExecutionPostsInput($routineIdentifier, 1, 20));
+        $result = $this->app->make(GetRoutineExecutionPosts::class)->execute(new GetRoutineExecutionPostsInput($routineIdentifier, 1, 20));
 
         self::assertSame([
             '33333333-3333-4333-8333-333333333333',
@@ -114,7 +115,7 @@ final class GetRoutineExecutionPostsTest extends TestCase
         $this->createPost('99999999-9999-4999-8999-999999999999', $routineIdentifier, '66666666-6666-4666-8666-666666666666', 'action', true, 0, '2026-09-07 11:00:00');
         $this->createPost('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', $routineIdentifier, '77777777-7777-4777-8777-777777777777', 'action', true, 0, '2026-09-07 10:00:00');
 
-        $result = (new GetRoutineExecutionPosts)->execute(new GetRoutineExecutionPostsInput($routineIdentifier, 2, 1));
+        $result = $this->app->make(GetRoutineExecutionPosts::class)->execute(new GetRoutineExecutionPostsInput($routineIdentifier, 2, 1));
 
         self::assertSame(['33333333-3333-4333-8333-333333333333'], array_column($result->items(), 'accountIdentifier'));
         self::assertSame(3, $result->total());

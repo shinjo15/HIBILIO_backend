@@ -33,6 +33,7 @@ final readonly class GetMyLikedRoutinePostsAction
                 'routine_identifier' => $item['routineIdentifier'],
                 'account_identifier' => $item['accountIdentifier'],
                 'account_name' => $item['accountName'],
+                'icon_image_url' => $item['iconImageUrl'],
                 'posted_at' => $item['postedAt'],
                 'routine_name' => $item['routineName'],
                 'routine_execution_minutes' => $item['routineExecutionMinutes'],

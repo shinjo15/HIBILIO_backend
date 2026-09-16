@@ -2,64 +2,42 @@
 
 declare(strict_types=1);
 
-namespace Tests\Feature\RoutineExecution\Presentation;
+namespace Tests\Feature\RoutineExecution\Infrastructure\Query\GetAccountRoutineExecutions;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Src\RoutineExecution\Application\Usecase\Query\GetAccountRoutineExecutions\GetAccountRoutineExecutionsInput;
+use Src\RoutineExecution\Infrastructure\Query\GetAccountRoutineExecutions\GetAccountRoutineExecutions;
 use Tests\Support\InteractsWithAccountImageUrlService;
 use Tests\TestCase;
 
-final class GetAccountRoutineExecutionsActionTest extends TestCase
+final class GetAccountRoutineExecutionsTest extends TestCase
 {
     use InteractsWithAccountImageUrlService;
     use RefreshDatabase;
 
-    public function test_returns_an_empty_history_for_an_account_without_routine_executions(): void
-    {
-        $this->getJson('/api/accounts/11111111-1111-4111-8111-111111111111/routine-executions')
-            ->assertOk()
-            ->assertExactJson(['items' => [], 'total' => 0]);
-    }
-
-    public function test_returns_execution_history_with_executor_account_fields(): void
+    public function test_it_returns_executor_account_fields_and_icon_image_url(): void
     {
         $accountIdentifier = '11111111-1111-4111-8111-111111111111';
         $routineIdentifier = '22222222-2222-4222-8222-222222222222';
         $routineExecutionIdentifier = '33333333-3333-4333-8333-333333333333';
         $this->createExecutionHistory($accountIdentifier, $routineIdentifier, $routineExecutionIdentifier);
 
-        $this->getJson("/api/accounts/{$accountIdentifier}/routine-executions")
-            ->assertOk()
-            ->assertExactJson($this->expectedResponse($accountIdentifier, $routineIdentifier, $routineExecutionIdentifier));
-    }
+        $result = $this->app->make(GetAccountRoutineExecutions::class)
+            ->execute(new GetAccountRoutineExecutionsInput($accountIdentifier, 1, 20));
 
-    public function test_returns_the_logged_in_accounts_execution_history_with_executor_account_fields(): void
-    {
-        $accountIdentifier = '11111111-1111-4111-8111-111111111111';
-        $routineIdentifier = '22222222-2222-4222-8222-222222222222';
-        $routineExecutionIdentifier = '33333333-3333-4333-8333-333333333333';
-        $this->createExecutionHistory($accountIdentifier, $routineIdentifier, $routineExecutionIdentifier);
-
-        $this->withSession(['account_identifier' => $accountIdentifier])
-            ->getJson('/api/my/routine-executions')
-            ->assertOk()
-            ->assertExactJson($this->expectedResponse($accountIdentifier, $routineIdentifier, $routineExecutionIdentifier));
-    }
-
-    private function expectedResponse(string $accountIdentifier, string $routineIdentifier, string $routineExecutionIdentifier): array
-    {
-        return ['items' => [[
-            'routine_execution_identifier' => $routineExecutionIdentifier,
-            'routine_identifier' => $routineIdentifier,
-            'routine_name' => '朝活',
-            'account_identifier' => $accountIdentifier,
-            'account_name' => '実行者',
-            'icon_image_url' => "https://images.example/accounts/{$accountIdentifier}/icon",
-            'executed_action_count' => 0,
-            'posted_at' => '2026-09-07T10:00:00+00:00',
-            'routine_execution_memo' => '振り返り',
-            'support_count' => 7,
-        ]], 'total' => 1];
+        self::assertSame([[
+            'routineExecutionIdentifier' => $routineExecutionIdentifier,
+            'routineIdentifier' => $routineIdentifier,
+            'routineName' => '朝活',
+            'accountIdentifier' => $accountIdentifier,
+            'accountName' => '実行者',
+            'iconImageUrl' => "https://images.example/accounts/{$accountIdentifier}/icon",
+            'executedActionCount' => 0,
+            'postedAt' => '2026-09-07T10:00:00+00:00',
+            'routineExecutionMemo' => '振り返り',
+            'supportCount' => 7,
+        ]], $result->items());
     }
 
     private function createExecutionHistory(string $accountIdentifier, string $routineIdentifier, string $routineExecutionIdentifier): void

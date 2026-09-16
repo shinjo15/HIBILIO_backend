@@ -6,6 +6,10 @@ namespace Tests\Feature\Account\Presentation;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Src\Account\Application\Service\AccountImageUrlServiceInterface;
+use Src\Account\Application\Usecase\Query\GetAccountRoutinePosts\GetAccountRoutinePostsInput;
+use Src\Account\Infrastructure\Query\GetAccountRoutinePosts\GetAccountRoutinePosts;
+use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Tests\TestCase;
 
 final class GetAccountRoutinePostsActionTest extends TestCase
@@ -18,11 +22,25 @@ final class GetAccountRoutinePostsActionTest extends TestCase
         DB::table('accounts')->insert(['account_identifier' => $accountIdentifier, 'account_name' => '作成者', 'email_address' => 'author@example.com', 'available' => true, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()]);
         DB::table('routines')->insert(['routine_identifier' => '22222222-2222-4222-8222-222222222222', 'account_identifier' => $accountIdentifier, 'routine_name' => '朝活', 'routine_execution_minutes' => 10, 'available' => true, 'created_at' => now(), 'updated_at' => now()]);
         DB::table('posts')->insert(['post_identifier' => '33333333-3333-4333-8333-333333333333', 'routine_identifier' => '22222222-2222-4222-8222-222222222222', 'post_category' => 'routine', 'post_like_count' => 1, 'post_support_count' => 2, 'available' => true, 'created_at' => '2026-09-09 10:00:00', 'updated_at' => now()]);
+        $result = (new GetAccountRoutinePosts(new class implements AccountImageUrlServiceInterface
+        {
+            public function iconImageUrl(AccountIdentifier $accountIdentifier): ?string
+            {
+                return "https://images.example/accounts/{$accountIdentifier->value()}/icon";
+            }
+
+            public function headerImageUrl(AccountIdentifier $accountIdentifier): ?string
+            {
+                return null;
+            }
+        }))->execute(new GetAccountRoutinePostsInput($accountIdentifier, 1, 20));
+
+        self::assertSame("https://images.example/accounts/{$accountIdentifier}/icon", $result->items()[0]['iconImageUrl']);
 
         $this->getJson("/api/accounts/{$accountIdentifier}/posts")
-            ->assertOk()->assertJsonPath('items.0.post_identifier', '33333333-3333-4333-8333-333333333333')->assertJsonPath('total', 1);
+            ->assertOk()->assertJsonPath('items.0.post_identifier', '33333333-3333-4333-8333-333333333333')->assertJsonPath('items.0.icon_image_url', null)->assertJsonPath('total', 1);
         $this->withSession(['account_identifier' => $accountIdentifier])->getJson('/api/my/posts')
-            ->assertOk()->assertJsonPath('items.0.post_identifier', '33333333-3333-4333-8333-333333333333');
+            ->assertOk()->assertJsonPath('items.0.post_identifier', '33333333-3333-4333-8333-333333333333')->assertJsonPath('items.0.icon_image_url', null);
     }
 
     public function test_returns_unauthorized_when_not_logged_in(): void
