@@ -6,13 +6,17 @@ namespace Src\RoutineExecution\Infrastructure\Query\GetAccountRoutineExecutions;
 
 use DateTimeImmutable;
 use Illuminate\Support\Facades\DB;
+use Src\Account\Application\Service\AccountImageUrlServiceInterface;
 use Src\RoutineExecution\Application\Usecase\Query\GetAccountRoutineExecutions\GetAccountRoutineExecutionsInputPort;
 use Src\RoutineExecution\Application\Usecase\Query\GetAccountRoutineExecutions\GetAccountRoutineExecutionsInterface;
 use Src\RoutineExecution\Application\Usecase\Query\GetAccountRoutineExecutions\GetAccountRoutineExecutionsOutput;
 use Src\RoutineExecution\Application\Usecase\Query\GetAccountRoutineExecutions\GetAccountRoutineExecutionsOutputPort;
+use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
 final class GetAccountRoutineExecutions implements GetAccountRoutineExecutionsInterface
 {
+    public function __construct(private AccountImageUrlServiceInterface $accountImageUrlService) {}
+
     public function execute(GetAccountRoutineExecutionsInputPort $input): GetAccountRoutineExecutionsOutputPort
     {
         $paginator = DB::table('posts')
@@ -26,15 +30,18 @@ final class GetAccountRoutineExecutions implements GetAccountRoutineExecutionsIn
             ->where('routines.available', true)
             ->where('accounts.available', true)
             ->where('accounts.status', 'active')
-            ->select(['routine_executions.routine_execution_identifier', 'routine_executions.routine_identifier', 'routine_executions.routine_execution_memo', 'routines.routine_name', 'posts.created_at as posted_at', 'posts.post_support_count'])
+            ->select(['routine_executions.routine_execution_identifier', 'routine_executions.routine_identifier', 'routine_executions.routine_execution_memo', 'routines.routine_name', 'accounts.account_identifier', 'accounts.account_name', 'posts.created_at as posted_at', 'posts.post_support_count'])
             ->selectSub(DB::table('routine_execution_actions')->selectRaw('count(*)')->whereColumn('routine_execution_actions.routine_execution_identifier', 'routine_executions.routine_execution_identifier'), 'executed_action_count')
             ->orderByDesc('posts.created_at')->orderBy('posts.post_identifier')
             ->paginate($input->numberOfItemsPerPage(), ['*'], 'page', $input->page());
 
-        $items = $paginator->getCollection()->map(static fn (object $record): array => [
+        $items = $paginator->getCollection()->map(fn (object $record): array => [
             'routineExecutionIdentifier' => (string) $record->routine_execution_identifier,
             'routineIdentifier' => (string) $record->routine_identifier,
             'routineName' => (string) $record->routine_name,
+            'accountIdentifier' => (string) $record->account_identifier,
+            'accountName' => (string) $record->account_name,
+            'iconImageUrl' => $this->accountImageUrlService->iconImageUrl(new AccountIdentifier((string) $record->account_identifier)),
             'executedActionCount' => (int) $record->executed_action_count,
             'postedAt' => (new DateTimeImmutable((string) $record->posted_at))->format(DATE_ATOM),
             'routineExecutionMemo' => $record->routine_execution_memo === null ? null : (string) $record->routine_execution_memo,

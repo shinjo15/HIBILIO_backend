@@ -6,13 +6,17 @@ namespace Src\Like\Infrastructure\Query\GetLikedRoutinePosts;
 
 use DateTimeImmutable;
 use Illuminate\Support\Facades\DB;
+use Src\Account\Application\Service\AccountImageUrlServiceInterface;
 use Src\Like\Application\Usecase\Query\GetLikedRoutinePosts\GetLikedRoutinePostsInputPort;
 use Src\Like\Application\Usecase\Query\GetLikedRoutinePosts\GetLikedRoutinePostsInterface;
 use Src\Like\Application\Usecase\Query\GetLikedRoutinePosts\GetLikedRoutinePostsOutput;
 use Src\Like\Application\Usecase\Query\GetLikedRoutinePosts\GetLikedRoutinePostsOutputPort;
+use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
 final class GetLikedRoutinePosts implements GetLikedRoutinePostsInterface
 {
+    public function __construct(private AccountImageUrlServiceInterface $accountImageUrlService) {}
+
     public function execute(GetLikedRoutinePostsInputPort $input): GetLikedRoutinePostsOutputPort
     {
         $paginator = DB::table('likes')
@@ -54,11 +58,12 @@ final class GetLikedRoutinePosts implements GetLikedRoutinePostsInterface
         $actionsByRoutineIdentifier = $this->actionsByRoutineIdentifier($routineIdentifiers);
 
         $items = $paginator->getCollection()
-            ->map(static fn (object $record): array => [
+            ->map(fn (object $record): array => [
                 'postIdentifier' => (string) $record->post_identifier,
                 'routineIdentifier' => (string) $record->routine_identifier,
                 'accountIdentifier' => (string) $record->account_identifier,
                 'accountName' => (string) $record->account_name,
+                'iconImageUrl' => $this->accountImageUrlService->iconImageUrl(new AccountIdentifier((string) $record->account_identifier)),
                 'postedAt' => (new DateTimeImmutable((string) $record->posted_at))->format(DATE_ATOM),
                 'routineName' => (string) $record->routine_name,
                 'routineExecutionMinutes' => $record->routine_execution_minutes === null

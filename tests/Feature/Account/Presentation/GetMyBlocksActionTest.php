@@ -6,10 +6,12 @@ namespace Tests\Feature\Account\Presentation;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Tests\Support\InteractsWithAccountImageUrlService;
 use Tests\TestCase;
 
 final class GetMyBlocksActionTest extends TestCase
 {
+    use InteractsWithAccountImageUrlService;
     use RefreshDatabase;
 
     public function test_returns_only_accounts_blocked_by_the_authenticated_account(): void
@@ -25,7 +27,7 @@ final class GetMyBlocksActionTest extends TestCase
         $this->withSession(['account_identifier' => '11111111-1111-4111-8111-111111111111'])
             ->getJson('/api/my/blocks')
             ->assertOk()
-            ->assertExactJson(['blocks' => [['account_identifier' => '22222222-2222-4222-8222-222222222222', 'account_name' => 'ブロック対象', 'account_bio' => 'ブロック対象の説明']]]);
+            ->assertExactJson(['blocks' => [['account_identifier' => '22222222-2222-4222-8222-222222222222', 'account_name' => 'ブロック対象', 'account_bio' => 'ブロック対象の説明', 'icon_image_url' => 'https://images.example/accounts/22222222-2222-4222-8222-222222222222/icon']]]);
     }
 
     public function test_returns_unauthorized_without_an_authenticated_account(): void

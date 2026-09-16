@@ -40,6 +40,7 @@ final readonly class GetPopularRoutinePostsAction
                     'post_category' => $post['postCategory'],
                     'account_identifier' => $post['accountIdentifier'],
                     'account_name' => $post['accountName'],
+                    'icon_image_url' => $post['iconImageUrl'],
                     'posted_at' => $post['postedAt'],
                     'routine_name' => $post['routineName'],
                     'routine_execution_minutes' => $post['routineExecutionMinutes'],

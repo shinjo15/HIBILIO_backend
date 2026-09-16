@@ -6,13 +6,17 @@ namespace Src\Account\Infrastructure\Query\GetFavoriteTagPosts;
 
 use DateTimeImmutable;
 use Illuminate\Support\Facades\DB;
+use Src\Account\Application\Service\AccountImageUrlServiceInterface;
 use Src\Account\Application\Usecase\Query\GetFavoriteTagPosts\GetFavoriteTagPostsInputPort;
 use Src\Account\Application\Usecase\Query\GetFavoriteTagPosts\GetFavoriteTagPostsInterface;
 use Src\Account\Application\Usecase\Query\GetFavoriteTagPosts\GetFavoriteTagPostsOutput;
 use Src\Account\Application\Usecase\Query\GetFavoriteTagPosts\GetFavoriteTagPostsOutputPort;
+use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
 final class GetFavoriteTagPosts implements GetFavoriteTagPostsInterface
 {
+    public function __construct(private AccountImageUrlServiceInterface $accountImageUrlService) {}
+
     public function execute(GetFavoriteTagPostsInputPort $input): GetFavoriteTagPostsOutputPort
     {
         $paginator = DB::table('posts')
@@ -58,12 +62,13 @@ final class GetFavoriteTagPosts implements GetFavoriteTagPostsInterface
         $actionsByRoutineIdentifier = $this->actionsByRoutineIdentifier($routineIdentifiers);
 
         $posts = $paginator->getCollection()
-            ->map(static fn (object $record): array => [
+            ->map(fn (object $record): array => [
                 'postIdentifier' => (string) $record->post_identifier,
                 'routineIdentifier' => (string) $record->routine_identifier,
                 'postCategory' => (string) $record->post_category,
                 'accountIdentifier' => (string) $record->account_identifier,
                 'accountName' => (string) $record->account_name,
+                'iconImageUrl' => $this->accountImageUrlService->iconImageUrl(new AccountIdentifier((string) $record->account_identifier)),
                 'postedAt' => (new DateTimeImmutable((string) $record->posted_at))->format(DATE_ATOM),
                 'routineName' => (string) $record->routine_name,
                 'routineExecutionMinutes' => $record->routine_execution_minutes === null

@@ -6,13 +6,17 @@ namespace Src\Routine\Infrastructure\Query\GetRoutineExecutionPosts;
 
 use DateTimeImmutable;
 use Illuminate\Support\Facades\DB;
+use Src\Account\Application\Service\AccountImageUrlServiceInterface;
 use Src\Routine\Application\Usecase\Query\GetRoutineExecutionPosts\GetRoutineExecutionPostsInputPort;
 use Src\Routine\Application\Usecase\Query\GetRoutineExecutionPosts\GetRoutineExecutionPostsInterface;
 use Src\Routine\Application\Usecase\Query\GetRoutineExecutionPosts\GetRoutineExecutionPostsOutput;
 use Src\Routine\Application\Usecase\Query\GetRoutineExecutionPosts\GetRoutineExecutionPostsOutputPort;
+use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
 final class GetRoutineExecutionPosts implements GetRoutineExecutionPostsInterface
 {
+    public function __construct(private AccountImageUrlServiceInterface $accountImageUrlService) {}
+
     public function execute(GetRoutineExecutionPostsInputPort $input): GetRoutineExecutionPostsOutputPort
     {
         $paginator = DB::table('posts')
@@ -45,9 +49,10 @@ final class GetRoutineExecutionPosts implements GetRoutineExecutionPostsInterfac
             ->paginate($input->numberOfItemsPerPage(), ['*'], 'page', $input->page());
 
         $items = $paginator->getCollection()
-            ->map(static fn (object $record): array => [
+            ->map(fn (object $record): array => [
                 'accountIdentifier' => (string) $record->account_identifier,
                 'accountName' => (string) $record->account_name,
+                'iconImageUrl' => $this->accountImageUrlService->iconImageUrl(new AccountIdentifier((string) $record->account_identifier)),
                 'executedActionCount' => (int) $record->executed_action_count,
                 'postedAt' => (new DateTimeImmutable((string) $record->posted_at))->format(DATE_ATOM),
                 'routineExecutionIdentifier' => (string) $record->routine_execution_identifier,

@@ -6,13 +6,17 @@ namespace Src\Account\Infrastructure\Query\GetAccountRoutinePosts;
 
 use DateTimeImmutable;
 use Illuminate\Support\Facades\DB;
+use Src\Account\Application\Service\AccountImageUrlServiceInterface;
 use Src\Account\Application\Usecase\Query\GetAccountRoutinePosts\GetAccountRoutinePostsInputPort;
 use Src\Account\Application\Usecase\Query\GetAccountRoutinePosts\GetAccountRoutinePostsInterface;
 use Src\Account\Application\Usecase\Query\GetAccountRoutinePosts\GetAccountRoutinePostsOutput;
 use Src\Account\Application\Usecase\Query\GetAccountRoutinePosts\GetAccountRoutinePostsOutputPort;
+use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
 final class GetAccountRoutinePosts implements GetAccountRoutinePostsInterface
 {
+    public function __construct(private AccountImageUrlServiceInterface $accountImageUrlService) {}
+
     public function execute(GetAccountRoutinePostsInputPort $input): GetAccountRoutinePostsOutputPort
     {
         $paginator = DB::table('posts')
@@ -41,11 +45,12 @@ final class GetAccountRoutinePosts implements GetAccountRoutinePostsInterface
         $tags = $this->tags($routineIdentifiers);
         $actions = $this->actions($routineIdentifiers);
 
-        $items = $paginator->getCollection()->map(static fn (object $post): array => [
+        $items = $paginator->getCollection()->map(fn (object $post): array => [
             'postIdentifier' => (string) $post->post_identifier,
             'routineIdentifier' => (string) $post->routine_identifier,
             'accountIdentifier' => (string) $post->account_identifier,
             'accountName' => (string) $post->account_name,
+            'iconImageUrl' => $this->accountImageUrlService->iconImageUrl(new AccountIdentifier((string) $post->account_identifier)),
             'postedAt' => (new DateTimeImmutable((string) $post->posted_at))->format(DATE_ATOM),
             'routineName' => (string) $post->routine_name,
             'routineExecutionMinutes' => $post->routine_execution_minutes === null ? null : (int) $post->routine_execution_minutes,

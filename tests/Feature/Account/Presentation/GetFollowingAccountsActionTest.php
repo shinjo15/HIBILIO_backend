@@ -6,10 +6,12 @@ namespace Tests\Feature\Account\Presentation;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Tests\Support\InteractsWithAccountImageUrlService;
 use Tests\TestCase;
 
 final class GetFollowingAccountsActionTest extends TestCase
 {
+    use InteractsWithAccountImageUrlService;
     use RefreshDatabase;
 
     public function test_returns_the_authenticated_accounts_following_accounts(): void
@@ -20,7 +22,7 @@ final class GetFollowingAccountsActionTest extends TestCase
 
         $this->withSession(['account_identifier' => '11111111-1111-4111-8111-111111111111'])
             ->getJson('/api/my/following')
-            ->assertExactJson(['following_accounts' => [['account_identifier' => '22222222-2222-4222-8222-222222222222', 'account_name' => 'フォロー対象', 'account_bio' => '説明']]]);
+            ->assertExactJson(['following_accounts' => [['account_identifier' => '22222222-2222-4222-8222-222222222222', 'account_name' => 'フォロー対象', 'account_bio' => '説明', 'icon_image_url' => 'https://images.example/accounts/22222222-2222-4222-8222-222222222222/icon']]]);
     }
 
     public function test_returns_the_specified_accounts_following_accounts(): void
@@ -30,7 +32,7 @@ final class GetFollowingAccountsActionTest extends TestCase
         $this->follow('11111111-1111-4111-8111-111111111111', '22222222-2222-4222-8222-222222222222');
 
         $this->getJson('/api/accounts/11111111-1111-4111-8111-111111111111/following')
-            ->assertExactJson(['following_accounts' => [['account_identifier' => '22222222-2222-4222-8222-222222222222', 'account_name' => 'フォロー対象', 'account_bio' => null]]]);
+            ->assertExactJson(['following_accounts' => [['account_identifier' => '22222222-2222-4222-8222-222222222222', 'account_name' => 'フォロー対象', 'account_bio' => null, 'icon_image_url' => 'https://images.example/accounts/22222222-2222-4222-8222-222222222222/icon']]]);
     }
 
     private function account(string $identifier, string $name, ?string $bio = null): void

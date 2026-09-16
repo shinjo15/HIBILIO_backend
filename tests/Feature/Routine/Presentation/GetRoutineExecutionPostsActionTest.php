@@ -6,10 +6,12 @@ namespace Tests\Feature\Routine\Presentation;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Tests\Support\InteractsWithAccountImageUrlService;
 use Tests\TestCase;
 
 final class GetRoutineExecutionPostsActionTest extends TestCase
 {
+    use InteractsWithAccountImageUrlService;
     use RefreshDatabase;
 
     public function test_returns_execution_posts_with_exact_fields_using_default_pagination(): void
@@ -33,6 +35,7 @@ final class GetRoutineExecutionPostsActionTest extends TestCase
                 'items' => [[
                     'account_identifier' => $accountIdentifier,
                     'account_name' => '実行者',
+                    'icon_image_url' => "https://images.example/accounts/{$accountIdentifier}/icon",
                     'executed_action_count' => 2,
                     'posted_at' => '2026-09-07T10:00:00+00:00',
                     'routine_execution_identifier' => $routineExecutionIdentifier,
@@ -65,6 +68,7 @@ final class GetRoutineExecutionPostsActionTest extends TestCase
                 'items' => [[
                     'account_identifier' => $secondAccountIdentifier,
                     'account_name' => '2番目の実行者',
+                    'icon_image_url' => "https://images.example/accounts/{$secondAccountIdentifier}/icon",
                     'executed_action_count' => 0,
                     'posted_at' => '2026-09-07T09:00:00+00:00',
                     'routine_execution_identifier' => $secondRoutineExecutionIdentifier,

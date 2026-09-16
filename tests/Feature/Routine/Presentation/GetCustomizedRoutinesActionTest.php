@@ -6,10 +6,12 @@ namespace Tests\Feature\Routine\Presentation;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Tests\Support\InteractsWithAccountImageUrlService;
 use Tests\TestCase;
 
 final class GetCustomizedRoutinesActionTest extends TestCase
 {
+    use InteractsWithAccountImageUrlService;
     use RefreshDatabase;
 
     public function test_returns_only_public_customized_routines_with_exact_fields_in_requested_page_and_total(): void
@@ -49,6 +51,7 @@ final class GetCustomizedRoutinesActionTest extends TestCase
                         'routine_identifier' => '99999999-9999-4999-8999-999999999999',
                         'account_identifier' => $secondChildAccountIdentifier,
                         'account_name' => '二番目作成者',
+                        'icon_image_url' => "https://images.example/accounts/{$secondChildAccountIdentifier}/icon",
                         'routine_name' => '同時刻で識別子が先',
                         'routine_memo' => null,
                         'routine_execution_minutes' => null,
@@ -60,6 +63,7 @@ final class GetCustomizedRoutinesActionTest extends TestCase
                         'routine_identifier' => 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
                         'account_identifier' => $firstChildAccountIdentifier,
                         'account_name' => '一番目作成者',
+                        'icon_image_url' => "https://images.example/accounts/{$firstChildAccountIdentifier}/icon",
                         'routine_name' => '同時刻で識別子が後',
                         'routine_memo' => '一番目のメモ',
                         'routine_execution_minutes' => 30,

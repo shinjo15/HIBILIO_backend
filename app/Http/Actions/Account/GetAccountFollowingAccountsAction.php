@@ -16,6 +16,6 @@ final readonly class GetAccountFollowingAccountsAction
     {
         $output = $this->getFollowingAccounts->execute(new GetFollowingAccountsInput($account_identifier));
 
-        return new JsonResponse(['following_accounts' => array_map(static fn (array $account): array => ['account_identifier' => $account['accountIdentifier'], 'account_name' => $account['accountName'], 'account_bio' => $account['accountBio']], $output->accounts())]);
+        return new JsonResponse(['following_accounts' => array_map(static fn (array $account): array => ['account_identifier' => $account['accountIdentifier'], 'account_name' => $account['accountName'], 'account_bio' => $account['accountBio'], 'icon_image_url' => $account['iconImageUrl']], $output->accounts())]);
     }
 }

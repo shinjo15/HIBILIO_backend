@@ -6,10 +6,12 @@ namespace Tests\Feature\Account\Presentation;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Tests\Support\InteractsWithAccountImageUrlService;
 use Tests\TestCase;
 
 final class GetFollowingPostsActionTest extends TestCase
 {
+    use InteractsWithAccountImageUrlService;
     use RefreshDatabase;
 
     public function test_returns_followed_accounts_routine_and_action_posts_in_descending_post_datetime_order(): void
@@ -46,6 +48,7 @@ final class GetFollowingPostsActionTest extends TestCase
                         'post_category' => 'action',
                         'account_identifier' => $followedAccountIdentifier,
                         'account_name' => 'フォロー対象者',
+                        'icon_image_url' => "https://images.example/accounts/{$followedAccountIdentifier}/icon",
                         'posted_at' => '2026-09-04T11:00:00+00:00',
                         'routine_name' => '朝の集中ルーティン',
                         'routine_execution_minutes' => 40,
