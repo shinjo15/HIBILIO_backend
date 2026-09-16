@@ -31,6 +31,7 @@ use Src\Account\Application\Usecase\Query\GetFollowingAccounts\GetFollowingAccou
 use Src\Account\Application\Usecase\Query\GetFollowingPosts\GetFollowingPostsInterface;
 use Src\Account\Application\Usecase\Query\GetMyBlocks\GetMyBlocksInterface;
 use Src\Account\Application\Usecase\Query\GetPopularRoutinePosts\GetPopularRoutinePostsInterface;
+use Src\Account\Application\Usecase\Query\SearchAccounts\SearchAccountsInterface;
 use Src\Account\Domain\Factory\AccountFactoryInterface;
 use Src\Account\Domain\Factory\BlockFactoryInterface;
 use Src\Account\Domain\Factory\FollowFactoryInterface;
@@ -47,6 +48,7 @@ use Src\Account\Infrastructure\Query\GetFollowingAccounts\GetFollowingAccounts;
 use Src\Account\Infrastructure\Query\GetFollowingPosts\GetFollowingPosts;
 use Src\Account\Infrastructure\Query\GetMyBlocks\GetMyBlocks;
 use Src\Account\Infrastructure\Query\GetPopularRoutinePosts\GetPopularRoutinePosts;
+use Src\Account\Infrastructure\Query\SearchAccounts\SearchAccounts;
 use Src\Account\Infrastructure\Repository\AccountRepository;
 use Src\Account\Infrastructure\Repository\BlockRepository;
 use Src\Account\Infrastructure\Repository\FollowRepository;
@@ -238,6 +240,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(GetFollowingPostsInterface::class, GetFollowingPosts::class);
         $this->app->bind(GetFollowingAccountsInterface::class, GetFollowingAccounts::class);
         $this->app->bind(GetPopularRoutinePostsInterface::class, GetPopularRoutinePosts::class);
+        $this->app->bind(SearchAccountsInterface::class, SearchAccounts::class);
         $this->app->bind(GetFavoriteTagPostsInterface::class, GetFavoriteTagPosts::class);
         $this->app->bind(BlockFactoryInterface::class, BlockFactory::class);
         $this->app->bind(BlockRepositoryInterface::class, BlockRepository::class);
