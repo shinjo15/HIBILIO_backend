@@ -33,6 +33,7 @@ use App\Http\Actions\Routine\CreateRoutineAction;
 use App\Http\Actions\Routine\GetCustomizedRoutinesAction;
 use App\Http\Actions\Routine\GetRoutineDetailsAction;
 use App\Http\Actions\Routine\GetRoutineExecutionPostsAction;
+use App\Http\Actions\Routine\SearchRoutinesAction;
 use App\Http\Actions\RoutineExecution\CreateRoutineExecutionAction;
 use App\Http\Actions\RoutineExecution\GetAccountRoutineExecutionsAction;
 use App\Http\Actions\RoutineExecution\GetMyRoutineExecutionsAction;
@@ -68,6 +69,7 @@ Route::middleware('web')->group(static function (): void {
     Route::post('/registration-passcodes', GenerateRegistrationPasscodeAction::class);
     Route::post('/registration-passcodes/verification', VerifyRegistrationPasscodeAction::class);
     Route::post('/routines', CreateRoutineAction::class);
+    Route::get('/routines/search', SearchRoutinesAction::class);
     Route::get('/routines/{routine_identifier}/customized', GetCustomizedRoutinesAction::class);
     Route::get('/routines/{routine_identifier}/execution-posts', GetRoutineExecutionPostsAction::class);
     Route::get('/routines/{routine_identifier}', GetRoutineDetailsAction::class);
