@@ -6,6 +6,8 @@ namespace Tests\Feature\Account\Presentation;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Src\Account\Application\Service\AccountImageUrlServiceInterface;
+use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Tests\TestCase;
 
 final class GetAccountDetailsActionTest extends TestCase
@@ -23,6 +25,8 @@ final class GetAccountDetailsActionTest extends TestCase
                 'account_identifier' => $accountIdentifier,
                 'account_name' => '公開アカウント',
                 'account_bio' => null,
+                'icon_image_url' => null,
+                'header_image_url' => null,
                 'favorite_tags' => [],
                 'social_links' => [],
             ]);
@@ -40,6 +44,29 @@ final class GetAccountDetailsActionTest extends TestCase
         $this->getJson("/api/accounts/{$unavailableAccountIdentifier}")->assertNotFound();
         $this->getJson("/api/accounts/{$temporarilyBannedAccountIdentifier}")->assertNotFound();
         $this->getJson("/api/accounts/{$permanentlyBannedAccountIdentifier}")->assertNotFound();
+    }
+
+    public function test_returns_image_urls_without_exposing_storage_keys(): void
+    {
+        $accountIdentifier = '11111111-1111-4111-8111-111111111111';
+        $this->insertAccount($accountIdentifier, true, 'active', '公開アカウント', null);
+        $this->app->instance(AccountImageUrlServiceInterface::class, new class implements AccountImageUrlServiceInterface
+        {
+            public function iconImageUrl(AccountIdentifier $accountIdentifier): ?string
+            {
+                return 'https://images.example/icon';
+            }
+
+            public function headerImageUrl(AccountIdentifier $accountIdentifier): ?string
+            {
+                return null;
+            }
+        });
+
+        $this->getJson("/api/accounts/{$accountIdentifier}")
+            ->assertOk()
+            ->assertJsonPath('icon_image_url', 'https://images.example/icon')
+            ->assertJsonPath('header_image_url', null);
     }
 
     private function insertAccount(string $identifier, bool $available, string $status, string $name, ?string $bio): void

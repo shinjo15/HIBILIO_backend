@@ -37,6 +37,8 @@ final class GetMyAccountActionTest extends TestCase
                 'account_identifier' => $accountIdentifier,
                 'account_name' => 'ログインアカウント',
                 'account_bio' => '自己紹介',
+                'icon_image_url' => null,
+                'header_image_url' => null,
                 'ui_mode' => 'system',
                 'favorite_tags' => [[
                     'tag_identifier' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',

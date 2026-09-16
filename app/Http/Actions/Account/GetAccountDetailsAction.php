@@ -26,6 +26,8 @@ final readonly class GetAccountDetailsAction
             'account_identifier' => $accountDetails['accountIdentifier'],
             'account_name' => $accountDetails['name'],
             'account_bio' => $accountDetails['bio'],
+            'icon_image_url' => $accountDetails['iconImageUrl'],
+            'header_image_url' => $accountDetails['headerImageUrl'],
             'favorite_tags' => array_map(static fn (array $tag): array => [
                 'tag_identifier' => $tag['tagIdentifier'],
                 'tag_name' => $tag['tagName'],
