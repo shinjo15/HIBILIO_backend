@@ -18,6 +18,7 @@ use App\Http\Actions\Account\GetMyFollowingAccountsAction;
 use App\Http\Actions\Account\GetMyRoutinePostsAction;
 use App\Http\Actions\Account\GetPopularRoutinePostsAction;
 use App\Http\Actions\Account\RemoveBlockAction;
+use App\Http\Actions\Account\SearchAccountsAction;
 use App\Http\Actions\Account\UpdateAccountProfileAction;
 use App\Http\Actions\Authentication\GenerateLoginPasscodeAction;
 use App\Http\Actions\Authentication\GenerateRegistrationPasscodeAction;
@@ -48,6 +49,7 @@ Route::middleware('web')->group(static function (): void {
     ]));
 
     Route::post('/accounts', CreateAccountAction::class);
+    Route::get('/accounts/search', SearchAccountsAction::class);
     Route::get('/accounts/{account_identifier}', GetAccountDetailsAction::class);
     Route::get('/accounts/{account_identifier}/following', GetAccountFollowingAccountsAction::class)->whereUuid('account_identifier');
     Route::get('/accounts/{account_identifier}/likes', GetAccountLikedRoutinePostsAction::class);
