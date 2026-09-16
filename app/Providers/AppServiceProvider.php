@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Support\LaravelUuidServices;
 use Illuminate\Support\ServiceProvider;
 use Src\Account\Application\Service\AccountImageConverterServiceInterface;
+use Src\Account\Application\Service\AccountImageUrlServiceInterface;
 use Src\Account\Application\Service\AccountRegistrationMailServiceInterface;
 use Src\Account\Application\Service\StorageServiceInterface;
 use Src\Account\Application\Usecase\Command\ChangeAccountStatus\ChangeAccountStatus;
@@ -50,6 +51,7 @@ use Src\Account\Infrastructure\Repository\AccountRepository;
 use Src\Account\Infrastructure\Repository\BlockRepository;
 use Src\Account\Infrastructure\Repository\FollowRepository;
 use Src\Account\Infrastructure\Service\AccountImageConverterService;
+use Src\Account\Infrastructure\Service\AccountImageUrlService;
 use Src\Account\Infrastructure\Service\LaravelAccountRegistrationMailService;
 use Src\Account\Infrastructure\Service\LocalStorageService;
 use Src\Account\Infrastructure\Service\S3StorageService;
@@ -202,6 +204,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(AccountRepositoryInterface::class, AccountRepository::class);
         $this->app->bind(AccountRegistrationMailServiceInterface::class, LaravelAccountRegistrationMailService::class);
         $this->app->bind(AccountImageConverterServiceInterface::class, AccountImageConverterService::class);
+        $this->app->bind(AccountImageUrlServiceInterface::class, AccountImageUrlService::class);
         $this->app->bind(
             StorageServiceInterface::class,
             config('account.images.storage') === 's3'

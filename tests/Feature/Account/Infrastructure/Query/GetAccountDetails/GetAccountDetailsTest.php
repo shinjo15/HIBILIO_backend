@@ -45,6 +45,8 @@ final class GetAccountDetailsTest extends TestCase
                 ['socialType' => 'instagram', 'socialUrl' => 'https://instagram.com/example'],
                 ['socialType' => 'x', 'socialUrl' => 'https://x.com/example'],
             ],
+            'iconImageUrl' => null,
+            'headerImageUrl' => null,
         ], $result->accountDetails());
     }
 

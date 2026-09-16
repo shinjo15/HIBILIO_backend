@@ -5,13 +5,17 @@ declare(strict_types=1);
 namespace Src\Account\Infrastructure\Query\GetAccountDetails;
 
 use Illuminate\Support\Facades\DB;
+use Src\Account\Application\Service\AccountImageUrlServiceInterface;
 use Src\Account\Application\Usecase\Query\GetAccountDetails\GetAccountDetailsInputPort;
 use Src\Account\Application\Usecase\Query\GetAccountDetails\GetAccountDetailsInterface;
 use Src\Account\Application\Usecase\Query\GetAccountDetails\GetAccountDetailsOutput;
 use Src\Account\Application\Usecase\Query\GetAccountDetails\GetAccountDetailsOutputPort;
+use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
 final class GetAccountDetails implements GetAccountDetailsInterface
 {
+    public function __construct(private AccountImageUrlServiceInterface $accountImageUrlService) {}
+
     public function execute(GetAccountDetailsInputPort $input): GetAccountDetailsOutputPort
     {
         $account = DB::table('accounts')
@@ -53,6 +57,8 @@ final class GetAccountDetails implements GetAccountDetailsInterface
             'uiMode' => (string) $account->ui_mode,
             'favoriteTags' => $favoriteTags,
             'socialLinks' => $socialLinks,
+            'iconImageUrl' => $this->accountImageUrlService->iconImageUrl(new AccountIdentifier((string) $account->account_identifier)),
+            'headerImageUrl' => $this->accountImageUrlService->headerImageUrl(new AccountIdentifier((string) $account->account_identifier)),
         ]);
     }
 }

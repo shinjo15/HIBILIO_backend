@@ -50,6 +50,8 @@ return [
         'account_images' => [
             'driver' => 'local',
             'root' => base_path('images'),
+            'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/account-images',
+            'serve' => true,
             'throw' => true,
             'report' => false,
         ],
