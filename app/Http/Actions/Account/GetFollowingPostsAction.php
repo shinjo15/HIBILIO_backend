@@ -24,7 +24,7 @@ final readonly class GetFollowingPostsAction
     {
         try {
             $result = $this->getFollowingPosts->execute(
-                $request->toInput($this->authService->accountIdentifier()),
+                $request->toInput($this->authService->accountIdentifier() ?? throw new RuntimeException),
             );
 
             return new JsonResponse([

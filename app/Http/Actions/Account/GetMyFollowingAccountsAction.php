@@ -17,7 +17,7 @@ final readonly class GetMyFollowingAccountsAction
     public function __invoke(): JsonResponse
     {
         try {
-            $output = $this->getFollowingAccounts->execute(new GetFollowingAccountsInput($this->authService->accountIdentifier()));
+            $output = $this->getFollowingAccounts->execute(new GetFollowingAccountsInput($this->authService->accountIdentifier() ?? throw new RuntimeException));
         } catch (RuntimeException) {
             return new JsonResponse([], 401);
         }

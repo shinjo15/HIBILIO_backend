@@ -24,7 +24,7 @@ final readonly class GetFavoriteTagPostsAction
     {
         try {
             $result = $this->getFavoriteTagPosts->execute(
-                $request->toInput($this->authService->accountIdentifier()),
+                $request->toInput($this->authService->accountIdentifier() ?? throw new RuntimeException),
             );
 
             return new JsonResponse([

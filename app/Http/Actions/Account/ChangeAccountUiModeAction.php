@@ -18,7 +18,7 @@ final readonly class ChangeAccountUiModeAction
     public function __invoke(ChangeAccountUiModeRequest $request): Response
     {
         try {
-            $accountIdentifier = $this->authService->accountIdentifier();
+            $accountIdentifier = $this->authService->accountIdentifier() ?? throw new RuntimeException;
         } catch (RuntimeException) {
             return new Response('', 401);
         }

@@ -6,7 +6,6 @@ namespace App\Http\Actions\Like;
 
 use App\Http\Requests\Like\GetAccountLikedRoutinePostsRequest;
 use Illuminate\Http\JsonResponse;
-use RuntimeException;
 use Src\Like\Application\Usecase\Query\GetLikedRoutinePosts\GetLikedRoutinePostsInterface;
 use Src\Shared\Application\Service\AuthServiceInterface;
 use Src\Shared\Domain\Exception\BlockedAccountVisibilityException;
@@ -20,11 +19,7 @@ final readonly class GetAccountLikedRoutinePostsAction
 
     public function __invoke(GetAccountLikedRoutinePostsRequest $request): JsonResponse
     {
-        try {
-            $viewerAccountIdentifier = $this->authService->accountIdentifier();
-        } catch (RuntimeException) {
-            $viewerAccountIdentifier = null;
-        }
+        $viewerAccountIdentifier = $this->authService->accountIdentifier();
 
         try {
             $result = $this->getLikedRoutinePosts->execute($request->toInput($viewerAccountIdentifier));

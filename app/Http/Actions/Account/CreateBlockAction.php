@@ -24,7 +24,7 @@ final readonly class CreateBlockAction
     public function __invoke(CreateBlockRequest $request): Response|JsonResponse
     {
         try {
-            $this->createBlock->execute($request->toInput($this->authService->accountIdentifier()));
+            $this->createBlock->execute($request->toInput($this->authService->accountIdentifier() ?? throw new RuntimeException));
 
             return new Response('', 204);
         } catch (RuntimeException) {

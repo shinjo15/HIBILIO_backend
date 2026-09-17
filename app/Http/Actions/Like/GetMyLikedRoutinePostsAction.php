@@ -20,7 +20,7 @@ final readonly class GetMyLikedRoutinePostsAction
     public function __invoke(GetMyLikedRoutinePostsRequest $request): JsonResponse
     {
         try {
-            $input = $request->toInput($this->authService->accountIdentifier());
+            $input = $request->toInput($this->authService->accountIdentifier() ?? throw new RuntimeException);
         } catch (RuntimeException) {
             return new JsonResponse([], 401);
         }

@@ -24,7 +24,7 @@ final readonly class CreateFollowAction
     public function __invoke(CreateFollowRequest $request): Response|JsonResponse
     {
         try {
-            $this->createFollow->execute($request->toInput($this->authService->accountIdentifier()));
+            $this->createFollow->execute($request->toInput($this->authService->accountIdentifier() ?? throw new RuntimeException));
 
             return new Response('', 204);
         } catch (RuntimeException) {

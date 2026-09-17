@@ -23,7 +23,7 @@ final readonly class UpdateAccountProfileAction
     public function __invoke(UpdateAccountProfileRequest $request): Response
     {
         try {
-            $accountIdentifier = $this->authService->accountIdentifier();
+            $accountIdentifier = $this->authService->accountIdentifier() ?? throw new RuntimeException;
         } catch (RuntimeException) {
             return new Response('', 401);
         }

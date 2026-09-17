@@ -18,7 +18,7 @@ final readonly class ChangeAccountVisibilityAction
     public function __invoke(ChangeAccountVisibilityRequest $request): Response
     {
         try {
-            $accountIdentifier = $this->authService->accountIdentifier();
+            $accountIdentifier = $this->authService->accountIdentifier() ?? throw new RuntimeException;
         } catch (RuntimeException) {
             return new Response('', 401);
         }

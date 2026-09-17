@@ -11,6 +11,14 @@ use Tests\TestCase;
 
 final class LaravelAuthServiceTest extends TestCase
 {
+    public function test_account_identifier_returns_null_when_session_has_no_account_identifier(): void
+    {
+        $request = Request::create('/');
+        $request->setLaravelSession($this->app['session.store']);
+
+        self::assertNull((new LaravelAuthService($request))->accountIdentifier());
+    }
+
     public function test_login_regenerates_session_and_stores_account_identifier(): void
     {
         $request = Request::create('/');

@@ -17,7 +17,7 @@ final readonly class CreateRoutineExecutionAction
     public function __invoke(CreateRoutineExecutionRequest $request): Response
     {
         try {
-            $this->createRoutineExecution->execute($request->toInput($this->authService->accountIdentifier()));
+            $this->createRoutineExecution->execute($request->toInput($this->authService->accountIdentifier() ?? throw new RuntimeException));
 
             return new Response('', 201);
         } catch (RuntimeException) {

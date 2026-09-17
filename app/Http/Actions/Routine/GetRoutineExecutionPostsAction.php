@@ -6,7 +6,6 @@ namespace App\Http\Actions\Routine;
 
 use App\Http\Requests\Routine\GetRoutineExecutionPostsRequest;
 use Illuminate\Http\JsonResponse;
-use RuntimeException;
 use Src\Routine\Application\Usecase\Query\GetRoutineExecutionPosts\GetRoutineExecutionPostsInterface;
 use Src\Shared\Application\Service\AuthServiceInterface;
 use Src\Shared\Domain\Exception\BlockedAccountVisibilityException;
@@ -20,11 +19,7 @@ final readonly class GetRoutineExecutionPostsAction
 
     public function __invoke(GetRoutineExecutionPostsRequest $request): JsonResponse
     {
-        try {
-            $viewerAccountIdentifier = $this->authService->accountIdentifier();
-        } catch (RuntimeException) {
-            $viewerAccountIdentifier = null;
-        }
+        $viewerAccountIdentifier = $this->authService->accountIdentifier();
 
         try {
             $result = $this->getRoutineExecutionPosts->execute($request->toInput($viewerAccountIdentifier));

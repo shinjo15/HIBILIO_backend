@@ -22,7 +22,7 @@ final readonly class CreateReportAction
     public function __invoke(CreateReportRequest $request): Response|JsonResponse
     {
         try {
-            $this->createReport->execute($request->toInput($this->authService->accountIdentifier()));
+            $this->createReport->execute($request->toInput($this->authService->accountIdentifier() ?? throw new RuntimeException));
 
             return new Response('', 204);
         } catch (RuntimeException) {

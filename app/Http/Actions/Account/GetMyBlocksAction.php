@@ -17,7 +17,7 @@ final readonly class GetMyBlocksAction
     public function __invoke(GetMyBlocksRequest $request): JsonResponse
     {
         try {
-            $output = $this->getMyBlocks->execute($request->toInput($this->authService->accountIdentifier()));
+            $output = $this->getMyBlocks->execute($request->toInput($this->authService->accountIdentifier() ?? throw new RuntimeException));
         } catch (RuntimeException) {
             return new JsonResponse([], 401);
         }

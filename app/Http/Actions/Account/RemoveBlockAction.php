@@ -17,7 +17,7 @@ final readonly class RemoveBlockAction
     public function __invoke(RemoveBlockRequest $request): Response
     {
         try {
-            $this->removeBlock->execute($request->toInput($this->authService->accountIdentifier()));
+            $this->removeBlock->execute($request->toInput($this->authService->accountIdentifier() ?? throw new RuntimeException));
 
             return new Response('', 204);
         } catch (RuntimeException) {
