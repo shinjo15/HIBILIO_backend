@@ -44,7 +44,7 @@ final class GetFollowingPosts implements GetFollowingPostsInterface
             ->orderByDesc('posts.created_at')
             ->orderBy('posts.post_identifier');
 
-        PostInteractionState::select($query, $input->accountIdentifier(), 'posts.post_identifier');
+        PostInteractionState::selectBoth($query, $input->accountIdentifier(), 'posts.post_identifier');
 
         $paginator = $query->paginate($input->numberOfItemsPerPage(), ['*'], 'page', $input->page());
 

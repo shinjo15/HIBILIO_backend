@@ -49,8 +49,7 @@ final readonly class GetFollowingPostsAction
                         'action_minutes' => $action['actionMinutes'],
                     ], $post['routineActions']),
                     'post_like_count' => $post['postLikeCount'],
-                    'liked' => $post['liked'],
-                    'supported' => $post['supported'],
+                    ...self::interactionState($post),
                     'execution_count' => $post['executionCount'],
                     'customization_count' => $post['customizationCount'],
                 ], $result->posts()),
@@ -63,5 +62,13 @@ final readonly class GetFollowingPostsAction
 
             return new JsonResponse([], $exception instanceof RuntimeException ? 401 : 500);
         }
+    }
+
+    /** @param array{postCategory: string, liked: bool, supported: bool} $post */
+    private static function interactionState(array $post): array
+    {
+        return $post['postCategory'] === 'routine'
+            ? ['liked' => $post['liked']]
+            : ['supported' => $post['supported']];
     }
 }

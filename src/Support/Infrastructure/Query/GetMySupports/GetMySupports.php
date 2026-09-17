@@ -33,7 +33,7 @@ final class GetMySupports implements GetMySupportsInterface
                 'supports.created_at as supported_at',
             ]);
 
-        PostInteractionState::select($query, $input->accountIdentifier(), 'posts.post_identifier');
+        PostInteractionState::selectSupported($query, $input->accountIdentifier(), 'posts.post_identifier');
 
         $paginator = $query->paginate($input->numberOfItemsPerPage(), ['*'], 'page', $input->page());
 
@@ -47,7 +47,6 @@ final class GetMySupports implements GetMySupportsInterface
                 'postCategory' => (string) $record->post_category,
                 'postLikeCount' => (int) $record->post_like_count,
                 'postSupportCount' => (int) $record->post_support_count,
-                'liked' => (bool) $record->liked,
                 'supported' => (bool) $record->supported,
                 'supportedAt' => (new DateTimeImmutable((string) $record->supported_at))->format(DATE_ATOM),
             ])

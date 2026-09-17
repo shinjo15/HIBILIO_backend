@@ -54,7 +54,6 @@ final class GetAccountLikedRoutinePostsActionTest extends TestCase
                     'post_like_count' => 2,
                     'post_support_count' => 4,
                     'liked' => false,
-                    'supported' => false,
                     'execution_count' => 0,
                     'customization_count' => 0,
                     'liked_at' => '2026-09-03T12:00:00+00:00',

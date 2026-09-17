@@ -58,7 +58,7 @@ final class GetRoutineExecutionPosts implements GetRoutineExecutionPostsInterfac
             BlockVisibility::exclude($query, $input->viewerAccountIdentifier(), 'accounts.account_identifier');
         }
 
-        PostInteractionState::select($query, $input->viewerAccountIdentifier(), 'posts.post_identifier');
+        PostInteractionState::selectSupported($query, $input->viewerAccountIdentifier(), 'posts.post_identifier');
 
         $paginator = $query->paginate($input->numberOfItemsPerPage(), ['*'], 'page', $input->page());
 
@@ -72,7 +72,6 @@ final class GetRoutineExecutionPosts implements GetRoutineExecutionPostsInterfac
                 'routineExecutionIdentifier' => (string) $record->routine_execution_identifier,
                 'routineExecutionMemo' => $record->routine_execution_memo === null ? null : (string) $record->routine_execution_memo,
                 'supportCount' => (int) $record->post_support_count,
-                'liked' => (bool) $record->liked,
                 'supported' => (bool) $record->supported,
             ])
             ->all();

@@ -53,7 +53,7 @@ final class GetRoutineExecutionDetails implements GetRoutineExecutionDetailsInte
             BlockVisibility::exclude($query, $input->accountIdentifier(), 'routine_authors.account_identifier');
         }
 
-        PostInteractionState::select($query, $input->accountIdentifier(), 'posts.post_identifier');
+        PostInteractionState::selectSupported($query, $input->accountIdentifier(), 'posts.post_identifier');
 
         $details = $query->first();
 
@@ -73,7 +73,6 @@ final class GetRoutineExecutionDetails implements GetRoutineExecutionDetailsInte
             'executedAt' => (new DateTimeImmutable((string) $details->executed_at))->format(DATE_ATOM),
             'postedAt' => (new DateTimeImmutable((string) $details->posted_at))->format(DATE_ATOM),
             'supportCount' => (int) $details->post_support_count,
-            'liked' => (bool) $details->liked,
             'supported' => (bool) $details->supported,
             'tags' => $this->tags((string) $details->routine_identifier),
             'routineExecutionActions' => $this->actions((string) $details->routine_execution_identifier),

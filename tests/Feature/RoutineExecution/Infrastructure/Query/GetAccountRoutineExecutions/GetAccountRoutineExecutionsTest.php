@@ -37,7 +37,6 @@ final class GetAccountRoutineExecutionsTest extends TestCase
             'postedAt' => '2026-09-07T10:00:00+00:00',
             'routineExecutionMemo' => '振り返り',
             'supportCount' => 7,
-            'liked' => false,
             'supported' => false,
         ]], $result->items());
     }

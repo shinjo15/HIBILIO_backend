@@ -41,7 +41,6 @@ final class GetRoutineExecutionPostsTest extends TestCase
             'routineExecutionIdentifier' => $routineExecutionIdentifier,
             'routineExecutionMemo' => '振り返りメモ',
             'supportCount' => 7,
-            'liked' => false,
             'supported' => false,
         ]], $result->items());
     }

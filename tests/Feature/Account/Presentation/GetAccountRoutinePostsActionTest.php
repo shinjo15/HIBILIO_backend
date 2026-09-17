@@ -23,7 +23,7 @@ final class GetAccountRoutinePostsActionTest extends TestCase
         DB::table('routines')->insert(['routine_identifier' => '22222222-2222-4222-8222-222222222222', 'account_identifier' => $accountIdentifier, 'routine_name' => '朝活', 'routine_execution_minutes' => 10, 'available' => true, 'created_at' => now(), 'updated_at' => now()]);
         DB::table('posts')->insert(['post_identifier' => '33333333-3333-4333-8333-333333333333', 'routine_identifier' => '22222222-2222-4222-8222-222222222222', 'post_category' => 'routine', 'post_like_count' => 1, 'post_support_count' => 2, 'available' => true, 'created_at' => '2026-09-09 10:00:00', 'updated_at' => now()]);
         DB::table('likes')->insert(['account_identifier' => $accountIdentifier, 'post_identifier' => '33333333-3333-4333-8333-333333333333', 'created_at' => now(), 'updated_at' => now()]);
-        DB::table('supports')->insert(['account_identifier' => $accountIdentifier, 'post_identifier' => '33333333-3333-4333-8333-333333333333', 'created_at' => now(), 'updated_at' => now()]);
+
         $result = (new GetAccountRoutinePosts(new class implements AccountImageUrlServiceInterface
         {
             public function iconImageUrl(AccountIdentifier $accountIdentifier): ?string
@@ -39,12 +39,15 @@ final class GetAccountRoutinePostsActionTest extends TestCase
 
         self::assertSame("https://images.example/accounts/{$accountIdentifier}/icon", $result->items()[0]['iconImageUrl']);
         self::assertTrue($result->items()[0]['liked']);
-        self::assertTrue($result->items()[0]['supported']);
+        self::assertArrayNotHasKey('supported', $result->items()[0]);
 
-        $this->getJson("/api/accounts/{$accountIdentifier}/posts")
-            ->assertOk()->assertJsonPath('items.0.post_identifier', '33333333-3333-4333-8333-333333333333')->assertJsonPath('items.0.icon_image_url', null)->assertJsonPath('items.0.liked', false)->assertJsonPath('items.0.supported', false)->assertJsonPath('total', 1);
-        $this->withSession(['account_identifier' => $accountIdentifier])->getJson('/api/my/posts')
-            ->assertOk()->assertJsonPath('items.0.post_identifier', '33333333-3333-4333-8333-333333333333')->assertJsonPath('items.0.icon_image_url', null)->assertJsonPath('items.0.liked', true)->assertJsonPath('items.0.supported', true);
+        $anonymousResponse = $this->getJson("/api/accounts/{$accountIdentifier}/posts")
+            ->assertOk()->assertJsonPath('items.0.post_identifier', '33333333-3333-4333-8333-333333333333')->assertJsonPath('items.0.icon_image_url', null)->assertJsonPath('items.0.liked', false)->assertJsonPath('total', 1);
+        self::assertArrayNotHasKey('supported', $anonymousResponse->json('items.0'));
+
+        $myPostsResponse = $this->withSession(['account_identifier' => $accountIdentifier])->getJson('/api/my/posts')
+            ->assertOk()->assertJsonPath('items.0.post_identifier', '33333333-3333-4333-8333-333333333333')->assertJsonPath('items.0.icon_image_url', null)->assertJsonPath('items.0.liked', true);
+        self::assertArrayNotHasKey('supported', $myPostsResponse->json('items.0'));
     }
 
     public function test_returns_unauthorized_when_not_logged_in(): void

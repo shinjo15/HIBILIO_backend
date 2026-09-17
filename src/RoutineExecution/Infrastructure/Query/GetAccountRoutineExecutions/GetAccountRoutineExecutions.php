@@ -45,7 +45,7 @@ final class GetAccountRoutineExecutions implements GetAccountRoutineExecutionsIn
             BlockVisibility::exclude($query, $input->viewerAccountIdentifier(), 'accounts.account_identifier');
         }
 
-        PostInteractionState::select($query, $input->viewerAccountIdentifier(), 'posts.post_identifier');
+        PostInteractionState::selectSupported($query, $input->viewerAccountIdentifier(), 'posts.post_identifier');
 
         $paginator = $query->paginate($input->numberOfItemsPerPage(), ['*'], 'page', $input->page());
 
@@ -60,7 +60,6 @@ final class GetAccountRoutineExecutions implements GetAccountRoutineExecutionsIn
             'postedAt' => (new DateTimeImmutable((string) $record->posted_at))->format(DATE_ATOM),
             'routineExecutionMemo' => $record->routine_execution_memo === null ? null : (string) $record->routine_execution_memo,
             'supportCount' => (int) $record->post_support_count,
-            'liked' => (bool) $record->liked,
             'supported' => (bool) $record->supported,
         ])->values()->all();
 

@@ -42,7 +42,6 @@ final readonly class GetRoutineExecutionPostsAction
                 'routine_execution_identifier' => $post['routineExecutionIdentifier'],
                 'routine_execution_memo' => $post['routineExecutionMemo'],
                 'support_count' => $post['supportCount'],
-                'liked' => $post['liked'],
                 'supported' => $post['supported'],
             ], $result->items()),
             'total' => $result->total(),

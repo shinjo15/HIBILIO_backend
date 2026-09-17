@@ -50,7 +50,7 @@ final class GetAccountRoutinePosts implements GetAccountRoutinePostsInterface
             BlockVisibility::exclude($query, $input->viewerAccountIdentifier(), 'accounts.account_identifier');
         }
 
-        PostInteractionState::select($query, $input->viewerAccountIdentifier(), 'posts.post_identifier');
+        PostInteractionState::selectLiked($query, $input->viewerAccountIdentifier(), 'posts.post_identifier');
 
         $paginator = $query->paginate($input->numberOfItemsPerPage(), ['*'], 'page', $input->page());
 
@@ -73,7 +73,6 @@ final class GetAccountRoutinePosts implements GetAccountRoutinePostsInterface
             'postLikeCount' => (int) $post->post_like_count,
             'postSupportCount' => (int) $post->post_support_count,
             'liked' => (bool) $post->liked,
-            'supported' => (bool) $post->supported,
             'executionCount' => (int) $post->execution_count,
             'customizationCount' => (int) $post->customization_count,
         ])->values()->all();

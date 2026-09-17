@@ -53,7 +53,7 @@ final class GetFavoriteTagPosts implements GetFavoriteTagPostsInterface
             ->orderBy('posts.post_identifier');
 
         BlockVisibility::exclude($query, $input->accountIdentifier(), 'routines.account_identifier');
-        PostInteractionState::select($query, $input->accountIdentifier(), 'posts.post_identifier');
+        PostInteractionState::selectLiked($query, $input->accountIdentifier(), 'posts.post_identifier');
 
         $paginator = $query->paginate($input->numberOfItemsPerPage(), ['*'], 'page', $input->page());
 
@@ -85,7 +85,6 @@ final class GetFavoriteTagPosts implements GetFavoriteTagPostsInterface
                 'postLikeCount' => (int) $record->post_like_count,
                 'liked' => (bool) $record->liked,
                 'postSupportCount' => (int) $record->post_support_count,
-                'supported' => (bool) $record->supported,
                 'executionCount' => (int) $record->execution_count,
                 'customizationCount' => (int) $record->customization_count,
             ])

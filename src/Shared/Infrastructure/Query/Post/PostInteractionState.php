@@ -9,19 +9,31 @@ use Illuminate\Support\Facades\DB;
 
 final class PostInteractionState
 {
-    public static function select(Builder $query, ?string $viewerAccountIdentifier, string $postIdentifierColumn): void
+    public static function selectLiked(Builder $query, ?string $viewerAccountIdentifier, string $postIdentifierColumn): void
+    {
+        self::select($query, 'likes', 'liked', $viewerAccountIdentifier, $postIdentifierColumn);
+    }
+
+    public static function selectSupported(Builder $query, ?string $viewerAccountIdentifier, string $postIdentifierColumn): void
+    {
+        self::select($query, 'supports', 'supported', $viewerAccountIdentifier, $postIdentifierColumn);
+    }
+
+    public static function selectBoth(Builder $query, ?string $viewerAccountIdentifier, string $postIdentifierColumn): void
+    {
+        self::selectLiked($query, $viewerAccountIdentifier, $postIdentifierColumn);
+        self::selectSupported($query, $viewerAccountIdentifier, $postIdentifierColumn);
+    }
+
+    private static function select(Builder $query, string $table, string $alias, ?string $viewerAccountIdentifier, string $postIdentifierColumn): void
     {
         if ($viewerAccountIdentifier === null) {
-            $query
-                ->selectRaw('0 as liked')
-                ->selectRaw('0 as supported');
+            $query->selectRaw("0 as {$alias}");
 
             return;
         }
 
-        $query
-            ->selectSub(self::exists('likes', $viewerAccountIdentifier, $postIdentifierColumn), 'liked')
-            ->selectSub(self::exists('supports', $viewerAccountIdentifier, $postIdentifierColumn), 'supported');
+        $query->selectSub(self::exists($table, $viewerAccountIdentifier, $postIdentifierColumn), $alias);
     }
 
     private static function exists(string $table, string $viewerAccountIdentifier, string $postIdentifierColumn): Builder

@@ -57,7 +57,7 @@ final class GetLikedRoutinePosts implements GetLikedRoutinePostsInterface
             BlockVisibility::exclude($query, $input->viewerAccountIdentifier(), 'accounts.account_identifier');
         }
 
-        PostInteractionState::select($query, $input->viewerAccountIdentifier(), 'posts.post_identifier');
+        PostInteractionState::selectLiked($query, $input->viewerAccountIdentifier(), 'posts.post_identifier');
 
         $paginator = $query->paginate($input->numberOfItemsPerPage(), ['*'], 'page', $input->page());
 
@@ -88,7 +88,6 @@ final class GetLikedRoutinePosts implements GetLikedRoutinePostsInterface
                 'postLikeCount' => (int) $record->post_like_count,
                 'postSupportCount' => (int) $record->post_support_count,
                 'liked' => (bool) $record->liked,
-                'supported' => (bool) $record->supported,
                 'executionCount' => (int) $record->execution_count,
                 'customizationCount' => (int) $record->customization_count,
                 'likedAt' => (new DateTimeImmutable((string) $record->liked_at))->format(DATE_ATOM),
