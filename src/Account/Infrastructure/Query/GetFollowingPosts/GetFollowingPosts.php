@@ -29,6 +29,7 @@ final class GetFollowingPosts implements GetFollowingPostsInterface
             ->select([
                 'posts.post_identifier',
                 'posts.routine_identifier',
+                'posts.routine_execution_identifier',
                 'posts.post_category',
                 'posts.post_like_count',
                 'posts.created_at as posted_at',
@@ -58,6 +59,9 @@ final class GetFollowingPosts implements GetFollowingPostsInterface
             ->map(fn (object $record): array => [
                 'postIdentifier' => (string) $record->post_identifier,
                 'routineIdentifier' => (string) $record->routine_identifier,
+                'routineExecutionIdentifier' => $record->routine_execution_identifier === null
+                    ? null
+                    : (string) $record->routine_execution_identifier,
                 'postCategory' => (string) $record->post_category,
                 'accountIdentifier' => (string) $record->account_identifier,
                 'accountName' => (string) $record->account_name,

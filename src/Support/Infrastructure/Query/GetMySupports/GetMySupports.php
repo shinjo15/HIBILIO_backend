@@ -25,6 +25,7 @@ final class GetMySupports implements GetMySupportsInterface
             ->paginate($input->numberOfItemsPerPage(), [
                 'posts.post_identifier',
                 'posts.routine_identifier',
+                'posts.routine_execution_identifier',
                 'posts.post_category',
                 'posts.post_like_count',
                 'posts.post_support_count',
@@ -35,6 +36,9 @@ final class GetMySupports implements GetMySupportsInterface
             ->map(static fn (object $record): array => [
                 'postIdentifier' => (string) $record->post_identifier,
                 'routineIdentifier' => (string) $record->routine_identifier,
+                'routineExecutionIdentifier' => $record->routine_execution_identifier === null
+                    ? null
+                    : (string) $record->routine_execution_identifier,
                 'postCategory' => (string) $record->post_category,
                 'postLikeCount' => (int) $record->post_like_count,
                 'postSupportCount' => (int) $record->post_support_count,

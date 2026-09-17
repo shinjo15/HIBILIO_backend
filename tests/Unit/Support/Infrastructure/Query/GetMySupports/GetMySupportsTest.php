@@ -39,6 +39,7 @@ final class GetMySupportsTest extends TestCase
             [
                 'postIdentifier' => 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
                 'routineIdentifier' => '11111111-1111-4111-8111-111111111111',
+                'routineExecutionIdentifier' => null,
                 'postCategory' => 'action',
                 'postLikeCount' => 2,
                 'postSupportCount' => 3,
@@ -47,6 +48,7 @@ final class GetMySupportsTest extends TestCase
             [
                 'postIdentifier' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
                 'routineIdentifier' => '11111111-1111-4111-8111-111111111111',
+                'routineExecutionIdentifier' => null,
                 'postCategory' => 'action',
                 'postLikeCount' => 4,
                 'postSupportCount' => 8,
@@ -75,6 +77,7 @@ final class GetMySupportsTest extends TestCase
         self::assertSame([[
             'postIdentifier' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
             'routineIdentifier' => '11111111-1111-4111-8111-111111111111',
+            'routineExecutionIdentifier' => null,
             'postCategory' => 'action',
             'postLikeCount' => 0,
             'postSupportCount' => 1,

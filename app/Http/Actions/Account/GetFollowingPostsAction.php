@@ -31,6 +31,7 @@ final readonly class GetFollowingPostsAction
                 'posts' => array_map(static fn (array $post): array => [
                     'post_identifier' => $post['postIdentifier'],
                     'routine_identifier' => $post['routineIdentifier'],
+                    'routine_execution_identifier' => $post['routineExecutionIdentifier'],
                     'post_category' => $post['postCategory'],
                     'account_identifier' => $post['accountIdentifier'],
                     'account_name' => $post['accountName'],

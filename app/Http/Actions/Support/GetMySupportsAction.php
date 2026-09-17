@@ -29,6 +29,7 @@ final readonly class GetMySupportsAction
                 'supports' => array_map(static fn (array $support): array => [
                     'post_identifier' => $support['postIdentifier'],
                     'routine_identifier' => $support['routineIdentifier'],
+                    'routine_execution_identifier' => $support['routineExecutionIdentifier'],
                     'post_category' => $support['postCategory'],
                     'post_like_count' => $support['postLikeCount'],
                     'post_support_count' => $support['postSupportCount'],
