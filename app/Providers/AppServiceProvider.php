@@ -3,6 +3,9 @@
 namespace App\Providers;
 
 use App\Support\LaravelUuidServices;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Src\Account\Application\Service\AccountImageConverterServiceInterface;
 use Src\Account\Application\Service\AccountImageUrlServiceInterface;
@@ -285,6 +288,18 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        RateLimiter::for('passcode-send', static function (Request $request): array {
+            $response = static function (Request $request, array $headers) {
+                return response()->json([
+                    'message' => 'Too Many Attempts.',
+                    'retry_after' => (int) $headers['Retry-After'],
+                ], 429, $headers);
+            };
+
+            return [
+                Limit::perMinutes(10, 5)->by('ip:'.$request->ip())->response($response),
+                Limit::perMinutes(10, 5)->by('email:'.strtolower((string) $request->input('email_address')))->response($response),
+            ];
+        });
     }
 }
