@@ -6,7 +6,6 @@ namespace App\Http\Actions\Routine;
 
 use App\Http\Requests\Routine\SearchRoutinesRequest;
 use Illuminate\Http\JsonResponse;
-use RuntimeException;
 use Src\Routine\Application\Usecase\Query\SearchRoutines\SearchRoutinesInterface;
 use Src\Shared\Application\Service\AuthServiceInterface;
 
@@ -19,11 +18,7 @@ final readonly class SearchRoutinesAction
 
     public function __invoke(SearchRoutinesRequest $request): JsonResponse
     {
-        try {
-            $accountIdentifier = $this->authService->accountIdentifier();
-        } catch (RuntimeException) {
-            $accountIdentifier = null;
-        }
+        $accountIdentifier = $this->authService->accountIdentifier();
 
         $output = $this->searchRoutines->execute($request->toInput($accountIdentifier));
 

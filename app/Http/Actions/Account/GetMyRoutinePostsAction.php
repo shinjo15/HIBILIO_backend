@@ -17,7 +17,7 @@ final readonly class GetMyRoutinePostsAction
     public function __invoke(GetMyRoutinePostsRequest $request): JsonResponse
     {
         try {
-            $input = $request->toInput($this->authService->accountIdentifier());
+            $input = $request->toInput($this->authService->accountIdentifier() ?? throw new RuntimeException);
         } catch (RuntimeException) {
             return new JsonResponse([], 401);
         }

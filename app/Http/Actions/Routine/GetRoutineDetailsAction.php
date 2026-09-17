@@ -6,7 +6,6 @@ namespace App\Http\Actions\Routine;
 
 use App\Http\Requests\Routine\GetRoutineDetailsRequest;
 use Illuminate\Http\JsonResponse;
-use RuntimeException;
 use Src\Routine\Application\Usecase\Query\GetRoutineDetails\GetRoutineDetailsInterface;
 use Src\Shared\Application\Service\AuthServiceInterface;
 
@@ -19,11 +18,7 @@ final readonly class GetRoutineDetailsAction
 
     public function __invoke(GetRoutineDetailsRequest $request): JsonResponse
     {
-        try {
-            $viewerAccountIdentifier = $this->authService->accountIdentifier();
-        } catch (RuntimeException) {
-            $viewerAccountIdentifier = null;
-        }
+        $viewerAccountIdentifier = $this->authService->accountIdentifier();
 
         $routineDetails = $this->getRoutineDetails->execute($request->toInput($viewerAccountIdentifier))->routineDetails();
 

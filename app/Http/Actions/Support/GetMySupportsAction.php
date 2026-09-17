@@ -23,7 +23,7 @@ final readonly class GetMySupportsAction
     public function __invoke(GetMySupportsRequest $request): JsonResponse
     {
         try {
-            $result = $this->getMySupports->execute($request->toInput($this->authService->accountIdentifier()));
+            $result = $this->getMySupports->execute($request->toInput($this->authService->accountIdentifier() ?? throw new RuntimeException));
 
             return new JsonResponse([
                 'supports' => array_map(static fn (array $support): array => [

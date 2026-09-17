@@ -25,7 +25,7 @@ final readonly class CreateRoutineAction
     {
         try {
             $this->createRoutine->execute(
-                $request->toInput($this->authService->accountIdentifier()),
+                $request->toInput($this->authService->accountIdentifier() ?? throw new RuntimeException),
             );
 
             return new Response('', 201);

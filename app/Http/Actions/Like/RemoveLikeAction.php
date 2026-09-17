@@ -20,7 +20,7 @@ final readonly class RemoveLikeAction
     public function __invoke(RemoveLikeRequest $request): Response|JsonResponse
     {
         try {
-            $this->removeLike->execute($request->toInput($this->authService->accountIdentifier()));
+            $this->removeLike->execute($request->toInput($this->authService->accountIdentifier() ?? throw new RuntimeException));
         } catch (RuntimeException) {
             return new Response('', 401);
         } catch (PostNotFoundForLikeException $exception) {

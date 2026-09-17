@@ -20,7 +20,7 @@ final readonly class CreateLikeAction
     public function __invoke(CreateLikeRequest $request): Response|JsonResponse
     {
         try {
-            $this->createLike->execute($request->toInput($this->authService->accountIdentifier()));
+            $this->createLike->execute($request->toInput($this->authService->accountIdentifier() ?? throw new RuntimeException));
 
             return new Response('', 204);
         } catch (RuntimeException) {

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Actions\Account;
 
 use Illuminate\Http\JsonResponse;
-use RuntimeException;
 use Src\Account\Application\Usecase\Query\GetFollowingAccounts\GetFollowingAccountsInput;
 use Src\Account\Application\Usecase\Query\GetFollowingAccounts\GetFollowingAccountsInterface;
 use Src\Shared\Application\Service\AuthServiceInterface;
@@ -17,11 +16,7 @@ final readonly class GetAccountFollowingAccountsAction
 
     public function __invoke(string $account_identifier): JsonResponse
     {
-        try {
-            $viewerAccountIdentifier = $this->authService->accountIdentifier();
-        } catch (RuntimeException) {
-            $viewerAccountIdentifier = null;
-        }
+        $viewerAccountIdentifier = $this->authService->accountIdentifier();
 
         try {
             $output = $this->getFollowingAccounts->execute(new GetFollowingAccountsInput($account_identifier, $viewerAccountIdentifier));
