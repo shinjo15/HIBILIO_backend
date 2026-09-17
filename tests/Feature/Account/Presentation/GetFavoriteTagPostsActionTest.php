@@ -72,6 +72,32 @@ final class GetFavoriteTagPostsActionTest extends TestCase
             ->assertExactJson(['posts' => [], 'total' => 0]);
     }
 
+    public function test_excludes_private_accounts_routine_posts_from_favorite_tag_recommendations(): void
+    {
+        $viewerIdentifier = '11111111-1111-4111-8111-111111111111';
+        $publicAuthorIdentifier = '22222222-2222-4222-8222-222222222222';
+        $privateAuthorIdentifier = '33333333-3333-4333-8333-333333333333';
+        $tagIdentifier = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+
+        $this->insertAccount($viewerIdentifier, '閲覧者', 'active');
+        $this->insertAccount($publicAuthorIdentifier, '公開投稿者', 'active');
+        $this->insertAccount($privateAuthorIdentifier, '鍵投稿者', 'active', 'private');
+        $this->insertTag($tagIdentifier, '朝活');
+        $this->insertFavoriteTag($viewerIdentifier, $tagIdentifier);
+        $this->insertRoutine('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', $publicAuthorIdentifier, '公開Routine', 30);
+        $this->insertRoutine('cccccccc-cccc-4ccc-8ccc-cccccccccccc', $privateAuthorIdentifier, '鍵Routine', 30);
+        $this->insertRoutineTag('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', $tagIdentifier);
+        $this->insertRoutineTag('cccccccc-cccc-4ccc-8ccc-cccccccccccc', $tagIdentifier);
+        $this->insertPost('12121212-1212-4121-8121-121212121212', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'routine', 1, 1, now());
+        $this->insertPost('13131313-1313-4131-8131-131313131313', 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'routine', 100, 100, now());
+
+        $this->withSession(['account_identifier' => $viewerIdentifier])
+            ->getJson('/api/posts/favorite_tags?page=1&number_of_items_per_page=20')
+            ->assertOk()
+            ->assertJsonPath('total', 1)
+            ->assertJsonPath('posts.0.post_identifier', '12121212-1212-4121-8121-121212121212');
+    }
+
     public function test_returns_unauthorized_without_an_authenticated_account(): void
     {
         $this->getJson('/api/posts/favorite_tags?page=1&number_of_items_per_page=20')->assertUnauthorized();
@@ -85,9 +111,9 @@ final class GetFavoriteTagPostsActionTest extends TestCase
             ->assertJsonValidationErrors(['page', 'number_of_items_per_page']);
     }
 
-    private function insertAccount(string $identifier, string $name, string $status): void
+    private function insertAccount(string $identifier, string $name, string $status, string $visibility = 'public'): void
     {
-        DB::table('accounts')->insert(['account_identifier' => $identifier, 'account_name' => $name, 'email_address' => "{$identifier}@example.com", 'available' => true, 'status' => $status, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('accounts')->insert(['account_identifier' => $identifier, 'account_name' => $name, 'email_address' => "{$identifier}@example.com", 'available' => true, 'status' => $status, 'visibility' => $visibility, 'created_at' => now(), 'updated_at' => now()]);
     }
 
     private function insertTag(string $identifier, string $name): void

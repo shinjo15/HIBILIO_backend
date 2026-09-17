@@ -11,6 +11,7 @@ use Src\Account\Application\Usecase\Query\GetFavoriteTagPosts\GetFavoriteTagPost
 use Src\Account\Application\Usecase\Query\GetFavoriteTagPosts\GetFavoriteTagPostsInterface;
 use Src\Account\Application\Usecase\Query\GetFavoriteTagPosts\GetFavoriteTagPostsOutput;
 use Src\Account\Application\Usecase\Query\GetFavoriteTagPosts\GetFavoriteTagPostsOutputPort;
+use Src\Account\Domain\ValueObject\AccountVisibility;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
 final class GetFavoriteTagPosts implements GetFavoriteTagPostsInterface
@@ -28,6 +29,7 @@ final class GetFavoriteTagPosts implements GetFavoriteTagPostsInterface
             ->where('posts.post_category', 'routine')
             ->where('accounts.available', true)
             ->where('accounts.status', 'active')
+            ->where('accounts.visibility', AccountVisibility::PUBLIC->value)
             ->whereNotExists($this->blockExists($input->accountIdentifier()))
             ->select([
                 'posts.post_identifier',
