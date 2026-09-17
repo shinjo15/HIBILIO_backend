@@ -49,7 +49,7 @@ final readonly class GetFollowingPostsAction
                         'action_minutes' => $action['actionMinutes'],
                     ], $post['routineActions']),
                     'post_like_count' => $post['postLikeCount'],
-                    ...self::interactionState($post),
+                    ...self::reactionFieldByCategory($post),
                     'execution_count' => $post['executionCount'],
                     'customization_count' => $post['customizationCount'],
                 ], $result->posts()),
@@ -65,7 +65,7 @@ final readonly class GetFollowingPostsAction
     }
 
     /** @param array{postCategory: string, liked: bool, supported: bool} $post */
-    private static function interactionState(array $post): array
+    private static function reactionFieldByCategory(array $post): array
     {
         return $post['postCategory'] === 'routine'
             ? ['liked' => $post['liked']]
