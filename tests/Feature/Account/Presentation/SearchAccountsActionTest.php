@@ -115,6 +115,37 @@ final class SearchAccountsActionTest extends TestCase
             ->assertJsonCount(1, 'accounts');
     }
 
+    public function test_uses_forty_items_as_the_default_page_size(): void
+    {
+        for ($index = 1; $index <= 41; $index++) {
+            $this->account(
+                identifier: sprintf('%08d-1111-4111-8111-%012d', $index, $index),
+                name: "既定ページ{$index}",
+                bio: '既定ページサイズの検証',
+                visibility: 'public',
+            );
+        }
+
+        $this->getJson('/api/accounts/search?account_name=既定ページ')
+            ->assertOk()
+            ->assertJsonPath('total', 41)
+            ->assertJsonCount(40, 'accounts');
+    }
+
+    public function test_rejects_a_page_size_greater_than_one_hundred_twenty(): void
+    {
+        $this->getJson('/api/accounts/search?account_name=対象&number_of_items_per_page=121')
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['number_of_items_per_page']);
+    }
+
+    public function test_rejects_an_empty_page_size(): void
+    {
+        $this->getJson('/api/accounts/search?account_name=対象&number_of_items_per_page=')
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['number_of_items_per_page']);
+    }
+
     private function account(string $identifier, string $name, string $bio, string $visibility, string $status = 'active', bool $available = true): void
     {
         DB::table('accounts')->insert([

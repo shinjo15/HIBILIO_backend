@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Routine;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Http\Requests\PaginatedRequest;
 use Src\Routine\Application\Usecase\Query\GetCustomizedRoutines\GetCustomizedRoutinesInput;
 
-final class GetCustomizedRoutinesRequest extends FormRequest
+final class GetCustomizedRoutinesRequest extends PaginatedRequest
 {
     public function authorize(): bool
     {
@@ -19,26 +19,16 @@ final class GetCustomizedRoutinesRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
-            'page' => ['nullable', 'integer', 'min:1'],
-            'number_of_items_per_page' => ['nullable', 'integer', 'min:1'],
-        ];
+        return $this->paginationRules();
     }
 
     public function toInput(?string $viewerAccountIdentifier = null): GetCustomizedRoutinesInput
     {
         return new GetCustomizedRoutinesInput(
             parentRoutineIdentifier: (string) $this->route('routine_identifier'),
-            page: $this->positiveInteger('page', 1),
-            numberOfItemsPerPage: $this->positiveInteger('number_of_items_per_page', 20),
+            page: $this->page(),
+            numberOfItemsPerPage: $this->numberOfItemsPerPage(),
             viewerAccountIdentifier: $viewerAccountIdentifier,
         );
-    }
-
-    private function positiveInteger(string $key, int $default): int
-    {
-        $value = $this->validated($key);
-
-        return is_numeric($value) ? (int) $value : $default;
     }
 }

@@ -103,12 +103,15 @@ final class GetFavoriteTagPostsActionTest extends TestCase
         $this->getJson('/api/posts/favorite_tags?page=1&number_of_items_per_page=20')->assertUnauthorized();
     }
 
-    public function test_requires_pagination_parameters(): void
+    public function test_uses_default_pagination_parameters(): void
     {
-        $this->withSession(['account_identifier' => '11111111-1111-4111-8111-111111111111'])
+        $accountIdentifier = '11111111-1111-4111-8111-111111111111';
+        $this->insertAccount($accountIdentifier, '閲覧者', 'active');
+
+        $this->withSession(['account_identifier' => $accountIdentifier])
             ->getJson('/api/posts/favorite_tags')
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['page', 'number_of_items_per_page']);
+            ->assertOk()
+            ->assertExactJson(['posts' => [], 'total' => 0]);
     }
 
     private function insertAccount(string $identifier, string $name, string $status, string $visibility = 'public'): void

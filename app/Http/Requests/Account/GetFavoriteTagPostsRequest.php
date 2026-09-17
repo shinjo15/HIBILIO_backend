@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Account;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Http\Requests\PaginatedRequest;
 use Src\Account\Application\Usecase\Query\GetFavoriteTagPosts\GetFavoriteTagPostsInput;
 
-final class GetFavoriteTagPostsRequest extends FormRequest
+final class GetFavoriteTagPostsRequest extends PaginatedRequest
 {
     public function authorize(): bool
     {
@@ -17,18 +17,15 @@ final class GetFavoriteTagPostsRequest extends FormRequest
     /** @return array<string, list<string>> */
     public function rules(): array
     {
-        return [
-            'page' => ['required', 'integer', 'min:1'],
-            'number_of_items_per_page' => ['required', 'integer', 'min:1'],
-        ];
+        return $this->paginationRules();
     }
 
     public function toInput(string $accountIdentifier): GetFavoriteTagPostsInput
     {
         return new GetFavoriteTagPostsInput(
             accountIdentifier: $accountIdentifier,
-            page: (int) $this->validated('page'),
-            numberOfItemsPerPage: (int) $this->validated('number_of_items_per_page'),
+            page: $this->page(),
+            numberOfItemsPerPage: $this->numberOfItemsPerPage(),
         );
     }
 }

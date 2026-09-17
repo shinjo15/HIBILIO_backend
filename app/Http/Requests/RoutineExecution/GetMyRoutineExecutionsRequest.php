@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\RoutineExecution;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Http\Requests\PaginatedRequest;
 use Src\RoutineExecution\Application\Usecase\Query\GetAccountRoutineExecutions\GetAccountRoutineExecutionsInput;
 
-final class GetMyRoutineExecutionsRequest extends FormRequest
+final class GetMyRoutineExecutionsRequest extends PaginatedRequest
 {
     public function authorize(): bool
     {
@@ -16,11 +16,11 @@ final class GetMyRoutineExecutionsRequest extends FormRequest
 
     public function rules(): array
     {
-        return ['page' => ['nullable', 'integer', 'min:1'], 'number_of_items_per_page' => ['nullable', 'integer', 'min:1']];
+        return $this->paginationRules();
     }
 
     public function toInput(string $accountIdentifier): GetAccountRoutineExecutionsInput
     {
-        return new GetAccountRoutineExecutionsInput($accountIdentifier, $this->integer('page', 1), $this->integer('number_of_items_per_page', 20), $accountIdentifier);
+        return new GetAccountRoutineExecutionsInput($accountIdentifier, $this->page(), $this->numberOfItemsPerPage(), $accountIdentifier);
     }
 }
