@@ -23,6 +23,13 @@ final class LoginPasscodeActionTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->withServerVariables(['REMOTE_ADDR' => '192.0.2.10']);
+    }
+
     public function test_generation_returns_generic_no_content_for_known_and_unknown_email_addresses(): void
     {
         Mail::fake();
@@ -38,6 +45,31 @@ final class LoginPasscodeActionTest extends TestCase
         $this->postJson('/api/login-passcodes', ['email_address' => 'missing@example.com'])->assertNoContent();
         Mail::assertSent(LoginPasscodeMail::class, 1);
         self::assertNull($this->app['session.store']->get('login_passcode_challenge_identifier'));
+    }
+
+    public function test_limits_passcode_generation_by_email_address_and_allows_resend_after_cooldown(): void
+    {
+        Mail::fake();
+        $emailAddress = 'rate-limited-login@example.com';
+        $this->insertAccount($emailAddress);
+
+        for ($attempt = 1; $attempt <= 5; $attempt++) {
+            $this->postJson('/api/login-passcodes', ['email_address' => $emailAddress])->assertNoContent();
+        }
+
+        $challengeIdentifier = $this->app['session.store']->get('login_passcode_challenge_identifier');
+        $response = $this->postJson('/api/login-passcodes', ['email_address' => $emailAddress]);
+
+        $response->assertTooManyRequests()
+            ->assertHeader('Retry-After')
+            ->assertJsonPath('retry_after', fn (int $seconds): bool => $seconds > 0);
+        Mail::assertSent(LoginPasscodeMail::class, 5);
+        self::assertSame($challengeIdentifier, $this->app['session.store']->get('login_passcode_challenge_identifier'));
+
+        $this->travel(10)->minutes();
+
+        $this->postJson('/api/login-passcodes', ['email_address' => $emailAddress])->assertNoContent();
+        Mail::assertSent(LoginPasscodeMail::class, 6);
     }
 
     public function test_verification_rejects_missing_invalid_and_expired_challenges(): void

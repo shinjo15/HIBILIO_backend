@@ -65,9 +65,9 @@ Route::middleware('web')->group(static function (): void {
     Route::patch('/my/account/ui-mode', ChangeAccountUiModeAction::class);
     Route::get('/my/posts', GetMyRoutinePostsAction::class);
     Route::get('/my/routine-executions', GetMyRoutineExecutionsAction::class);
-    Route::post('/login-passcodes', GenerateLoginPasscodeAction::class);
+    Route::post('/login-passcodes', GenerateLoginPasscodeAction::class)->middleware('throttle:passcode-send');
     Route::post('/login-passcodes/verification', VerifyLoginPasscodeAction::class);
-    Route::post('/registration-passcodes', GenerateRegistrationPasscodeAction::class);
+    Route::post('/registration-passcodes', GenerateRegistrationPasscodeAction::class)->middleware('throttle:passcode-send');
     Route::post('/registration-passcodes/verification', VerifyRegistrationPasscodeAction::class);
     Route::post('/routines', CreateRoutineAction::class);
     Route::get('/routines/search', SearchRoutinesAction::class);

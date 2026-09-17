@@ -6,12 +6,20 @@ namespace Tests\Feature\Authentication\Presentation;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
+use Src\Authentication\Infrastructure\Mail\LoginPasscodeMail;
 use Src\Authentication\Infrastructure\Mail\RegistrationPasscodeMail;
 use Tests\TestCase;
 
 final class RegistrationPasscodeActionTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->withServerVariables(['REMOTE_ADDR' => '192.0.2.20']);
+    }
 
     public function test_sends_a_registration_passcode_to_an_unregistered_email_address(): void
     {
@@ -55,6 +63,24 @@ final class RegistrationPasscodeActionTest extends TestCase
 
         Mail::assertNothingSent();
         self::assertNull($this->app['session.store']->get('registration_passcode_challenge_identifier'));
+    }
+
+    public function test_limits_passcode_generation_by_ip_address_across_registration_and_login(): void
+    {
+        Mail::fake();
+
+        for ($attempt = 1; $attempt <= 5; $attempt++) {
+            $this->postJson('/api/registration-passcodes', ['email_address' => "ip-rate-limit-{$attempt}@example.com"])
+                ->assertNoContent();
+        }
+
+        $this->postJson('/api/login-passcodes', ['email_address' => 'different-email@example.com'])
+            ->assertTooManyRequests()
+            ->assertHeader('Retry-After')
+            ->assertJsonPath('retry_after', fn (int $seconds): bool => $seconds > 0);
+
+        Mail::assertSent(RegistrationPasscodeMail::class, 5);
+        Mail::assertNotSent(LoginPasscodeMail::class);
     }
 
     private function insertAccount(string $emailAddress): void
