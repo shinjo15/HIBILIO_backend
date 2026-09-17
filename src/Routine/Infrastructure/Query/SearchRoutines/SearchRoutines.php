@@ -7,6 +7,7 @@ namespace Src\Routine\Infrastructure\Query\SearchRoutines;
 use DateTimeImmutable;
 use Illuminate\Support\Facades\DB;
 use Src\Account\Application\Service\AccountImageUrlServiceInterface;
+use Src\Account\Domain\ValueObject\AccountVisibility;
 use Src\Routine\Application\Usecase\Query\SearchRoutines\SearchRoutinesInputPort;
 use Src\Routine\Application\Usecase\Query\SearchRoutines\SearchRoutinesInterface;
 use Src\Routine\Application\Usecase\Query\SearchRoutines\SearchRoutinesOutput;
@@ -88,7 +89,8 @@ final class SearchRoutines implements SearchRoutinesInterface
         $query
             ->where('routines.available', true)
             ->where('accounts.available', true)
-            ->where('accounts.status', 'active');
+            ->where('accounts.status', 'active')
+            ->where('accounts.visibility', AccountVisibility::PUBLIC->value);
 
         if ($input->title() !== null) {
             $query->where('routines.routine_name', 'like', '%'.$input->title().'%');

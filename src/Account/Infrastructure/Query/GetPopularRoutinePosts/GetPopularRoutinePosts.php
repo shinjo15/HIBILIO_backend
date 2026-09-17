@@ -11,6 +11,7 @@ use Src\Account\Application\Usecase\Query\GetPopularRoutinePosts\GetPopularRouti
 use Src\Account\Application\Usecase\Query\GetPopularRoutinePosts\GetPopularRoutinePostsInterface;
 use Src\Account\Application\Usecase\Query\GetPopularRoutinePosts\GetPopularRoutinePostsOutput;
 use Src\Account\Application\Usecase\Query\GetPopularRoutinePosts\GetPopularRoutinePostsOutputPort;
+use Src\Account\Domain\ValueObject\AccountVisibility;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
 final class GetPopularRoutinePosts implements GetPopularRoutinePostsInterface
@@ -28,6 +29,7 @@ final class GetPopularRoutinePosts implements GetPopularRoutinePostsInterface
             ->where('routines.available', true)
             ->where('accounts.available', true)
             ->where('accounts.status', 'active')
+            ->where('accounts.visibility', AccountVisibility::PUBLIC->value)
             ->select([
                 'posts.post_identifier',
                 'posts.routine_identifier',

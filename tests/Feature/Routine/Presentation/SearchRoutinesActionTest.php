@@ -154,6 +154,35 @@ final class SearchRoutinesActionTest extends TestCase
             ->assertJsonPath('items.0.account_identifier', $visibleAuthorIdentifier);
     }
 
+    public function test_excludes_private_accounts_routines_and_routine_execution_posts_from_search(): void
+    {
+        $publicAuthorIdentifier = '11111111-1111-4111-8111-111111111111';
+        $privateAuthorIdentifier = '22222222-2222-4222-8222-222222222222';
+        $publicExecutorIdentifier = '33333333-3333-4333-8333-333333333333';
+        $privateExecutorIdentifier = '44444444-4444-4444-8444-444444444444';
+        $publicRoutineIdentifier = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+        $privateRoutineIdentifier = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+        $publicExecutionIdentifier = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
+        $privateExecutionIdentifier = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
+
+        $this->account($publicAuthorIdentifier, '公開作成者');
+        $this->account($privateAuthorIdentifier, '鍵作成者', 'active', true, 'private');
+        $this->account($publicExecutorIdentifier, '公開実行者');
+        $this->account($privateExecutorIdentifier, '鍵実行者', 'active', true, 'private');
+        $this->routine($publicRoutineIdentifier, $publicAuthorIdentifier, '対象公開Routine', '2026-09-01 09:00:00');
+        $this->routine($privateRoutineIdentifier, $privateAuthorIdentifier, '対象鍵Routine', '2026-09-02 09:00:00');
+        $this->routineExecution($publicExecutionIdentifier, $publicRoutineIdentifier, $publicExecutorIdentifier, '2026-09-03 09:00:00');
+        $this->routineExecution($privateExecutionIdentifier, $publicRoutineIdentifier, $privateExecutorIdentifier, '2026-09-04 09:00:00');
+        $this->executionPost('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', $publicRoutineIdentifier, $publicExecutionIdentifier, '2026-09-03 10:00:00');
+        $this->executionPost('ffffffff-ffff-4fff-8fff-ffffffffffff', $publicRoutineIdentifier, $privateExecutionIdentifier, '2026-09-04 10:00:00');
+
+        $this->getJson('/api/routines/search?title=対象&page=1&number_of_items_per_page=20')
+            ->assertOk()
+            ->assertJsonPath('total', 2)
+            ->assertJsonPath('items.0.account_identifier', $publicExecutorIdentifier)
+            ->assertJsonPath('items.1.account_identifier', $publicAuthorIdentifier);
+    }
+
     public function test_paginates_the_combined_items(): void
     {
         $authorIdentifier = '11111111-1111-4111-8111-111111111111';
@@ -171,7 +200,7 @@ final class SearchRoutinesActionTest extends TestCase
             ->assertJsonCount(1, 'items');
     }
 
-    private function account(string $identifier, string $name, string $status = 'active', bool $available = true): void
+    private function account(string $identifier, string $name, string $status = 'active', bool $available = true, string $visibility = 'public'): void
     {
         DB::table('accounts')->insert([
             'account_identifier' => $identifier,
@@ -179,6 +208,7 @@ final class SearchRoutinesActionTest extends TestCase
             'email_address' => "{$identifier}@example.com",
             'available' => $available,
             'status' => $status,
+            'visibility' => $visibility,
             'created_at' => now(),
             'updated_at' => now(),
         ]);

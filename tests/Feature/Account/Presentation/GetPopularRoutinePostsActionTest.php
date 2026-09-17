@@ -76,6 +76,24 @@ final class GetPopularRoutinePostsActionTest extends TestCase
             ->assertJsonPath('posts.0.liked', false);
     }
 
+    public function test_excludes_private_accounts_routine_posts_from_the_popular_list(): void
+    {
+        $publicAuthorIdentifier = '22222222-2222-4222-8222-222222222222';
+        $privateAuthorIdentifier = '33333333-3333-4333-8333-333333333333';
+
+        $this->insertAccount($publicAuthorIdentifier, '公開投稿者', 'active');
+        $this->insertAccount($privateAuthorIdentifier, '鍵投稿者', 'active', 'private');
+        $this->insertRoutine('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', $publicAuthorIdentifier, '公開Routine', 30);
+        $this->insertRoutine('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', $privateAuthorIdentifier, '鍵Routine', 30);
+        $this->insertPost('12121212-1212-4121-8121-121212121212', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'routine', 1, now());
+        $this->insertPost('13131313-1313-4131-8131-131313131313', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'routine', 100, now());
+
+        $this->getJson('/api/posts/popular?page=1&number_of_items_per_page=20')
+            ->assertOk()
+            ->assertJsonPath('total', 1)
+            ->assertJsonPath('posts.0.post_identifier', '12121212-1212-4121-8121-121212121212');
+    }
+
     public function test_requires_pagination_parameters(): void
     {
         $this->withSession(['account_identifier' => '11111111-1111-4111-8111-111111111111'])
@@ -84,9 +102,9 @@ final class GetPopularRoutinePostsActionTest extends TestCase
             ->assertJsonValidationErrors(['page', 'number_of_items_per_page']);
     }
 
-    private function insertAccount(string $identifier, string $name, string $status): void
+    private function insertAccount(string $identifier, string $name, string $status, string $visibility = 'public'): void
     {
-        DB::table('accounts')->insert(['account_identifier' => $identifier, 'account_name' => $name, 'email_address' => "{$identifier}@example.com", 'available' => true, 'status' => $status, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('accounts')->insert(['account_identifier' => $identifier, 'account_name' => $name, 'email_address' => "{$identifier}@example.com", 'available' => true, 'status' => $status, 'visibility' => $visibility, 'created_at' => now(), 'updated_at' => now()]);
     }
 
     private function insertRoutine(string $identifier, string $accountIdentifier, string $name, int $minutes): void
