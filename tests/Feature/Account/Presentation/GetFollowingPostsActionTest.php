@@ -20,21 +20,23 @@ final class GetFollowingPostsActionTest extends TestCase
         $followedAccountIdentifier = '22222222-2222-4222-8222-222222222222';
         $unfollowedAccountIdentifier = '33333333-3333-4333-8333-333333333333';
         $routineIdentifier = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+        $routineExecutionIdentifier = 'abababab-abab-4aba-8aba-abababababab';
 
         $this->insertAccount($followingAccountIdentifier, 'フォロー実行者');
         $this->insertAccount($followedAccountIdentifier, 'フォロー対象者');
         $this->insertAccount($unfollowedAccountIdentifier, '対象外');
         $this->insertFollow($followingAccountIdentifier, $followedAccountIdentifier);
         $this->insertRoutine($routineIdentifier, $followedAccountIdentifier, null, '朝の集中ルーティン', 40);
+        $this->insertRoutineExecution($routineExecutionIdentifier, $followedAccountIdentifier, $routineIdentifier);
         $this->insertRoutine('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', $followedAccountIdentifier, $routineIdentifier, 'カスタマイズ版', 30);
         $this->insertRoutine('cccccccc-cccc-4ccc-8ccc-cccccccccccc', $unfollowedAccountIdentifier, null, '対象外ルーティン', 10);
         $this->insertTag('dddddddd-dddd-4ddd-8ddd-dddddddddddd', '朝活');
         $this->insertRoutineTag($routineIdentifier, 'dddddddd-dddd-4ddd-8ddd-dddddddddddd');
         $this->insertRoutineAction('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', $routineIdentifier, '水を飲む', 1);
         $this->insertRoutineAction('ffffffff-ffff-4fff-8fff-ffffffffffff', $routineIdentifier, 'ストレッチ', 5);
-        $this->insertPost('12121212-1212-4121-8121-121212121212', $routineIdentifier, 'routine', 4, '2026-09-04 10:00:00');
-        $this->insertPost('13131313-1313-4131-8131-131313131313', $routineIdentifier, 'action', 0, '2026-09-04 11:00:00');
-        $this->insertPost('14141414-1414-4141-8141-141414141414', 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'routine', 9, '2026-09-04 12:00:00');
+        $this->insertPost('12121212-1212-4121-8121-121212121212', $routineIdentifier, null, 'routine', 4, '2026-09-04 10:00:00');
+        $this->insertPost('13131313-1313-4131-8131-131313131313', $routineIdentifier, $routineExecutionIdentifier, 'action', 0, '2026-09-04 11:00:00');
+        $this->insertPost('14141414-1414-4141-8141-141414141414', 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', null, 'routine', 9, '2026-09-04 12:00:00');
         $this->insertLike($followingAccountIdentifier, '13131313-1313-4131-8131-131313131313');
 
         $this->withSession(['account_identifier' => $followingAccountIdentifier])
@@ -45,6 +47,7 @@ final class GetFollowingPostsActionTest extends TestCase
                     [
                         'post_identifier' => '13131313-1313-4131-8131-131313131313',
                         'routine_identifier' => $routineIdentifier,
+                        'routine_execution_identifier' => $routineExecutionIdentifier,
                         'post_category' => 'action',
                         'account_identifier' => $followedAccountIdentifier,
                         'account_name' => 'フォロー対象者',
@@ -76,6 +79,7 @@ final class GetFollowingPostsActionTest extends TestCase
                     [
                         'post_identifier' => '12121212-1212-4121-8121-121212121212',
                         'routine_identifier' => $routineIdentifier,
+                        'routine_execution_identifier' => null,
                         'post_category' => 'routine',
                         'account_identifier' => $followedAccountIdentifier,
                         'account_name' => 'フォロー対象者',
@@ -147,6 +151,21 @@ final class GetFollowingPostsActionTest extends TestCase
         ]);
     }
 
+    private function insertRoutineExecution(
+        string $routineExecutionIdentifier,
+        string $executorAccountIdentifier,
+        string $routineIdentifier,
+    ): void {
+        DB::table('routine_executions')->insert([
+            'routine_execution_identifier' => $routineExecutionIdentifier,
+            'executor_account_identifier' => $executorAccountIdentifier,
+            'routine_identifier' => $routineIdentifier,
+            'executed_at' => '2026-09-04 10:30:00',
+            'created_at' => '2026-09-04 10:30:00',
+            'updated_at' => '2026-09-04 10:30:00',
+        ]);
+    }
+
     private function insertTag(string $tagIdentifier, string $tagName): void
     {
         DB::table('tags')->insert([
@@ -189,6 +208,7 @@ final class GetFollowingPostsActionTest extends TestCase
     private function insertPost(
         string $postIdentifier,
         string $routineIdentifier,
+        ?string $routineExecutionIdentifier,
         string $postCategory,
         int $postLikeCount,
         string $createdAt,
@@ -196,6 +216,7 @@ final class GetFollowingPostsActionTest extends TestCase
         DB::table('posts')->insert([
             'post_identifier' => $postIdentifier,
             'routine_identifier' => $routineIdentifier,
+            'routine_execution_identifier' => $routineExecutionIdentifier,
             'post_category' => $postCategory,
             'post_like_count' => $postLikeCount,
             'post_support_count' => 0,

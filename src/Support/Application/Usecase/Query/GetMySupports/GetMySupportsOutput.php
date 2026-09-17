@@ -7,7 +7,7 @@ namespace Src\Support\Application\Usecase\Query\GetMySupports;
 final readonly class GetMySupportsOutput implements GetMySupportsOutputPort
 {
     /**
-     * @param  list<array{postIdentifier: string, routineIdentifier: string, postCategory: string, postLikeCount: int, postSupportCount: int, supportedAt: string}>  $items
+     * @param  list<array{postIdentifier: string, routineIdentifier: string, routineExecutionIdentifier: ?string, postCategory: string, postLikeCount: int, postSupportCount: int, supportedAt: string}>  $items
      */
     public function __construct(
         private array $items,
