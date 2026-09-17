@@ -21,6 +21,6 @@ final class GetMyRoutineExecutionsRequest extends FormRequest
 
     public function toInput(string $accountIdentifier): GetAccountRoutineExecutionsInput
     {
-        return new GetAccountRoutineExecutionsInput($accountIdentifier, $this->integer('page', 1), $this->integer('number_of_items_per_page', 20));
+        return new GetAccountRoutineExecutionsInput($accountIdentifier, $this->integer('page', 1), $this->integer('number_of_items_per_page', 20), $accountIdentifier);
     }
 }

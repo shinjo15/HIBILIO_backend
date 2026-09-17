@@ -43,6 +43,8 @@ final readonly class GetRoutineExecutionDetailsAction
             'executed_at' => $details['executedAt'],
             'posted_at' => $details['postedAt'],
             'support_count' => $details['supportCount'],
+            'liked' => $details['liked'],
+            'supported' => $details['supported'],
             'tags' => array_map(static fn (array $tag): array => [
                 'tag_identifier' => $tag['tagIdentifier'],
                 'tag_name' => $tag['tagName'],

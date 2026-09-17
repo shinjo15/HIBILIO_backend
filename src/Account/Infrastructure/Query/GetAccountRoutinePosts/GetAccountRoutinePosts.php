@@ -14,6 +14,7 @@ use Src\Account\Application\Usecase\Query\GetAccountRoutinePosts\GetAccountRouti
 use Src\Shared\Domain\Exception\BlockedAccountVisibilityException;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
+use Src\Shared\Infrastructure\Query\Post\PostInteractionState;
 
 final class GetAccountRoutinePosts implements GetAccountRoutinePostsInterface
 {
@@ -49,6 +50,8 @@ final class GetAccountRoutinePosts implements GetAccountRoutinePostsInterface
             BlockVisibility::exclude($query, $input->viewerAccountIdentifier(), 'accounts.account_identifier');
         }
 
+        PostInteractionState::select($query, $input->viewerAccountIdentifier(), 'posts.post_identifier');
+
         $paginator = $query->paginate($input->numberOfItemsPerPage(), ['*'], 'page', $input->page());
 
         $routineIdentifiers = $paginator->getCollection()->pluck('routine_identifier')
@@ -69,6 +72,8 @@ final class GetAccountRoutinePosts implements GetAccountRoutinePostsInterface
             'routineActions' => $actions[(string) $post->routine_identifier] ?? [],
             'postLikeCount' => (int) $post->post_like_count,
             'postSupportCount' => (int) $post->post_support_count,
+            'liked' => (bool) $post->liked,
+            'supported' => (bool) $post->supported,
             'executionCount' => (int) $post->execution_count,
             'customizationCount' => (int) $post->customization_count,
         ])->values()->all();

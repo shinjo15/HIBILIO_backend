@@ -14,6 +14,7 @@ use Src\Account\Application\Usecase\Query\GetPopularRoutinePosts\GetPopularRouti
 use Src\Account\Domain\ValueObject\AccountVisibility;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
+use Src\Shared\Infrastructure\Query\Post\PostInteractionState;
 
 final class GetPopularRoutinePosts implements GetPopularRoutinePostsInterface
 {
@@ -51,10 +52,9 @@ final class GetPopularRoutinePosts implements GetPopularRoutinePostsInterface
 
         if ($input->accountIdentifier() !== null) {
             BlockVisibility::exclude($query, $input->accountIdentifier(), 'routines.account_identifier');
-            $query->selectSub($this->liked($input->accountIdentifier()), 'liked');
-        } else {
-            $query->selectRaw('0 as liked');
         }
+
+        PostInteractionState::select($query, $input->accountIdentifier(), 'posts.post_identifier');
 
         $paginator = $query->paginate($input->numberOfItemsPerPage(), ['*'], 'page', $input->page());
 
@@ -84,6 +84,7 @@ final class GetPopularRoutinePosts implements GetPopularRoutinePostsInterface
                 'postLikeCount' => (int) $record->post_like_count,
                 'liked' => (bool) $record->liked,
                 'postSupportCount' => (int) $record->post_support_count,
+                'supported' => (bool) $record->supported,
                 'executionCount' => (int) $record->execution_count,
                 'customizationCount' => (int) $record->customization_count,
             ])
@@ -91,14 +92,6 @@ final class GetPopularRoutinePosts implements GetPopularRoutinePostsInterface
             ->all();
 
         return new GetPopularRoutinePostsOutput($posts, $paginator->total());
-    }
-
-    private function liked(string $accountIdentifier): mixed
-    {
-        return DB::table('likes')
-            ->selectRaw('count(*) > 0')
-            ->where('likes.account_identifier', $accountIdentifier)
-            ->whereColumn('likes.post_identifier', 'posts.post_identifier');
     }
 
     private function executionCount(): mixed

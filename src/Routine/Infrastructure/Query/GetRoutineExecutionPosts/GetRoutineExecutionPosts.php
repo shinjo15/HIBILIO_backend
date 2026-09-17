@@ -14,6 +14,7 @@ use Src\Routine\Application\Usecase\Query\GetRoutineExecutionPosts\GetRoutineExe
 use Src\Shared\Domain\Exception\BlockedAccountVisibilityException;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
+use Src\Shared\Infrastructure\Query\Post\PostInteractionState;
 
 final class GetRoutineExecutionPosts implements GetRoutineExecutionPostsInterface
 {
@@ -57,6 +58,8 @@ final class GetRoutineExecutionPosts implements GetRoutineExecutionPostsInterfac
             BlockVisibility::exclude($query, $input->viewerAccountIdentifier(), 'accounts.account_identifier');
         }
 
+        PostInteractionState::select($query, $input->viewerAccountIdentifier(), 'posts.post_identifier');
+
         $paginator = $query->paginate($input->numberOfItemsPerPage(), ['*'], 'page', $input->page());
 
         $items = $paginator->getCollection()
@@ -69,6 +72,8 @@ final class GetRoutineExecutionPosts implements GetRoutineExecutionPostsInterfac
                 'routineExecutionIdentifier' => (string) $record->routine_execution_identifier,
                 'routineExecutionMemo' => $record->routine_execution_memo === null ? null : (string) $record->routine_execution_memo,
                 'supportCount' => (int) $record->post_support_count,
+                'liked' => (bool) $record->liked,
+                'supported' => (bool) $record->supported,
             ])
             ->all();
 

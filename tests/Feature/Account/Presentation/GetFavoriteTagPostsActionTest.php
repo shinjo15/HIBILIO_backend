@@ -55,9 +55,11 @@ final class GetFavoriteTagPostsActionTest extends TestCase
             ->assertJsonPath('posts.0.post_identifier', '13131313-1313-4131-8131-131313131313')
             ->assertJsonPath('posts.0.post_support_count', 0)
             ->assertJsonPath('posts.0.liked', true)
+            ->assertJsonPath('posts.0.supported', false)
             ->assertJsonPath('posts.0.icon_image_url', "https://images.example/accounts/{$authorIdentifier}/icon")
             ->assertJsonPath('posts.1.post_identifier', '12121212-1212-4121-8121-121212121212')
             ->assertJsonPath('posts.1.liked', false)
+            ->assertJsonPath('posts.1.supported', false)
             ->assertJsonCount(2, 'posts');
     }
 

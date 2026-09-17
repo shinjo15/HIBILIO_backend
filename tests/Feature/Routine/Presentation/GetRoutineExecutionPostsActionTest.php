@@ -41,6 +41,8 @@ final class GetRoutineExecutionPostsActionTest extends TestCase
                     'routine_execution_identifier' => $routineExecutionIdentifier,
                     'routine_execution_memo' => '振り返りメモ',
                     'support_count' => 7,
+                    'liked' => false,
+                    'supported' => false,
                 ]],
                 'total' => 1,
             ]);
@@ -74,6 +76,8 @@ final class GetRoutineExecutionPostsActionTest extends TestCase
                     'routine_execution_identifier' => $secondRoutineExecutionIdentifier,
                     'routine_execution_memo' => '2番目のメモ',
                     'support_count' => 8,
+                    'liked' => false,
+                    'supported' => false,
                 ]],
                 'total' => 2,
             ]);

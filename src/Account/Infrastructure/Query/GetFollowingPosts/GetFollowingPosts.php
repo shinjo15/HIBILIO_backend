@@ -12,6 +12,7 @@ use Src\Account\Application\Usecase\Query\GetFollowingPosts\GetFollowingPostsInt
 use Src\Account\Application\Usecase\Query\GetFollowingPosts\GetFollowingPostsOutput;
 use Src\Account\Application\Usecase\Query\GetFollowingPosts\GetFollowingPostsOutputPort;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
+use Src\Shared\Infrastructure\Query\Post\PostInteractionState;
 
 final class GetFollowingPosts implements GetFollowingPostsInterface
 {
@@ -19,7 +20,7 @@ final class GetFollowingPosts implements GetFollowingPostsInterface
 
     public function execute(GetFollowingPostsInputPort $input): GetFollowingPostsOutputPort
     {
-        $paginator = DB::table('follows')
+        $query = DB::table('follows')
             ->join('routines', 'follows.followed_account_identifier', '=', 'routines.account_identifier')
             ->join('posts', 'routines.routine_identifier', '=', 'posts.routine_identifier')
             ->join('accounts', 'routines.account_identifier', '=', 'accounts.account_identifier')
@@ -38,12 +39,14 @@ final class GetFollowingPosts implements GetFollowingPostsInterface
                 'routines.routine_execution_minutes',
                 'accounts.account_name',
             ])
-            ->selectSub($this->liked($input->accountIdentifier()), 'liked')
             ->selectSub($this->executionCount(), 'execution_count')
             ->selectSub($this->customizationCount(), 'customization_count')
             ->orderByDesc('posts.created_at')
-            ->orderBy('posts.post_identifier')
-            ->paginate($input->numberOfItemsPerPage(), ['*'], 'page', $input->page());
+            ->orderBy('posts.post_identifier');
+
+        PostInteractionState::select($query, $input->accountIdentifier(), 'posts.post_identifier');
+
+        $paginator = $query->paginate($input->numberOfItemsPerPage(), ['*'], 'page', $input->page());
 
         $routineIdentifiers = $paginator->getCollection()
             ->pluck('routine_identifier')
@@ -75,6 +78,7 @@ final class GetFollowingPosts implements GetFollowingPostsInterface
                 'routineActions' => $actionsByRoutineIdentifier[(string) $record->routine_identifier] ?? [],
                 'postLikeCount' => (int) $record->post_like_count,
                 'liked' => (bool) $record->liked,
+                'supported' => (bool) $record->supported,
                 'executionCount' => (int) $record->execution_count,
                 'customizationCount' => (int) $record->customization_count,
             ])
@@ -82,14 +86,6 @@ final class GetFollowingPosts implements GetFollowingPostsInterface
             ->all();
 
         return new GetFollowingPostsOutput($posts, $paginator->total());
-    }
-
-    private function liked(string $accountIdentifier): mixed
-    {
-        return DB::table('likes')
-            ->selectRaw('count(*) > 0')
-            ->where('likes.account_identifier', $accountIdentifier)
-            ->whereColumn('likes.post_identifier', 'posts.post_identifier');
     }
 
     private function executionCount(): mixed

@@ -39,6 +39,8 @@ final class GetMySupportsActionTest extends TestCase
                     'post_category' => 'action',
                     'post_like_count' => 2,
                     'post_support_count' => 4,
+                    'liked' => false,
+                    'supported' => true,
                     'supported_at' => '2026-09-03T12:00:00+00:00',
                 ]],
                 'total' => 2,

@@ -33,6 +33,8 @@ final readonly class GetMySupportsAction
                     'post_category' => $support['postCategory'],
                     'post_like_count' => $support['postLikeCount'],
                     'post_support_count' => $support['postSupportCount'],
+                    'liked' => $support['liked'],
+                    'supported' => $support['supported'],
                     'supported_at' => $support['supportedAt'],
                 ], $result->items()),
                 'total' => $result->total(),

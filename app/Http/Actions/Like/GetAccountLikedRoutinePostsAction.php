@@ -53,6 +53,8 @@ final readonly class GetAccountLikedRoutinePostsAction
                 ], $item['routineActions']),
                 'post_like_count' => $item['postLikeCount'],
                 'post_support_count' => $item['postSupportCount'],
+                'liked' => $item['liked'],
+                'supported' => $item['supported'],
                 'execution_count' => $item['executionCount'],
                 'customization_count' => $item['customizationCount'],
                 'liked_at' => $item['likedAt'],

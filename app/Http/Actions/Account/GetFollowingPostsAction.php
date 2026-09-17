@@ -50,6 +50,7 @@ final readonly class GetFollowingPostsAction
                     ], $post['routineActions']),
                     'post_like_count' => $post['postLikeCount'],
                     'liked' => $post['liked'],
+                    'supported' => $post['supported'],
                     'execution_count' => $post['executionCount'],
                     'customization_count' => $post['customizationCount'],
                 ], $result->posts()),

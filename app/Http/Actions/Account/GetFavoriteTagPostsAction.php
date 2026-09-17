@@ -50,6 +50,7 @@ final readonly class GetFavoriteTagPostsAction
                     'post_like_count' => $post['postLikeCount'],
                     'liked' => $post['liked'],
                     'post_support_count' => $post['postSupportCount'],
+                    'supported' => $post['supported'],
                     'execution_count' => $post['executionCount'],
                     'customization_count' => $post['customizationCount'],
                 ], $result->posts()),

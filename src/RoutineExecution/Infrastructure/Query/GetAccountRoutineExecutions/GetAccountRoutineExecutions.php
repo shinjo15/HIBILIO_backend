@@ -14,6 +14,7 @@ use Src\RoutineExecution\Application\Usecase\Query\GetAccountRoutineExecutions\G
 use Src\Shared\Domain\Exception\BlockedAccountVisibilityException;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
+use Src\Shared\Infrastructure\Query\Post\PostInteractionState;
 
 final class GetAccountRoutineExecutions implements GetAccountRoutineExecutionsInterface
 {
@@ -44,6 +45,8 @@ final class GetAccountRoutineExecutions implements GetAccountRoutineExecutionsIn
             BlockVisibility::exclude($query, $input->viewerAccountIdentifier(), 'accounts.account_identifier');
         }
 
+        PostInteractionState::select($query, $input->viewerAccountIdentifier(), 'posts.post_identifier');
+
         $paginator = $query->paginate($input->numberOfItemsPerPage(), ['*'], 'page', $input->page());
 
         $items = $paginator->getCollection()->map(fn (object $record): array => [
@@ -57,6 +60,8 @@ final class GetAccountRoutineExecutions implements GetAccountRoutineExecutionsIn
             'postedAt' => (new DateTimeImmutable((string) $record->posted_at))->format(DATE_ATOM),
             'routineExecutionMemo' => $record->routine_execution_memo === null ? null : (string) $record->routine_execution_memo,
             'supportCount' => (int) $record->post_support_count,
+            'liked' => (bool) $record->liked,
+            'supported' => (bool) $record->supported,
         ])->values()->all();
 
         return new GetAccountRoutineExecutionsOutput($items, $paginator->total());
