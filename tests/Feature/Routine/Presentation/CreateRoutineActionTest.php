@@ -15,6 +15,7 @@ final class CreateRoutineActionTest extends TestCase
 
     public function test_creates_a_routine_for_the_account_identifier_in_the_session(): void
     {
+        $this->insertActiveAccount();
         TagModel::query()->create([
             'tag_identifier' => 'b0caa7f4-e1da-4f48-a8db-12fcf9bf47d5',
             'tag_name' => '朝活',
@@ -67,6 +68,7 @@ final class CreateRoutineActionTest extends TestCase
 
     public function test_creates_a_routine_that_references_the_specified_parent_routine(): void
     {
+        $this->insertActiveAccount();
         DB::table('routines')->insert([
             'routine_identifier' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
             'account_identifier' => '3b5581e9-16df-4879-b7d2-5d88dca6ab87',
@@ -89,6 +91,19 @@ final class CreateRoutineActionTest extends TestCase
         $this->assertDatabaseHas('routines', [
             'parent_routine_identifier' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
             'routine_name' => 'カスタマイズ版',
+        ]);
+    }
+
+    private function insertActiveAccount(): void
+    {
+        DB::table('accounts')->insert([
+            'account_identifier' => '3b5581e9-16df-4879-b7d2-5d88dca6ab87',
+            'account_name' => 'テストAccount',
+            'email_address' => 'routine-creator@example.com',
+            'available' => true,
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
     }
 }

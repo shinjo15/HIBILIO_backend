@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Src\Shared\Infrastructure\Service;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Src\Shared\Application\Service\AuthServiceInterface;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
@@ -27,6 +28,18 @@ final readonly class LaravelAuthService implements AuthServiceInterface
         $accountIdentifier = $this->request->session()->get(self::SESSION_KEY);
 
         if (! is_string($accountIdentifier) || $accountIdentifier === '') {
+            return null;
+        }
+
+        $isAuthenticatedAccount = DB::table('accounts')
+            ->where('account_identifier', $accountIdentifier)
+            ->where('available', true)
+            ->where('status', 'active')
+            ->exists();
+
+        if (! $isAuthenticatedAccount) {
+            $this->request->session()->forget(self::SESSION_KEY);
+
             return null;
         }
 
