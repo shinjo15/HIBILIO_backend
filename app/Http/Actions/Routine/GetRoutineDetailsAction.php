@@ -36,6 +36,7 @@ final readonly class GetRoutineDetailsAction
             'execution_count' => $routineDetails['executionCount'],
             'customization_count' => $routineDetails['customizationCount'],
             'like_count' => $routineDetails['likeCount'],
+            'liked' => $routineDetails['liked'],
             'routine_actions' => array_map(static fn (array $action): array => [
                 'routine_action_identifier' => $action['routineActionIdentifier'],
                 'action_name' => $action['actionName'],

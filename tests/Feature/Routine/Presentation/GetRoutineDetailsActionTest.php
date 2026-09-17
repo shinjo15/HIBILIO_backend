@@ -46,6 +46,7 @@ final class GetRoutineDetailsActionTest extends TestCase
                 'execution_count' => 3,
                 'customization_count' => 1,
                 'like_count' => 10,
+                'liked' => false,
                 'routine_actions' => [
                     [
                         'routine_action_identifier' => '22222222-2222-4222-8222-222222222222',
@@ -61,6 +62,30 @@ final class GetRoutineDetailsActionTest extends TestCase
                     ],
                 ],
             ]);
+    }
+
+    public function test_returns_liked_when_the_authenticated_viewer_liked_an_available_routine_post(): void
+    {
+        $ownerAccountIdentifier = '11111111-1111-4111-8111-111111111111';
+        $viewerAccountIdentifier = '22222222-2222-4222-8222-222222222222';
+        $routineIdentifier = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+        $postIdentifier = '33333333-3333-4333-8333-333333333333';
+
+        $this->insertAccount($ownerAccountIdentifier, true, 'active');
+        $this->insertAccount($viewerAccountIdentifier, true, 'active');
+        $this->insertRoutine($routineIdentifier, $ownerAccountIdentifier, null, true, '朝の集中', null, null);
+        $this->insertPost($postIdentifier, $routineIdentifier, 'routine', true, 1);
+        DB::table('likes')->insert([
+            'account_identifier' => $viewerAccountIdentifier,
+            'post_identifier' => $postIdentifier,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->withSession(['account_identifier' => $viewerAccountIdentifier])
+            ->getJson("/api/routines/{$routineIdentifier}")
+            ->assertOk()
+            ->assertJsonPath('liked', true);
     }
 
     public function test_returns_not_found_for_non_public_routines(): void
