@@ -14,6 +14,7 @@ use Src\Like\Application\Usecase\Query\GetLikedRoutinePosts\GetLikedRoutinePosts
 use Src\Shared\Domain\Exception\BlockedAccountVisibilityException;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
+use Src\Shared\Infrastructure\Query\Post\PostInteractionState;
 
 final class GetLikedRoutinePosts implements GetLikedRoutinePostsInterface
 {
@@ -56,6 +57,8 @@ final class GetLikedRoutinePosts implements GetLikedRoutinePostsInterface
             BlockVisibility::exclude($query, $input->viewerAccountIdentifier(), 'accounts.account_identifier');
         }
 
+        PostInteractionState::selectLiked($query, $input->viewerAccountIdentifier(), 'posts.post_identifier');
+
         $paginator = $query->paginate($input->numberOfItemsPerPage(), ['*'], 'page', $input->page());
 
         $routineIdentifiers = $paginator->getCollection()
@@ -84,6 +87,7 @@ final class GetLikedRoutinePosts implements GetLikedRoutinePostsInterface
                 'routineActions' => $actionsByRoutineIdentifier[(string) $record->routine_identifier] ?? [],
                 'postLikeCount' => (int) $record->post_like_count,
                 'postSupportCount' => (int) $record->post_support_count,
+                'liked' => (bool) $record->liked,
                 'executionCount' => (int) $record->execution_count,
                 'customizationCount' => (int) $record->customization_count,
                 'likedAt' => (new DateTimeImmutable((string) $record->liked_at))->format(DATE_ATOM),

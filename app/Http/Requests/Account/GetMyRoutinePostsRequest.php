@@ -21,7 +21,7 @@ final class GetMyRoutinePostsRequest extends FormRequest
 
     public function toInput(string $accountIdentifier): GetAccountRoutinePostsInput
     {
-        return new GetAccountRoutinePostsInput($accountIdentifier, $this->positiveInteger('page', 1), $this->positiveInteger('number_of_items_per_page', 20));
+        return new GetAccountRoutinePostsInput($accountIdentifier, $this->positiveInteger('page', 1), $this->positiveInteger('number_of_items_per_page', 20), $accountIdentifier);
     }
 
     private function positiveInteger(string $key, int $default): int

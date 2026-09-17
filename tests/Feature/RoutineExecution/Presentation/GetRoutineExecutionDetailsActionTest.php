@@ -50,6 +50,7 @@ final class GetRoutineExecutionDetailsActionTest extends TestCase
                 'executed_at' => '2026-09-02T09:00:00+00:00',
                 'posted_at' => '2026-09-02T10:00:00+00:00',
                 'support_count' => 3,
+                'supported' => false,
                 'tags' => [[
                     'tag_identifier' => $tagIdentifier,
                     'tag_name' => '朝活',

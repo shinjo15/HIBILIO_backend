@@ -43,6 +43,7 @@ final class GetMySupportsTest extends TestCase
                 'postCategory' => 'action',
                 'postLikeCount' => 2,
                 'postSupportCount' => 3,
+                'supported' => true,
                 'supportedAt' => '2026-09-03T12:00:00+00:00',
             ],
             [
@@ -52,6 +53,7 @@ final class GetMySupportsTest extends TestCase
                 'postCategory' => 'action',
                 'postLikeCount' => 4,
                 'postSupportCount' => 8,
+                'supported' => true,
                 'supportedAt' => '2026-09-03T10:00:00+00:00',
             ],
         ], $result->items());
@@ -81,6 +83,7 @@ final class GetMySupportsTest extends TestCase
             'postCategory' => 'action',
             'postLikeCount' => 0,
             'postSupportCount' => 1,
+            'supported' => true,
             'supportedAt' => '2026-09-03T10:00:00+00:00',
         ]], $result->items());
     }

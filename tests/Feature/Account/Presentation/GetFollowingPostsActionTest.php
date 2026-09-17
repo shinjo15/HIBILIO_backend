@@ -37,7 +37,7 @@ final class GetFollowingPostsActionTest extends TestCase
         $this->insertPost('12121212-1212-4121-8121-121212121212', $routineIdentifier, null, 'routine', 4, '2026-09-04 10:00:00');
         $this->insertPost('13131313-1313-4131-8131-131313131313', $routineIdentifier, $routineExecutionIdentifier, 'action', 0, '2026-09-04 11:00:00');
         $this->insertPost('14141414-1414-4141-8141-141414141414', 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', null, 'routine', 9, '2026-09-04 12:00:00');
-        $this->insertLike($followingAccountIdentifier, '13131313-1313-4131-8131-131313131313');
+        $this->insertSupport($followingAccountIdentifier, '13131313-1313-4131-8131-131313131313');
 
         $this->withSession(['account_identifier' => $followingAccountIdentifier])
             ->getJson('/api/following/posts?page=1&number_of_items_per_page=20')
@@ -72,7 +72,7 @@ final class GetFollowingPostsActionTest extends TestCase
                             ],
                         ],
                         'post_like_count' => 0,
-                        'liked' => true,
+                        'supported' => true,
                         'execution_count' => 1,
                         'customization_count' => 1,
                     ],
@@ -94,6 +94,12 @@ final class GetFollowingPostsActionTest extends TestCase
                 ],
                 'total' => 2,
             ]);
+
+        $response = $this->withSession(['account_identifier' => $followingAccountIdentifier])
+            ->getJson('/api/following/posts?page=1&number_of_items_per_page=20')
+            ->assertOk();
+        self::assertArrayNotHasKey('liked', $response->json('posts.0'));
+        self::assertArrayNotHasKey('supported', $response->json('posts.1'));
     }
 
     public function test_returns_unauthorized_without_an_authenticated_account(): void
@@ -229,6 +235,16 @@ final class GetFollowingPostsActionTest extends TestCase
     private function insertLike(string $accountIdentifier, string $postIdentifier): void
     {
         DB::table('likes')->insert([
+            'account_identifier' => $accountIdentifier,
+            'post_identifier' => $postIdentifier,
+            'created_at' => '2026-09-04 09:00:00',
+            'updated_at' => '2026-09-04 09:00:00',
+        ]);
+    }
+
+    private function insertSupport(string $accountIdentifier, string $postIdentifier): void
+    {
+        DB::table('supports')->insert([
             'account_identifier' => $accountIdentifier,
             'post_identifier' => $postIdentifier,
             'created_at' => '2026-09-04 09:00:00',

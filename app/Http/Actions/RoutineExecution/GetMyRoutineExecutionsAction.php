@@ -34,6 +34,7 @@ final readonly class GetMyRoutineExecutionsAction
             'posted_at' => $item['postedAt'],
             'routine_execution_memo' => $item['routineExecutionMemo'],
             'support_count' => $item['supportCount'],
+            'supported' => $item['supported'],
         ], $result->items()), 'total' => $result->total()]);
     }
 }

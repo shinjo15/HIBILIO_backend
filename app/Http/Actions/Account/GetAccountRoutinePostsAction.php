@@ -38,6 +38,7 @@ final readonly class GetAccountRoutinePostsAction
             'tags' => array_map(static fn (array $tag): array => ['tag_identifier' => $tag['tagIdentifier'], 'tag_name' => $tag['tagName']], $post['tags']),
             'routine_actions' => array_map(static fn (array $action): array => ['routine_action_identifier' => $action['routineActionIdentifier'], 'action_name' => $action['actionName'], 'action_minutes' => $action['actionMinutes']], $post['routineActions']),
             'post_like_count' => $post['postLikeCount'], 'post_support_count' => $post['postSupportCount'],
+            'liked' => $post['liked'],
             'execution_count' => $post['executionCount'], 'customization_count' => $post['customizationCount'],
         ], $result->items()), 'total' => $result->total()]);
     }

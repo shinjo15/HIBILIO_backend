@@ -14,6 +14,7 @@ use Src\Account\Application\Usecase\Query\GetFavoriteTagPosts\GetFavoriteTagPost
 use Src\Account\Domain\ValueObject\AccountVisibility;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
+use Src\Shared\Infrastructure\Query\Post\PostInteractionState;
 
 final class GetFavoriteTagPosts implements GetFavoriteTagPostsInterface
 {
@@ -43,7 +44,6 @@ final class GetFavoriteTagPosts implements GetFavoriteTagPostsInterface
                 'routines.routine_execution_minutes',
                 'accounts.account_name',
             ])
-            ->selectSub($this->liked($input->accountIdentifier()), 'liked')
             ->selectSub($this->executionCount(), 'execution_count')
             ->selectSub($this->customizationCount(), 'customization_count')
             ->selectRaw($this->scoreExpression().' as recommendation_score')
@@ -53,6 +53,7 @@ final class GetFavoriteTagPosts implements GetFavoriteTagPostsInterface
             ->orderBy('posts.post_identifier');
 
         BlockVisibility::exclude($query, $input->accountIdentifier(), 'routines.account_identifier');
+        PostInteractionState::selectLiked($query, $input->accountIdentifier(), 'posts.post_identifier');
 
         $paginator = $query->paginate($input->numberOfItemsPerPage(), ['*'], 'page', $input->page());
 
@@ -109,14 +110,6 @@ final class GetFavoriteTagPosts implements GetFavoriteTagPostsInterface
             ->where('favorite_tags.account_identifier', $accountIdentifier)
             ->where('routine_tags.available', true)
             ->select('routine_tags.routine_identifier');
-    }
-
-    private function liked(string $accountIdentifier): mixed
-    {
-        return DB::table('likes')
-            ->selectRaw('count(*) > 0')
-            ->where('likes.account_identifier', $accountIdentifier)
-            ->whereColumn('likes.post_identifier', 'posts.post_identifier');
     }
 
     private function executionCount(): mixed

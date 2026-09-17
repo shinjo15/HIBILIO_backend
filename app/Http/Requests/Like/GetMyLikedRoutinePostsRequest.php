@@ -29,6 +29,7 @@ final class GetMyLikedRoutinePostsRequest extends FormRequest
             accountIdentifier: $accountIdentifier,
             page: $this->positiveInteger('page', 1),
             numberOfItemsPerPage: $this->positiveInteger('number_of_items_per_page', 20),
+            viewerAccountIdentifier: $accountIdentifier,
         );
     }
 
