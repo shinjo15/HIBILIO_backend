@@ -36,6 +36,12 @@ final class GetRoutineDetails implements GetRoutineDetailsInterface
             ->selectSub($this->customizationCount(), 'customization_count')
             ->selectSub($this->likeCount(), 'like_count');
 
+        if ($input->viewerAccountIdentifier() === null) {
+            $query->selectRaw('0 as liked');
+        } else {
+            $query->selectSub($this->liked($input->viewerAccountIdentifier()), 'liked');
+        }
+
         if ($input->viewerAccountIdentifier() !== null) {
             BlockVisibility::exclude($query, $input->viewerAccountIdentifier(), 'accounts.account_identifier');
         }
@@ -75,6 +81,7 @@ final class GetRoutineDetails implements GetRoutineDetailsInterface
             'executionCount' => (int) $routine->execution_count,
             'customizationCount' => (int) $routine->customization_count,
             'likeCount' => (int) $routine->like_count,
+            'liked' => (bool) $routine->liked,
             'routineActions' => $routineActions,
         ]);
     }
@@ -98,6 +105,17 @@ final class GetRoutineDetails implements GetRoutineDetailsInterface
     {
         return DB::table('posts')
             ->selectRaw('coalesce(sum(post_like_count), 0)')
+            ->whereColumn('posts.routine_identifier', 'routines.routine_identifier')
+            ->where('posts.available', true)
+            ->where('posts.post_category', 'routine');
+    }
+
+    private function liked(string $viewerAccountIdentifier): mixed
+    {
+        return DB::table('likes')
+            ->join('posts', 'likes.post_identifier', '=', 'posts.post_identifier')
+            ->selectRaw('count(*) > 0')
+            ->where('likes.account_identifier', $viewerAccountIdentifier)
             ->whereColumn('posts.routine_identifier', 'routines.routine_identifier')
             ->where('posts.available', true)
             ->where('posts.post_category', 'routine');
