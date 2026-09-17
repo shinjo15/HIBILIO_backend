@@ -43,4 +43,18 @@ final class BlockVisibility
             })
             ->exists();
     }
+
+    public static function routineIsBlocked(?string $viewerAccountIdentifier, string $routineIdentifier): bool
+    {
+        if ($viewerAccountIdentifier === null) {
+            return false;
+        }
+
+        $routineAuthorIdentifier = DB::table('routines')
+            ->where('routine_identifier', $routineIdentifier)
+            ->value('account_identifier');
+
+        return $routineAuthorIdentifier !== null
+            && self::exists($viewerAccountIdentifier, (string) $routineAuthorIdentifier);
+    }
 }

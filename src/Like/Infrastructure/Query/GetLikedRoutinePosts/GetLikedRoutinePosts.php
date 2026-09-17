@@ -11,6 +11,7 @@ use Src\Like\Application\Usecase\Query\GetLikedRoutinePosts\GetLikedRoutinePosts
 use Src\Like\Application\Usecase\Query\GetLikedRoutinePosts\GetLikedRoutinePostsInterface;
 use Src\Like\Application\Usecase\Query\GetLikedRoutinePosts\GetLikedRoutinePostsOutput;
 use Src\Like\Application\Usecase\Query\GetLikedRoutinePosts\GetLikedRoutinePostsOutputPort;
+use Src\Shared\Domain\Exception\BlockedAccountVisibilityException;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
 
@@ -20,6 +21,10 @@ final class GetLikedRoutinePosts implements GetLikedRoutinePostsInterface
 
     public function execute(GetLikedRoutinePostsInputPort $input): GetLikedRoutinePostsOutputPort
     {
+        if ($input->viewerAccountIdentifier() !== null && BlockVisibility::exists($input->viewerAccountIdentifier(), $input->accountIdentifier())) {
+            throw new BlockedAccountVisibilityException;
+        }
+
         $query = DB::table('likes')
             ->join('posts', 'likes.post_identifier', '=', 'posts.post_identifier')
             ->join('routines', 'posts.routine_identifier', '=', 'routines.routine_identifier')

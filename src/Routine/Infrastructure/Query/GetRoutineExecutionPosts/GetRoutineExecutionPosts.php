@@ -11,6 +11,7 @@ use Src\Routine\Application\Usecase\Query\GetRoutineExecutionPosts\GetRoutineExe
 use Src\Routine\Application\Usecase\Query\GetRoutineExecutionPosts\GetRoutineExecutionPostsInterface;
 use Src\Routine\Application\Usecase\Query\GetRoutineExecutionPosts\GetRoutineExecutionPostsOutput;
 use Src\Routine\Application\Usecase\Query\GetRoutineExecutionPosts\GetRoutineExecutionPostsOutputPort;
+use Src\Shared\Domain\Exception\BlockedAccountVisibilityException;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
 
@@ -20,6 +21,10 @@ final class GetRoutineExecutionPosts implements GetRoutineExecutionPostsInterfac
 
     public function execute(GetRoutineExecutionPostsInputPort $input): GetRoutineExecutionPostsOutputPort
     {
+        if (BlockVisibility::routineIsBlocked($input->viewerAccountIdentifier(), $input->routineIdentifier())) {
+            throw new BlockedAccountVisibilityException;
+        }
+
         $query = DB::table('posts')
             ->join('routine_executions', 'posts.routine_execution_identifier', '=', 'routine_executions.routine_execution_identifier')
             ->join('routines', 'routine_executions.routine_identifier', '=', 'routines.routine_identifier')

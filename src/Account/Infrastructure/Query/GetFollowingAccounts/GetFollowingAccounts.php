@@ -10,6 +10,7 @@ use Src\Account\Application\Usecase\Query\GetFollowingAccounts\GetFollowingAccou
 use Src\Account\Application\Usecase\Query\GetFollowingAccounts\GetFollowingAccountsInterface;
 use Src\Account\Application\Usecase\Query\GetFollowingAccounts\GetFollowingAccountsOutput;
 use Src\Account\Application\Usecase\Query\GetFollowingAccounts\GetFollowingAccountsOutputPort;
+use Src\Shared\Domain\Exception\BlockedAccountVisibilityException;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
 
@@ -19,6 +20,10 @@ final class GetFollowingAccounts implements GetFollowingAccountsInterface
 
     public function execute(GetFollowingAccountsInputPort $input): GetFollowingAccountsOutputPort
     {
+        if ($input->viewerAccountIdentifier() !== null && BlockVisibility::exists($input->viewerAccountIdentifier(), $input->accountIdentifier())) {
+            throw new BlockedAccountVisibilityException;
+        }
+
         $query = DB::table('follows')
             ->join('accounts', 'follows.followed_account_identifier', '=', 'accounts.account_identifier')
             ->where('follows.following_account_identifier', $input->accountIdentifier())

@@ -9,11 +9,11 @@ use Illuminate\Http\JsonResponse;
 use RuntimeException;
 use Src\Account\Application\Usecase\Query\GetAccountRoutinePosts\GetAccountRoutinePostsInterface;
 use Src\Shared\Application\Service\AuthServiceInterface;
-use Src\Shared\Application\Service\BlockVisibilityServiceInterface;
+use Src\Shared\Domain\Exception\BlockedAccountVisibilityException;
 
 final readonly class GetAccountRoutinePostsAction
 {
-    public function __construct(private GetAccountRoutinePostsInterface $getAccountRoutinePosts, private AuthServiceInterface $authService, private BlockVisibilityServiceInterface $blockVisibilityService) {}
+    public function __construct(private GetAccountRoutinePostsInterface $getAccountRoutinePosts, private AuthServiceInterface $authService) {}
 
     public function __invoke(GetAccountRoutinePostsRequest $request): JsonResponse
     {
@@ -23,11 +23,11 @@ final readonly class GetAccountRoutinePostsAction
             $viewerAccountIdentifier = null;
         }
 
-        if (! $this->blockVisibilityService->accountIsVisible($viewerAccountIdentifier, (string) $request->route('account_identifier'))) {
+        try {
+            $result = $this->getAccountRoutinePosts->execute($request->toInput($viewerAccountIdentifier));
+        } catch (BlockedAccountVisibilityException) {
             return new JsonResponse([], 404);
         }
-
-        $result = $this->getAccountRoutinePosts->execute($request->toInput($viewerAccountIdentifier));
 
         return new JsonResponse(['items' => array_map(static fn (array $post): array => [
             'post_identifier' => $post['postIdentifier'], 'routine_identifier' => $post['routineIdentifier'],

@@ -9,11 +9,11 @@ use Illuminate\Http\JsonResponse;
 use RuntimeException;
 use Src\RoutineExecution\Application\Usecase\Query\GetAccountRoutineExecutions\GetAccountRoutineExecutionsInterface;
 use Src\Shared\Application\Service\AuthServiceInterface;
-use Src\Shared\Application\Service\BlockVisibilityServiceInterface;
+use Src\Shared\Domain\Exception\BlockedAccountVisibilityException;
 
 final readonly class GetAccountRoutineExecutionsAction
 {
-    public function __construct(private GetAccountRoutineExecutionsInterface $query, private AuthServiceInterface $authService, private BlockVisibilityServiceInterface $blockVisibilityService) {}
+    public function __construct(private GetAccountRoutineExecutionsInterface $query, private AuthServiceInterface $authService) {}
 
     public function __invoke(GetAccountRoutineExecutionsRequest $request): JsonResponse
     {
@@ -23,11 +23,11 @@ final readonly class GetAccountRoutineExecutionsAction
             $viewerAccountIdentifier = null;
         }
 
-        if (! $this->blockVisibilityService->accountIsVisible($viewerAccountIdentifier, (string) $request->route('account_identifier'))) {
+        try {
+            $result = $this->query->execute($request->toInput($viewerAccountIdentifier));
+        } catch (BlockedAccountVisibilityException) {
             return new JsonResponse([], 404);
         }
-
-        $result = $this->query->execute($request->toInput($viewerAccountIdentifier));
 
         return new JsonResponse(['items' => array_map(static fn (array $item): array => [
             'routine_execution_identifier' => $item['routineExecutionIdentifier'],

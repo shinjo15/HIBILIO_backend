@@ -6,6 +6,9 @@ namespace Tests\Feature\Account\Presentation;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Src\Routine\Application\Usecase\Query\GetCustomizedRoutines\GetCustomizedRoutinesInput;
+use Src\Routine\Application\Usecase\Query\GetCustomizedRoutines\GetCustomizedRoutinesInterface;
+use Src\Shared\Domain\Exception\BlockedAccountVisibilityException;
 use Tests\Support\InteractsWithAccountImageUrlService;
 use Tests\TestCase;
 
@@ -53,6 +56,26 @@ final class BlockVisibilityActionTest extends TestCase
                 ->getJson($url)
                 ->assertNotFound();
         }
+    }
+
+    public function test_throws_a_visibility_exception_when_the_customized_routines_parent_author_is_blocked(): void
+    {
+        $viewerIdentifier = '11111111-1111-4111-8111-111111111111';
+        $authorIdentifier = '22222222-2222-4222-8222-222222222222';
+        $routineIdentifier = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+        $this->account($viewerIdentifier, '閲覧者');
+        $this->account($authorIdentifier, 'Routine作成者');
+        $this->routine($routineIdentifier, $authorIdentifier, null, '対象Routine');
+        $this->block($authorIdentifier, $viewerIdentifier);
+
+        $this->expectException(BlockedAccountVisibilityException::class);
+
+        $this->app->make(GetCustomizedRoutinesInterface::class)->execute(new GetCustomizedRoutinesInput(
+            parentRoutineIdentifier: $routineIdentifier,
+            page: 1,
+            numberOfItemsPerPage: 20,
+            viewerAccountIdentifier: $viewerIdentifier,
+        ));
     }
 
     public function test_excludes_blocked_execution_and_customization_authors_from_routine_lists(): void

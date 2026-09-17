@@ -10,6 +10,7 @@ use Src\Routine\Application\Usecase\Query\GetCustomizedRoutines\GetCustomizedRou
 use Src\Routine\Application\Usecase\Query\GetCustomizedRoutines\GetCustomizedRoutinesInterface;
 use Src\Routine\Application\Usecase\Query\GetCustomizedRoutines\GetCustomizedRoutinesOutput;
 use Src\Routine\Application\Usecase\Query\GetCustomizedRoutines\GetCustomizedRoutinesOutputPort;
+use Src\Shared\Domain\Exception\BlockedAccountVisibilityException;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
 
@@ -19,6 +20,10 @@ final class GetCustomizedRoutines implements GetCustomizedRoutinesInterface
 
     public function execute(GetCustomizedRoutinesInputPort $input): GetCustomizedRoutinesOutputPort
     {
+        if (BlockVisibility::routineIsBlocked($input->viewerAccountIdentifier(), $input->parentRoutineIdentifier())) {
+            throw new BlockedAccountVisibilityException;
+        }
+
         $parentRoutineQuery = DB::table('routines')
             ->join('accounts', 'routines.account_identifier', '=', 'accounts.account_identifier')
             ->where('routines.routine_identifier', $input->parentRoutineIdentifier())

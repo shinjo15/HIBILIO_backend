@@ -9,14 +9,13 @@ use Illuminate\Http\JsonResponse;
 use RuntimeException;
 use Src\Like\Application\Usecase\Query\GetLikedRoutinePosts\GetLikedRoutinePostsInterface;
 use Src\Shared\Application\Service\AuthServiceInterface;
-use Src\Shared\Application\Service\BlockVisibilityServiceInterface;
+use Src\Shared\Domain\Exception\BlockedAccountVisibilityException;
 
 final readonly class GetAccountLikedRoutinePostsAction
 {
     public function __construct(
         private GetLikedRoutinePostsInterface $getLikedRoutinePosts,
         private AuthServiceInterface $authService,
-        private BlockVisibilityServiceInterface $blockVisibilityService,
     ) {}
 
     public function __invoke(GetAccountLikedRoutinePostsRequest $request): JsonResponse
@@ -27,11 +26,11 @@ final readonly class GetAccountLikedRoutinePostsAction
             $viewerAccountIdentifier = null;
         }
 
-        if (! $this->blockVisibilityService->accountIsVisible($viewerAccountIdentifier, (string) $request->route('account_identifier'))) {
+        try {
+            $result = $this->getLikedRoutinePosts->execute($request->toInput($viewerAccountIdentifier));
+        } catch (BlockedAccountVisibilityException) {
             return new JsonResponse([], 404);
         }
-
-        $result = $this->getLikedRoutinePosts->execute($request->toInput($viewerAccountIdentifier));
 
         return new JsonResponse([
             'items' => array_map(static fn (array $item): array => [
