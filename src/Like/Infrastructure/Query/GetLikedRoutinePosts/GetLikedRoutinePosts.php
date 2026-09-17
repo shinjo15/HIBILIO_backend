@@ -12,6 +12,7 @@ use Src\Like\Application\Usecase\Query\GetLikedRoutinePosts\GetLikedRoutinePosts
 use Src\Like\Application\Usecase\Query\GetLikedRoutinePosts\GetLikedRoutinePostsOutput;
 use Src\Like\Application\Usecase\Query\GetLikedRoutinePosts\GetLikedRoutinePostsOutputPort;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
+use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
 
 final class GetLikedRoutinePosts implements GetLikedRoutinePostsInterface
 {
@@ -19,7 +20,7 @@ final class GetLikedRoutinePosts implements GetLikedRoutinePostsInterface
 
     public function execute(GetLikedRoutinePostsInputPort $input): GetLikedRoutinePostsOutputPort
     {
-        $paginator = DB::table('likes')
+        $query = DB::table('likes')
             ->join('posts', 'likes.post_identifier', '=', 'posts.post_identifier')
             ->join('routines', 'posts.routine_identifier', '=', 'routines.routine_identifier')
             ->join('accounts', 'routines.account_identifier', '=', 'accounts.account_identifier')
@@ -44,8 +45,13 @@ final class GetLikedRoutinePosts implements GetLikedRoutinePostsInterface
             ->selectSub($this->executionCount(), 'execution_count')
             ->selectSub($this->customizationCount(), 'customization_count')
             ->orderByDesc('likes.created_at')
-            ->orderBy('likes.post_identifier')
-            ->paginate($input->numberOfItemsPerPage(), ['*'], 'page', $input->page());
+            ->orderBy('likes.post_identifier');
+
+        if ($input->viewerAccountIdentifier() !== null) {
+            BlockVisibility::exclude($query, $input->viewerAccountIdentifier(), 'accounts.account_identifier');
+        }
+
+        $paginator = $query->paginate($input->numberOfItemsPerPage(), ['*'], 'page', $input->page());
 
         $routineIdentifiers = $paginator->getCollection()
             ->pluck('routine_identifier')

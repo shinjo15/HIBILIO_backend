@@ -19,8 +19,8 @@ final class GetAccountRoutineExecutionsRequest extends FormRequest
         return ['page' => ['nullable', 'integer', 'min:1'], 'number_of_items_per_page' => ['nullable', 'integer', 'min:1']];
     }
 
-    public function toInput(): GetAccountRoutineExecutionsInput
+    public function toInput(?string $viewerAccountIdentifier = null): GetAccountRoutineExecutionsInput
     {
-        return new GetAccountRoutineExecutionsInput((string) $this->route('account_identifier'), $this->integer('page', 1), $this->integer('number_of_items_per_page', 20));
+        return new GetAccountRoutineExecutionsInput((string) $this->route('account_identifier'), $this->integer('page', 1), $this->integer('number_of_items_per_page', 20), $viewerAccountIdentifier);
     }
 }

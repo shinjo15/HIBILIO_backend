@@ -6,17 +6,32 @@ namespace App\Http\Actions\Like;
 
 use App\Http\Requests\Like\GetAccountLikedRoutinePostsRequest;
 use Illuminate\Http\JsonResponse;
+use RuntimeException;
 use Src\Like\Application\Usecase\Query\GetLikedRoutinePosts\GetLikedRoutinePostsInterface;
+use Src\Shared\Application\Service\AuthServiceInterface;
+use Src\Shared\Application\Service\BlockVisibilityServiceInterface;
 
 final readonly class GetAccountLikedRoutinePostsAction
 {
     public function __construct(
         private GetLikedRoutinePostsInterface $getLikedRoutinePosts,
+        private AuthServiceInterface $authService,
+        private BlockVisibilityServiceInterface $blockVisibilityService,
     ) {}
 
     public function __invoke(GetAccountLikedRoutinePostsRequest $request): JsonResponse
     {
-        $result = $this->getLikedRoutinePosts->execute($request->toInput());
+        try {
+            $viewerAccountIdentifier = $this->authService->accountIdentifier();
+        } catch (RuntimeException) {
+            $viewerAccountIdentifier = null;
+        }
+
+        if (! $this->blockVisibilityService->accountIsVisible($viewerAccountIdentifier, (string) $request->route('account_identifier'))) {
+            return new JsonResponse([], 404);
+        }
+
+        $result = $this->getLikedRoutinePosts->execute($request->toInput($viewerAccountIdentifier));
 
         return new JsonResponse([
             'items' => array_map(static fn (array $item): array => [

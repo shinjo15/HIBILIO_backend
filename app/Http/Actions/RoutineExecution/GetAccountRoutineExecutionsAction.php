@@ -6,15 +6,28 @@ namespace App\Http\Actions\RoutineExecution;
 
 use App\Http\Requests\RoutineExecution\GetAccountRoutineExecutionsRequest;
 use Illuminate\Http\JsonResponse;
+use RuntimeException;
 use Src\RoutineExecution\Application\Usecase\Query\GetAccountRoutineExecutions\GetAccountRoutineExecutionsInterface;
+use Src\Shared\Application\Service\AuthServiceInterface;
+use Src\Shared\Application\Service\BlockVisibilityServiceInterface;
 
 final readonly class GetAccountRoutineExecutionsAction
 {
-    public function __construct(private GetAccountRoutineExecutionsInterface $query) {}
+    public function __construct(private GetAccountRoutineExecutionsInterface $query, private AuthServiceInterface $authService, private BlockVisibilityServiceInterface $blockVisibilityService) {}
 
     public function __invoke(GetAccountRoutineExecutionsRequest $request): JsonResponse
     {
-        $result = $this->query->execute($request->toInput());
+        try {
+            $viewerAccountIdentifier = $this->authService->accountIdentifier();
+        } catch (RuntimeException) {
+            $viewerAccountIdentifier = null;
+        }
+
+        if (! $this->blockVisibilityService->accountIsVisible($viewerAccountIdentifier, (string) $request->route('account_identifier'))) {
+            return new JsonResponse([], 404);
+        }
+
+        $result = $this->query->execute($request->toInput($viewerAccountIdentifier));
 
         return new JsonResponse(['items' => array_map(static fn (array $item): array => [
             'routine_execution_identifier' => $item['routineExecutionIdentifier'],

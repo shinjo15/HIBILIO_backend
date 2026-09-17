@@ -12,6 +12,7 @@ use Src\RoutineExecution\Application\Usecase\Query\GetRoutineExecutionDetails\Ge
 use Src\RoutineExecution\Application\Usecase\Query\GetRoutineExecutionDetails\GetRoutineExecutionDetailsOutput;
 use Src\RoutineExecution\Application\Usecase\Query\GetRoutineExecutionDetails\GetRoutineExecutionDetailsOutputPort;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
+use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
 
 final class GetRoutineExecutionDetails implements GetRoutineExecutionDetailsInterface
 {
@@ -47,9 +48,8 @@ final class GetRoutineExecutionDetails implements GetRoutineExecutionDetailsInte
             ]);
 
         if ($input->accountIdentifier() !== null) {
-            $query
-                ->whereNotExists($this->blockExists($input->accountIdentifier(), 'accounts.account_identifier'))
-                ->whereNotExists($this->blockExists($input->accountIdentifier(), 'routine_authors.account_identifier'));
+            BlockVisibility::exclude($query, $input->accountIdentifier(), 'accounts.account_identifier');
+            BlockVisibility::exclude($query, $input->accountIdentifier(), 'routine_authors.account_identifier');
         }
 
         $details = $query->first();
@@ -73,22 +73,6 @@ final class GetRoutineExecutionDetails implements GetRoutineExecutionDetailsInte
             'tags' => $this->tags((string) $details->routine_identifier),
             'routineExecutionActions' => $this->actions((string) $details->routine_execution_identifier),
         ]);
-    }
-
-    private function blockExists(string $accountIdentifier, string $targetAccountIdentifierColumn): \Closure
-    {
-        return static function ($query) use ($accountIdentifier, $targetAccountIdentifierColumn): void {
-            $query->selectRaw('1')
-                ->from('blocks')
-                ->where(static function ($query) use ($accountIdentifier, $targetAccountIdentifierColumn): void {
-                    $query->where('blocks.blocking_account_identifier', $accountIdentifier)
-                        ->whereColumn('blocks.blocked_account_identifier', $targetAccountIdentifierColumn);
-                })
-                ->orWhere(static function ($query) use ($accountIdentifier, $targetAccountIdentifierColumn): void {
-                    $query->where('blocks.blocked_account_identifier', $accountIdentifier)
-                        ->whereColumn('blocks.blocking_account_identifier', $targetAccountIdentifierColumn);
-                });
-        };
     }
 
     /** @return list<array{tagIdentifier: string, tagName: string}> */

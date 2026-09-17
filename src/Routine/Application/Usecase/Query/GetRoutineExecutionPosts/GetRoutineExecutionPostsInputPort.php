@@ -8,6 +8,8 @@ interface GetRoutineExecutionPostsInputPort
 {
     public function routineIdentifier(): string;
 
+    public function viewerAccountIdentifier(): ?string;
+
     public function page(): int;
 
     public function numberOfItemsPerPage(): int;

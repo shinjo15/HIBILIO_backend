@@ -12,6 +12,7 @@ use Src\Account\Application\Usecase\Query\GetAccountRoutinePosts\GetAccountRouti
 use Src\Account\Application\Usecase\Query\GetAccountRoutinePosts\GetAccountRoutinePostsOutput;
 use Src\Account\Application\Usecase\Query\GetAccountRoutinePosts\GetAccountRoutinePostsOutputPort;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
+use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
 
 final class GetAccountRoutinePosts implements GetAccountRoutinePostsInterface
 {
@@ -19,7 +20,7 @@ final class GetAccountRoutinePosts implements GetAccountRoutinePostsInterface
 
     public function execute(GetAccountRoutinePostsInputPort $input): GetAccountRoutinePostsOutputPort
     {
-        $paginator = DB::table('posts')
+        $query = DB::table('posts')
             ->join('routines', 'posts.routine_identifier', '=', 'routines.routine_identifier')
             ->join('accounts', 'routines.account_identifier', '=', 'accounts.account_identifier')
             ->where('routines.account_identifier', $input->accountIdentifier())
@@ -37,8 +38,13 @@ final class GetAccountRoutinePosts implements GetAccountRoutinePostsInterface
             ->selectSub($this->executionCount(), 'execution_count')
             ->selectSub($this->customizationCount(), 'customization_count')
             ->orderByDesc('posts.created_at')
-            ->orderBy('posts.post_identifier')
-            ->paginate($input->numberOfItemsPerPage(), ['*'], 'page', $input->page());
+            ->orderBy('posts.post_identifier');
+
+        if ($input->viewerAccountIdentifier() !== null) {
+            BlockVisibility::exclude($query, $input->viewerAccountIdentifier(), 'accounts.account_identifier');
+        }
+
+        $paginator = $query->paginate($input->numberOfItemsPerPage(), ['*'], 'page', $input->page());
 
         $routineIdentifiers = $paginator->getCollection()->pluck('routine_identifier')
             ->map(static fn (mixed $identifier): string => (string) $identifier)->unique()->values()->all();

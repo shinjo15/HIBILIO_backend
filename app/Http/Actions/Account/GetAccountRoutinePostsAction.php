@@ -6,15 +6,28 @@ namespace App\Http\Actions\Account;
 
 use App\Http\Requests\Account\GetAccountRoutinePostsRequest;
 use Illuminate\Http\JsonResponse;
+use RuntimeException;
 use Src\Account\Application\Usecase\Query\GetAccountRoutinePosts\GetAccountRoutinePostsInterface;
+use Src\Shared\Application\Service\AuthServiceInterface;
+use Src\Shared\Application\Service\BlockVisibilityServiceInterface;
 
 final readonly class GetAccountRoutinePostsAction
 {
-    public function __construct(private GetAccountRoutinePostsInterface $getAccountRoutinePosts) {}
+    public function __construct(private GetAccountRoutinePostsInterface $getAccountRoutinePosts, private AuthServiceInterface $authService, private BlockVisibilityServiceInterface $blockVisibilityService) {}
 
     public function __invoke(GetAccountRoutinePostsRequest $request): JsonResponse
     {
-        $result = $this->getAccountRoutinePosts->execute($request->toInput());
+        try {
+            $viewerAccountIdentifier = $this->authService->accountIdentifier();
+        } catch (RuntimeException) {
+            $viewerAccountIdentifier = null;
+        }
+
+        if (! $this->blockVisibilityService->accountIsVisible($viewerAccountIdentifier, (string) $request->route('account_identifier'))) {
+            return new JsonResponse([], 404);
+        }
+
+        $result = $this->getAccountRoutinePosts->execute($request->toInput($viewerAccountIdentifier));
 
         return new JsonResponse(['items' => array_map(static fn (array $post): array => [
             'post_identifier' => $post['postIdentifier'], 'routine_identifier' => $post['routineIdentifier'],

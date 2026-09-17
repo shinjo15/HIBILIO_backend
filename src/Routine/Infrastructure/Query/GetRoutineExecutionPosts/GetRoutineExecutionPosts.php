@@ -12,6 +12,7 @@ use Src\Routine\Application\Usecase\Query\GetRoutineExecutionPosts\GetRoutineExe
 use Src\Routine\Application\Usecase\Query\GetRoutineExecutionPosts\GetRoutineExecutionPostsOutput;
 use Src\Routine\Application\Usecase\Query\GetRoutineExecutionPosts\GetRoutineExecutionPostsOutputPort;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
+use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
 
 final class GetRoutineExecutionPosts implements GetRoutineExecutionPostsInterface
 {
@@ -19,7 +20,7 @@ final class GetRoutineExecutionPosts implements GetRoutineExecutionPostsInterfac
 
     public function execute(GetRoutineExecutionPostsInputPort $input): GetRoutineExecutionPostsOutputPort
     {
-        $paginator = DB::table('posts')
+        $query = DB::table('posts')
             ->join('routine_executions', 'posts.routine_execution_identifier', '=', 'routine_executions.routine_execution_identifier')
             ->join('routines', 'routine_executions.routine_identifier', '=', 'routines.routine_identifier')
             ->join('accounts', 'routine_executions.executor_account_identifier', '=', 'accounts.account_identifier')
@@ -45,8 +46,13 @@ final class GetRoutineExecutionPosts implements GetRoutineExecutionPostsInterfac
                 'executed_action_count',
             )
             ->orderByDesc('posts.created_at')
-            ->orderBy('posts.post_identifier')
-            ->paginate($input->numberOfItemsPerPage(), ['*'], 'page', $input->page());
+            ->orderBy('posts.post_identifier');
+
+        if ($input->viewerAccountIdentifier() !== null) {
+            BlockVisibility::exclude($query, $input->viewerAccountIdentifier(), 'accounts.account_identifier');
+        }
+
+        $paginator = $query->paginate($input->numberOfItemsPerPage(), ['*'], 'page', $input->page());
 
         $items = $paginator->getCollection()
             ->map(fn (object $record): array => [

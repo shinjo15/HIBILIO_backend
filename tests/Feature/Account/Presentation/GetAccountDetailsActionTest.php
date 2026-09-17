@@ -46,6 +46,28 @@ final class GetAccountDetailsActionTest extends TestCase
         $this->getJson("/api/accounts/{$permanentlyBannedAccountIdentifier}")->assertNotFound();
     }
 
+    public function test_returns_not_found_to_both_sides_of_a_block_relationship_while_anonymous_access_remains_public(): void
+    {
+        $viewerIdentifier = '11111111-1111-4111-8111-111111111111';
+        $targetIdentifier = '22222222-2222-4222-8222-222222222222';
+        $this->insertAccount($viewerIdentifier, true, 'active', '閲覧者', null);
+        $this->insertAccount($targetIdentifier, true, 'active', '対象', null);
+        DB::table('blocks')->insert([
+            'blocking_account_identifier' => $targetIdentifier,
+            'blocked_account_identifier' => $viewerIdentifier,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->getJson("/api/accounts/{$targetIdentifier}")->assertOk();
+        $this->withSession(['account_identifier' => $viewerIdentifier])
+            ->getJson("/api/accounts/{$targetIdentifier}")
+            ->assertNotFound();
+        $this->withSession(['account_identifier' => $targetIdentifier])
+            ->getJson("/api/accounts/{$viewerIdentifier}")
+            ->assertNotFound();
+    }
+
     public function test_returns_image_urls_without_exposing_storage_keys(): void
     {
         $accountIdentifier = '11111111-1111-4111-8111-111111111111';

@@ -11,6 +11,7 @@ use Src\Account\Application\Usecase\Query\GetAccountDetails\GetAccountDetailsInt
 use Src\Account\Application\Usecase\Query\GetAccountDetails\GetAccountDetailsOutput;
 use Src\Account\Application\Usecase\Query\GetAccountDetails\GetAccountDetailsOutputPort;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
+use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
 
 final class GetAccountDetails implements GetAccountDetailsInterface
 {
@@ -18,11 +19,16 @@ final class GetAccountDetails implements GetAccountDetailsInterface
 
     public function execute(GetAccountDetailsInputPort $input): GetAccountDetailsOutputPort
     {
-        $account = DB::table('accounts')
+        $query = DB::table('accounts')
             ->where('account_identifier', $input->accountIdentifier())
             ->where('available', true)
-            ->where('status', 'active')
-            ->first(['account_identifier', 'account_name', 'account_bio', 'ui_mode']);
+            ->where('status', 'active');
+
+        if ($input->viewerAccountIdentifier() !== null) {
+            BlockVisibility::exclude($query, $input->viewerAccountIdentifier(), 'accounts.account_identifier');
+        }
+
+        $account = $query->first(['account_identifier', 'account_name', 'account_bio', 'ui_mode']);
 
         if ($account === null) {
             return new GetAccountDetailsOutput(null);

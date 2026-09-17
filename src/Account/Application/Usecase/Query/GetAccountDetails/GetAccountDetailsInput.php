@@ -8,10 +8,16 @@ final readonly class GetAccountDetailsInput implements GetAccountDetailsInputPor
 {
     public function __construct(
         private string $accountIdentifier,
+        private ?string $viewerAccountIdentifier = null,
     ) {}
 
     public function accountIdentifier(): string
     {
         return $this->accountIdentifier;
+    }
+
+    public function viewerAccountIdentifier(): ?string
+    {
+        return $this->viewerAccountIdentifier;
     }
 }

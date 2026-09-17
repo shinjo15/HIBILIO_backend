@@ -12,6 +12,7 @@ use Src\RoutineExecution\Application\Usecase\Query\GetAccountRoutineExecutions\G
 use Src\RoutineExecution\Application\Usecase\Query\GetAccountRoutineExecutions\GetAccountRoutineExecutionsOutput;
 use Src\RoutineExecution\Application\Usecase\Query\GetAccountRoutineExecutions\GetAccountRoutineExecutionsOutputPort;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
+use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
 
 final class GetAccountRoutineExecutions implements GetAccountRoutineExecutionsInterface
 {
@@ -19,7 +20,7 @@ final class GetAccountRoutineExecutions implements GetAccountRoutineExecutionsIn
 
     public function execute(GetAccountRoutineExecutionsInputPort $input): GetAccountRoutineExecutionsOutputPort
     {
-        $paginator = DB::table('posts')
+        $query = DB::table('posts')
             ->join('routine_executions', 'posts.routine_execution_identifier', '=', 'routine_executions.routine_execution_identifier')
             ->join('routines', 'routine_executions.routine_identifier', '=', 'routines.routine_identifier')
             ->join('accounts', 'routine_executions.executor_account_identifier', '=', 'accounts.account_identifier')
@@ -32,8 +33,13 @@ final class GetAccountRoutineExecutions implements GetAccountRoutineExecutionsIn
             ->where('accounts.status', 'active')
             ->select(['routine_executions.routine_execution_identifier', 'routine_executions.routine_identifier', 'routine_executions.routine_execution_memo', 'routines.routine_name', 'accounts.account_identifier', 'accounts.account_name', 'posts.created_at as posted_at', 'posts.post_support_count'])
             ->selectSub(DB::table('routine_execution_actions')->selectRaw('count(*)')->whereColumn('routine_execution_actions.routine_execution_identifier', 'routine_executions.routine_execution_identifier'), 'executed_action_count')
-            ->orderByDesc('posts.created_at')->orderBy('posts.post_identifier')
-            ->paginate($input->numberOfItemsPerPage(), ['*'], 'page', $input->page());
+            ->orderByDesc('posts.created_at')->orderBy('posts.post_identifier');
+
+        if ($input->viewerAccountIdentifier() !== null) {
+            BlockVisibility::exclude($query, $input->viewerAccountIdentifier(), 'accounts.account_identifier');
+        }
+
+        $paginator = $query->paginate($input->numberOfItemsPerPage(), ['*'], 'page', $input->page());
 
         $items = $paginator->getCollection()->map(fn (object $record): array => [
             'routineExecutionIdentifier' => (string) $record->routine_execution_identifier,

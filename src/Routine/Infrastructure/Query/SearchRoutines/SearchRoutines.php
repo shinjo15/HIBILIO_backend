@@ -13,6 +13,7 @@ use Src\Routine\Application\Usecase\Query\SearchRoutines\SearchRoutinesInterface
 use Src\Routine\Application\Usecase\Query\SearchRoutines\SearchRoutinesOutput;
 use Src\Routine\Application\Usecase\Query\SearchRoutines\SearchRoutinesOutputPort;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
+use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
 
 final class SearchRoutines implements SearchRoutinesInterface
 {
@@ -107,24 +108,8 @@ final class SearchRoutines implements SearchRoutinesInterface
         }
 
         if ($input->accountIdentifier() !== null) {
-            $query->whereNotExists($this->blockExists($input->accountIdentifier(), $accountIdentifierColumn));
+            BlockVisibility::exclude($query, $input->accountIdentifier(), $accountIdentifierColumn);
         }
-    }
-
-    private function blockExists(string $accountIdentifier, string $accountIdentifierColumn): \Closure
-    {
-        return static function ($query) use ($accountIdentifier, $accountIdentifierColumn): void {
-            $query->selectRaw('1')
-                ->from('blocks')
-                ->where(static function ($query) use ($accountIdentifier, $accountIdentifierColumn): void {
-                    $query->where('blocks.blocking_account_identifier', $accountIdentifier)
-                        ->whereColumn('blocks.blocked_account_identifier', $accountIdentifierColumn);
-                })
-                ->orWhere(static function ($query) use ($accountIdentifier, $accountIdentifierColumn): void {
-                    $query->where('blocks.blocked_account_identifier', $accountIdentifier)
-                        ->whereColumn('blocks.blocking_account_identifier', $accountIdentifierColumn);
-                });
-        };
     }
 
     /**

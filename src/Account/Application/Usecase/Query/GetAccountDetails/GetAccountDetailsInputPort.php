@@ -7,4 +7,6 @@ namespace Src\Account\Application\Usecase\Query\GetAccountDetails;
 interface GetAccountDetailsInputPort
 {
     public function accountIdentifier(): string;
+
+    public function viewerAccountIdentifier(): ?string;
 }

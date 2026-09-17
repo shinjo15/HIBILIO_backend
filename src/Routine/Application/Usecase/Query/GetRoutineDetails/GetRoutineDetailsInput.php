@@ -8,10 +8,16 @@ final readonly class GetRoutineDetailsInput implements GetRoutineDetailsInputPor
 {
     public function __construct(
         private string $routineIdentifier,
+        private ?string $viewerAccountIdentifier = null,
     ) {}
 
     public function routineIdentifier(): string
     {
         return $this->routineIdentifier;
+    }
+
+    public function viewerAccountIdentifier(): ?string
+    {
+        return $this->viewerAccountIdentifier;
     }
 }

@@ -11,6 +11,7 @@ use Src\Routine\Application\Usecase\Query\GetCustomizedRoutines\GetCustomizedRou
 use Src\Routine\Application\Usecase\Query\GetCustomizedRoutines\GetCustomizedRoutinesOutput;
 use Src\Routine\Application\Usecase\Query\GetCustomizedRoutines\GetCustomizedRoutinesOutputPort;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
+use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
 
 final class GetCustomizedRoutines implements GetCustomizedRoutinesInterface
 {
@@ -18,19 +19,24 @@ final class GetCustomizedRoutines implements GetCustomizedRoutinesInterface
 
     public function execute(GetCustomizedRoutinesInputPort $input): GetCustomizedRoutinesOutputPort
     {
-        $parentRoutineExists = DB::table('routines')
+        $parentRoutineQuery = DB::table('routines')
             ->join('accounts', 'routines.account_identifier', '=', 'accounts.account_identifier')
             ->where('routines.routine_identifier', $input->parentRoutineIdentifier())
             ->where('routines.available', true)
             ->where('accounts.available', true)
-            ->where('accounts.status', 'active')
-            ->exists();
+            ->where('accounts.status', 'active');
+
+        if ($input->viewerAccountIdentifier() !== null) {
+            BlockVisibility::exclude($parentRoutineQuery, $input->viewerAccountIdentifier(), 'accounts.account_identifier');
+        }
+
+        $parentRoutineExists = $parentRoutineQuery->exists();
 
         if (! $parentRoutineExists) {
             return new GetCustomizedRoutinesOutput([], 0, false);
         }
 
-        $paginator = DB::table('routines')
+        $query = DB::table('routines')
             ->join('accounts', 'routines.account_identifier', '=', 'accounts.account_identifier')
             ->where('routines.parent_routine_identifier', $input->parentRoutineIdentifier())
             ->where('routines.available', true)
@@ -48,8 +54,13 @@ final class GetCustomizedRoutines implements GetCustomizedRoutinesInterface
             ->selectSub($this->customizationCount(), 'customization_count')
             ->selectSub($this->likeCount(), 'like_count')
             ->orderByDesc('routines.created_at')
-            ->orderBy('routines.routine_identifier')
-            ->paginate($input->numberOfItemsPerPage(), ['*'], 'page', $input->page());
+            ->orderBy('routines.routine_identifier');
+
+        if ($input->viewerAccountIdentifier() !== null) {
+            BlockVisibility::exclude($query, $input->viewerAccountIdentifier(), 'accounts.account_identifier');
+        }
+
+        $paginator = $query->paginate($input->numberOfItemsPerPage(), ['*'], 'page', $input->page());
 
         $items = $paginator->getCollection()
             ->map(fn (object $routine): array => [

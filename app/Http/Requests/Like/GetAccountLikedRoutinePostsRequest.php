@@ -23,12 +23,13 @@ final class GetAccountLikedRoutinePostsRequest extends FormRequest
         ];
     }
 
-    public function toInput(): GetLikedRoutinePostsInput
+    public function toInput(?string $viewerAccountIdentifier = null): GetLikedRoutinePostsInput
     {
         return new GetLikedRoutinePostsInput(
             accountIdentifier: (string) $this->route('account_identifier'),
             page: $this->positiveInteger('page', 1),
             numberOfItemsPerPage: $this->positiveInteger('number_of_items_per_page', 20),
+            viewerAccountIdentifier: $viewerAccountIdentifier,
         );
     }
 
