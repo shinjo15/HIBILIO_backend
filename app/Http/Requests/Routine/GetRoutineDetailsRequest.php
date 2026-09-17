@@ -20,10 +20,11 @@ final class GetRoutineDetailsRequest extends FormRequest
         return [];
     }
 
-    public function toInput(): GetRoutineDetailsInput
+    public function toInput(?string $viewerAccountIdentifier = null): GetRoutineDetailsInput
     {
         return new GetRoutineDetailsInput(
             routineIdentifier: (string) $this->route('routine_identifier'),
+            viewerAccountIdentifier: $viewerAccountIdentifier,
         );
     }
 }

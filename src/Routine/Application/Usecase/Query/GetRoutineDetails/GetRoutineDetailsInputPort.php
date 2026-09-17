@@ -7,4 +7,6 @@ namespace Src\Routine\Application\Usecase\Query\GetRoutineDetails;
 interface GetRoutineDetailsInputPort
 {
     public function routineIdentifier(): string;
+
+    public function viewerAccountIdentifier(): ?string;
 }

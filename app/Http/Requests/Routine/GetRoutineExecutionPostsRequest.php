@@ -25,12 +25,13 @@ final class GetRoutineExecutionPostsRequest extends FormRequest
         ];
     }
 
-    public function toInput(): GetRoutineExecutionPostsInput
+    public function toInput(?string $viewerAccountIdentifier = null): GetRoutineExecutionPostsInput
     {
         return new GetRoutineExecutionPostsInput(
             routineIdentifier: (string) $this->route('routine_identifier'),
             page: $this->positiveInteger('page', 1),
             numberOfItemsPerPage: $this->positiveInteger('number_of_items_per_page', 20),
+            viewerAccountIdentifier: $viewerAccountIdentifier,
         );
     }
 

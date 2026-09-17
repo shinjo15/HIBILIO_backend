@@ -10,11 +10,17 @@ final readonly class GetLikedRoutinePostsInput implements GetLikedRoutinePostsIn
         private string $accountIdentifier,
         private int $page,
         private int $numberOfItemsPerPage,
+        private ?string $viewerAccountIdentifier = null,
     ) {}
 
     public function accountIdentifier(): string
     {
         return $this->accountIdentifier;
+    }
+
+    public function viewerAccountIdentifier(): ?string
+    {
+        return $this->viewerAccountIdentifier;
     }
 
     public function page(): int

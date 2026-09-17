@@ -6,17 +6,26 @@ namespace App\Http\Actions\Routine;
 
 use App\Http\Requests\Routine\GetRoutineDetailsRequest;
 use Illuminate\Http\JsonResponse;
+use RuntimeException;
 use Src\Routine\Application\Usecase\Query\GetRoutineDetails\GetRoutineDetailsInterface;
+use Src\Shared\Application\Service\AuthServiceInterface;
 
 final readonly class GetRoutineDetailsAction
 {
     public function __construct(
         private GetRoutineDetailsInterface $getRoutineDetails,
+        private AuthServiceInterface $authService,
     ) {}
 
     public function __invoke(GetRoutineDetailsRequest $request): JsonResponse
     {
-        $routineDetails = $this->getRoutineDetails->execute($request->toInput())->routineDetails();
+        try {
+            $viewerAccountIdentifier = $this->authService->accountIdentifier();
+        } catch (RuntimeException) {
+            $viewerAccountIdentifier = null;
+        }
+
+        $routineDetails = $this->getRoutineDetails->execute($request->toInput($viewerAccountIdentifier))->routineDetails();
 
         if ($routineDetails === null) {
             return new JsonResponse([], 404);

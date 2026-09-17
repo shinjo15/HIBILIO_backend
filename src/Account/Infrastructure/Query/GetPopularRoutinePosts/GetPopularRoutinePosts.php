@@ -13,6 +13,7 @@ use Src\Account\Application\Usecase\Query\GetPopularRoutinePosts\GetPopularRouti
 use Src\Account\Application\Usecase\Query\GetPopularRoutinePosts\GetPopularRoutinePostsOutputPort;
 use Src\Account\Domain\ValueObject\AccountVisibility;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
+use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
 
 final class GetPopularRoutinePosts implements GetPopularRoutinePostsInterface
 {
@@ -49,9 +50,8 @@ final class GetPopularRoutinePosts implements GetPopularRoutinePostsInterface
             ->orderBy('posts.post_identifier');
 
         if ($input->accountIdentifier() !== null) {
-            $query
-                ->whereNotExists($this->blockExists($input->accountIdentifier()))
-                ->selectSub($this->liked($input->accountIdentifier()), 'liked');
+            BlockVisibility::exclude($query, $input->accountIdentifier(), 'routines.account_identifier');
+            $query->selectSub($this->liked($input->accountIdentifier()), 'liked');
         } else {
             $query->selectRaw('0 as liked');
         }
@@ -91,22 +91,6 @@ final class GetPopularRoutinePosts implements GetPopularRoutinePostsInterface
             ->all();
 
         return new GetPopularRoutinePostsOutput($posts, $paginator->total());
-    }
-
-    private function blockExists(string $accountIdentifier): \Closure
-    {
-        return static function ($query) use ($accountIdentifier): void {
-            $query->selectRaw('1')
-                ->from('blocks')
-                ->where(static function ($query) use ($accountIdentifier): void {
-                    $query->where('blocks.blocking_account_identifier', $accountIdentifier)
-                        ->whereColumn('blocks.blocked_account_identifier', 'routines.account_identifier');
-                })
-                ->orWhere(static function ($query) use ($accountIdentifier): void {
-                    $query->where('blocks.blocked_account_identifier', $accountIdentifier)
-                        ->whereColumn('blocks.blocking_account_identifier', 'routines.account_identifier');
-                });
-        };
     }
 
     private function liked(string $accountIdentifier): mixed

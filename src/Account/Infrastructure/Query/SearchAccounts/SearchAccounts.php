@@ -11,6 +11,7 @@ use Src\Account\Application\Usecase\Query\SearchAccounts\SearchAccountsInterface
 use Src\Account\Application\Usecase\Query\SearchAccounts\SearchAccountsOutput;
 use Src\Account\Application\Usecase\Query\SearchAccounts\SearchAccountsOutputPort;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
+use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
 
 final class SearchAccounts implements SearchAccountsInterface
 {
@@ -38,7 +39,7 @@ final class SearchAccounts implements SearchAccountsInterface
         }
 
         if ($input->accountIdentifier() !== null) {
-            $query->whereNotExists($this->blockExists($input->accountIdentifier()));
+            BlockVisibility::exclude($query, $input->accountIdentifier(), 'accounts.account_identifier');
         }
 
         $paginator = $query->paginate($input->numberOfItemsPerPage(), [
@@ -58,21 +59,5 @@ final class SearchAccounts implements SearchAccountsInterface
             ->all();
 
         return new SearchAccountsOutput($accounts, $paginator->total());
-    }
-
-    private function blockExists(string $accountIdentifier): \Closure
-    {
-        return static function ($query) use ($accountIdentifier): void {
-            $query->selectRaw('1')
-                ->from('blocks')
-                ->where(static function ($query) use ($accountIdentifier): void {
-                    $query->where('blocks.blocking_account_identifier', $accountIdentifier)
-                        ->whereColumn('blocks.blocked_account_identifier', 'accounts.account_identifier');
-                })
-                ->orWhere(static function ($query) use ($accountIdentifier): void {
-                    $query->where('blocks.blocked_account_identifier', $accountIdentifier)
-                        ->whereColumn('blocks.blocking_account_identifier', 'accounts.account_identifier');
-                });
-        };
     }
 }

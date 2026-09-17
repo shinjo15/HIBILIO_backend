@@ -20,10 +20,11 @@ final class GetAccountDetailsRequest extends FormRequest
         return [];
     }
 
-    public function toInput(): GetAccountDetailsInput
+    public function toInput(?string $viewerAccountIdentifier = null): GetAccountDetailsInput
     {
         return new GetAccountDetailsInput(
             accountIdentifier: (string) $this->route('account_identifier'),
+            viewerAccountIdentifier: $viewerAccountIdentifier,
         );
     }
 }

@@ -185,6 +185,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(AuthServiceInterface::class, LaravelAuthService::class);
+
         $this->app->bind(LoginPasscodeGeneratorServiceInterface::class, LoginPasscodeGeneratorService::class);
         $this->app->bind(LoginPasscodeHashServiceInterface::class, LoginPasscodeHashService::class);
         $this->app->bind(LoginPasscodeMailServiceInterface::class, LoginPasscodeMailService::class);

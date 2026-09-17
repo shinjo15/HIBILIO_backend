@@ -13,6 +13,7 @@ use Src\Account\Application\Usecase\Query\GetFavoriteTagPosts\GetFavoriteTagPost
 use Src\Account\Application\Usecase\Query\GetFavoriteTagPosts\GetFavoriteTagPostsOutputPort;
 use Src\Account\Domain\ValueObject\AccountVisibility;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
+use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
 
 final class GetFavoriteTagPosts implements GetFavoriteTagPostsInterface
 {
@@ -20,7 +21,7 @@ final class GetFavoriteTagPosts implements GetFavoriteTagPostsInterface
 
     public function execute(GetFavoriteTagPostsInputPort $input): GetFavoriteTagPostsOutputPort
     {
-        $paginator = DB::table('posts')
+        $query = DB::table('posts')
             ->join('routines', 'posts.routine_identifier', '=', 'routines.routine_identifier')
             ->join('accounts', 'routines.account_identifier', '=', 'accounts.account_identifier')
             ->whereIn('posts.routine_identifier', $this->favoriteTagRoutineIdentifiers($input->accountIdentifier()))
@@ -30,7 +31,6 @@ final class GetFavoriteTagPosts implements GetFavoriteTagPostsInterface
             ->where('accounts.available', true)
             ->where('accounts.status', 'active')
             ->where('accounts.visibility', AccountVisibility::PUBLIC->value)
-            ->whereNotExists($this->blockExists($input->accountIdentifier()))
             ->select([
                 'posts.post_identifier',
                 'posts.routine_identifier',
@@ -50,8 +50,11 @@ final class GetFavoriteTagPosts implements GetFavoriteTagPostsInterface
             ->distinct()
             ->orderByDesc('recommendation_score')
             ->orderByDesc('posts.created_at')
-            ->orderBy('posts.post_identifier')
-            ->paginate($input->numberOfItemsPerPage(), ['*'], 'page', $input->page());
+            ->orderBy('posts.post_identifier');
+
+        BlockVisibility::exclude($query, $input->accountIdentifier(), 'routines.account_identifier');
+
+        $paginator = $query->paginate($input->numberOfItemsPerPage(), ['*'], 'page', $input->page());
 
         $routineIdentifiers = $paginator->getCollection()
             ->pluck('routine_identifier')
@@ -114,22 +117,6 @@ final class GetFavoriteTagPosts implements GetFavoriteTagPostsInterface
             ->selectRaw('count(*) > 0')
             ->where('likes.account_identifier', $accountIdentifier)
             ->whereColumn('likes.post_identifier', 'posts.post_identifier');
-    }
-
-    private function blockExists(string $accountIdentifier): \Closure
-    {
-        return static function ($query) use ($accountIdentifier): void {
-            $query->selectRaw('1')
-                ->from('blocks')
-                ->where(static function ($query) use ($accountIdentifier): void {
-                    $query->where('blocks.blocking_account_identifier', $accountIdentifier)
-                        ->whereColumn('blocks.blocked_account_identifier', 'routines.account_identifier');
-                })
-                ->orWhere(static function ($query) use ($accountIdentifier): void {
-                    $query->where('blocks.blocked_account_identifier', $accountIdentifier)
-                        ->whereColumn('blocks.blocking_account_identifier', 'routines.account_identifier');
-                });
-        };
     }
 
     private function executionCount(): mixed

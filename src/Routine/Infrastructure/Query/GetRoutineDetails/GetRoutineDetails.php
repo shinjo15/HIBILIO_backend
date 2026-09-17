@@ -11,6 +11,7 @@ use Src\Routine\Application\Usecase\Query\GetRoutineDetails\GetRoutineDetailsInt
 use Src\Routine\Application\Usecase\Query\GetRoutineDetails\GetRoutineDetailsOutput;
 use Src\Routine\Application\Usecase\Query\GetRoutineDetails\GetRoutineDetailsOutputPort;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
+use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
 
 final class GetRoutineDetails implements GetRoutineDetailsInterface
 {
@@ -18,7 +19,7 @@ final class GetRoutineDetails implements GetRoutineDetailsInterface
 
     public function execute(GetRoutineDetailsInputPort $input): GetRoutineDetailsOutputPort
     {
-        $routine = DB::table('routines')
+        $query = DB::table('routines')
             ->join('accounts', 'routines.account_identifier', '=', 'accounts.account_identifier')
             ->where('routines.routine_identifier', $input->routineIdentifier())
             ->where('routines.available', true)
@@ -33,8 +34,13 @@ final class GetRoutineDetails implements GetRoutineDetailsInterface
             ])
             ->selectSub($this->executionCount(), 'execution_count')
             ->selectSub($this->customizationCount(), 'customization_count')
-            ->selectSub($this->likeCount(), 'like_count')
-            ->first();
+            ->selectSub($this->likeCount(), 'like_count');
+
+        if ($input->viewerAccountIdentifier() !== null) {
+            BlockVisibility::exclude($query, $input->viewerAccountIdentifier(), 'accounts.account_identifier');
+        }
+
+        $routine = $query->first();
 
         if ($routine === null) {
             return new GetRoutineDetailsOutput(null);

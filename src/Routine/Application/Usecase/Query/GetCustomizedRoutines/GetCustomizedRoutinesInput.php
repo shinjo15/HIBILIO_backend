@@ -10,11 +10,17 @@ final readonly class GetCustomizedRoutinesInput implements GetCustomizedRoutines
         private string $parentRoutineIdentifier,
         private int $page,
         private int $numberOfItemsPerPage,
+        private ?string $viewerAccountIdentifier = null,
     ) {}
 
     public function parentRoutineIdentifier(): string
     {
         return $this->parentRoutineIdentifier;
+    }
+
+    public function viewerAccountIdentifier(): ?string
+    {
+        return $this->viewerAccountIdentifier;
     }
 
     public function page(): int

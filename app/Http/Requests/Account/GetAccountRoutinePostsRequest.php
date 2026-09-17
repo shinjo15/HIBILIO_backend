@@ -19,9 +19,9 @@ final class GetAccountRoutinePostsRequest extends FormRequest
         return ['page' => ['nullable', 'integer', 'min:1'], 'number_of_items_per_page' => ['nullable', 'integer', 'min:1']];
     }
 
-    public function toInput(): GetAccountRoutinePostsInput
+    public function toInput(?string $viewerAccountIdentifier = null): GetAccountRoutinePostsInput
     {
-        return new GetAccountRoutinePostsInput((string) $this->route('account_identifier'), $this->positiveInteger('page', 1), $this->positiveInteger('number_of_items_per_page', 20));
+        return new GetAccountRoutinePostsInput((string) $this->route('account_identifier'), $this->positiveInteger('page', 1), $this->positiveInteger('number_of_items_per_page', 20), $viewerAccountIdentifier);
     }
 
     private function positiveInteger(string $key, int $default): int
