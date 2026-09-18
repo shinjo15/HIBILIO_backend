@@ -11,6 +11,7 @@ use Src\Account\Application\Usecase\Query\SearchAccounts\SearchAccountsInterface
 use Src\Account\Application\Usecase\Query\SearchAccounts\SearchAccountsOutput;
 use Src\Account\Application\Usecase\Query\SearchAccounts\SearchAccountsOutputPort;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
+use Src\Shared\Infrastructure\Query\Account\PrivateAccountVisibility;
 use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
 
 final class SearchAccounts implements SearchAccountsInterface
@@ -41,6 +42,7 @@ final class SearchAccounts implements SearchAccountsInterface
         if ($input->accountIdentifier() !== null) {
             BlockVisibility::exclude($query, $input->accountIdentifier(), 'accounts.account_identifier');
         }
+        PrivateAccountVisibility::exclude($query, $input->accountIdentifier(), 'accounts.account_identifier', 'accounts.visibility');
 
         $paginator = $query->paginate($input->numberOfItemsPerPage(), [
             'accounts.account_identifier',
