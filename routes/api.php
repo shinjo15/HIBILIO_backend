@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Actions\Account\ApproveFollowRequestAction;
 use App\Http\Actions\Account\ChangeAccountUiModeAction;
 use App\Http\Actions\Account\ChangeAccountVisibilityAction;
 use App\Http\Actions\Account\CreateAccountAction;
@@ -17,6 +18,7 @@ use App\Http\Actions\Account\GetMyBlocksAction;
 use App\Http\Actions\Account\GetMyFollowingAccountsAction;
 use App\Http\Actions\Account\GetMyRoutinePostsAction;
 use App\Http\Actions\Account\GetPopularRoutinePostsAction;
+use App\Http\Actions\Account\RejectFollowRequestAction;
 use App\Http\Actions\Account\RemoveBlockAction;
 use App\Http\Actions\Account\SearchAccountsAction;
 use App\Http\Actions\Account\UpdateAccountProfileAction;
@@ -80,6 +82,8 @@ Route::middleware('web')->group(static function (): void {
     Route::get('/tags/pickup', GetPickupTagsAction::class);
     Route::post('/reports', CreateReportAction::class);
     Route::post('/follows', CreateFollowAction::class);
+    Route::post('/follow-requests/{requesting_account_identifier}/approve', ApproveFollowRequestAction::class)->whereUuid('requesting_account_identifier');
+    Route::post('/follow-requests/{requesting_account_identifier}/reject', RejectFollowRequestAction::class)->whereUuid('requesting_account_identifier');
     Route::get('/following/posts', GetFollowingPostsAction::class);
     Route::get('/posts/popular', GetPopularRoutinePostsAction::class);
     Route::get('/posts/favorite_tags', GetFavoriteTagPostsAction::class);
