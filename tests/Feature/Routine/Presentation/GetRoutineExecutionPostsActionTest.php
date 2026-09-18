@@ -113,6 +113,8 @@ final class GetRoutineExecutionPostsActionTest extends TestCase
 
     private function insertRoutine(string $identifier): void
     {
+        $this->insertAccount('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'Routine作成者');
+
         DB::table('routines')->insert([
             'routine_identifier' => $identifier,
             'routine_name' => '朝活',

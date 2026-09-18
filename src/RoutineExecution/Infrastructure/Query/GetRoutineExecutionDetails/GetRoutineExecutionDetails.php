@@ -12,6 +12,7 @@ use Src\RoutineExecution\Application\Usecase\Query\GetRoutineExecutionDetails\Ge
 use Src\RoutineExecution\Application\Usecase\Query\GetRoutineExecutionDetails\GetRoutineExecutionDetailsOutput;
 use Src\RoutineExecution\Application\Usecase\Query\GetRoutineExecutionDetails\GetRoutineExecutionDetailsOutputPort;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
+use Src\Shared\Infrastructure\Query\Account\PrivateAccountVisibility;
 use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
 use Src\Shared\Infrastructure\Query\Post\PostInteractionState;
 
@@ -52,6 +53,8 @@ final class GetRoutineExecutionDetails implements GetRoutineExecutionDetailsInte
             BlockVisibility::exclude($query, $input->accountIdentifier(), 'accounts.account_identifier');
             BlockVisibility::exclude($query, $input->accountIdentifier(), 'routine_authors.account_identifier');
         }
+        PrivateAccountVisibility::exclude($query, $input->accountIdentifier(), 'accounts.account_identifier', 'accounts.visibility');
+        PrivateAccountVisibility::exclude($query, $input->accountIdentifier(), 'routine_authors.account_identifier', 'routine_authors.visibility');
 
         PostInteractionState::selectSupported($query, $input->accountIdentifier(), 'posts.post_identifier');
 

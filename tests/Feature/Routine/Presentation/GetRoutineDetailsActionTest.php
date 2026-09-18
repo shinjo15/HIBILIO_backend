@@ -110,7 +110,18 @@ final class GetRoutineDetailsActionTest extends TestCase
         $this->getJson('/api/routines/dddddddd-dddd-4ddd-8ddd-dddddddddddd')->assertNotFound();
     }
 
-    private function insertAccount(string $identifier, bool $available, string $status): void
+    public function test_hides_a_private_accounts_routine_from_anonymous_viewers(): void
+    {
+        $accountIdentifier = '11111111-1111-4111-8111-111111111111';
+        $routineIdentifier = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+
+        $this->insertAccount($accountIdentifier, true, 'active', 'private');
+        $this->insertRoutine($routineIdentifier, $accountIdentifier, null, true, '鍵AccountのRoutine', null, null);
+
+        $this->getJson("/api/routines/{$routineIdentifier}")->assertNotFound();
+    }
+
+    private function insertAccount(string $identifier, bool $available, string $status, string $visibility = 'public'): void
     {
         DB::table('accounts')->insert([
             'account_identifier' => $identifier,
@@ -118,6 +129,7 @@ final class GetRoutineDetailsActionTest extends TestCase
             'email_address' => "{$identifier}@example.com",
             'available' => $available,
             'status' => $status,
+            'visibility' => $visibility,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
