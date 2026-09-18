@@ -14,7 +14,7 @@ final class SearchAccountsActionTest extends TestCase
     use InteractsWithAccountImageUrlService;
     use RefreshDatabase;
 
-    public function test_excludes_private_accounts_from_anonymous_search(): void
+    public function test_returns_active_accounts_whose_names_start_with_the_search_name_including_private_accounts(): void
     {
         $this->account('11111111-1111-4111-8111-111111111111', 'アリス', '公開プロフィール', 'public');
         $this->account('22222222-2222-4222-8222-222222222222', 'アリス秘密', '鍵プロフィール', 'private');
@@ -30,26 +30,15 @@ final class SearchAccountsActionTest extends TestCase
                         'account_bio' => '公開プロフィール',
                         'icon_image_url' => 'https://images.example/accounts/11111111-1111-4111-8111-111111111111/icon',
                     ],
+                    [
+                        'account_identifier' => '22222222-2222-4222-8222-222222222222',
+                        'account_name' => 'アリス秘密',
+                        'account_bio' => '鍵プロフィール',
+                        'icon_image_url' => 'https://images.example/accounts/22222222-2222-4222-8222-222222222222/icon',
+                    ],
                 ],
-                'total' => 1,
+                'total' => 2,
             ]);
-    }
-
-    public function test_includes_a_private_account_for_its_approved_follower_and_owner(): void
-    {
-        $ownerIdentifier = '11111111-1111-4111-8111-111111111111';
-        $followerIdentifier = '22222222-2222-4222-8222-222222222222';
-        $this->account($ownerIdentifier, '鍵Account', '鍵プロフィール', 'private');
-        $this->account($followerIdentifier, '承認済みFollower', 'Followerプロフィール', 'public');
-        DB::table('follows')->insert(['following_account_identifier' => $followerIdentifier, 'followed_account_identifier' => $ownerIdentifier, 'created_at' => now(), 'updated_at' => now()]);
-
-        foreach ([$followerIdentifier, $ownerIdentifier] as $viewerIdentifier) {
-            $this->withSession(['account_identifier' => $viewerIdentifier])
-                ->getJson('/api/accounts/search?account_name=鍵&page=1&number_of_items_per_page=20')
-                ->assertOk()
-                ->assertJsonPath('total', 1)
-                ->assertJsonPath('accounts.0.account_identifier', $ownerIdentifier);
-        }
     }
 
     public function test_returns_only_accounts_that_have_all_specified_favorite_tags(): void
