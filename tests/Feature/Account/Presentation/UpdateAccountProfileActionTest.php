@@ -8,6 +8,10 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use InvalidArgumentException;
+use Src\Account\Application\Service\AccountImageConverterServiceInterface;
+use Src\Account\Domain\ValueObject\AccountHeader;
+use Src\Account\Domain\ValueObject\AccountIcon;
 use Src\Shared\Application\Service\AuthServiceInterface;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Tests\TestCase;
@@ -89,6 +93,70 @@ final class UpdateAccountProfileActionTest extends TestCase
             'icon_image' => UploadedFile::fake()->image('icon.png', 128, 128),
             'icon_image_deleted' => true,
         ])->assertUnprocessable()->assertJsonValidationErrors('icon_image');
+    }
+
+    public function test_rejects_an_icon_that_exceeds_the_dimension_limit_before_conversion(): void
+    {
+        Storage::fake('account_images');
+        $this->insertAccount();
+        $this->authenticateAsAccount();
+
+        $this->patch('/api/my/account', [
+            'icon_image' => UploadedFile::fake()->image('icon.png', 2049, 2048),
+        ])->assertUnprocessable()->assertJsonValidationErrors('icon_image');
+
+        Storage::disk('account_images')->assertMissing('accounts/11111111-1111-4111-8111-111111111111/icon/icon.webp');
+    }
+
+    public function test_rejects_a_header_that_exceeds_the_dimension_limit_before_conversion(): void
+    {
+        Storage::fake('account_images');
+        $this->insertAccount();
+        $this->authenticateAsAccount();
+
+        $this->patch('/api/my/account', [
+            'header_image' => UploadedFile::fake()->image('header.png', 2560, 1441),
+        ])->assertUnprocessable()->assertJsonValidationErrors('header_image');
+
+        Storage::disk('account_images')->assertMissing('accounts/11111111-1111-4111-8111-111111111111/header/header.webp');
+    }
+
+    public function test_converts_and_stores_images_within_the_dimension_limits(): void
+    {
+        Storage::fake('account_images');
+        $this->insertAccount();
+        $this->authenticateAsAccount();
+
+        $this->patch('/api/my/account', [
+            'icon_image' => UploadedFile::fake()->image('icon.png', 128, 128),
+            'header_image' => UploadedFile::fake()->image('header.png', 640, 320),
+        ])->assertNoContent();
+
+        Storage::disk('account_images')->assertExists('accounts/11111111-1111-4111-8111-111111111111/icon/icon.webp');
+        Storage::disk('account_images')->assertExists('accounts/11111111-1111-4111-8111-111111111111/header/header.webp');
+        self::assertSame('image/webp', getimagesizefromstring(Storage::disk('account_images')->get('accounts/11111111-1111-4111-8111-111111111111/icon/icon.webp'))['mime']);
+        self::assertSame('image/webp', getimagesizefromstring(Storage::disk('account_images')->get('accounts/11111111-1111-4111-8111-111111111111/header/header.webp'))['mime']);
+    }
+
+    public function test_returns_unprocessable_when_image_conversion_fails(): void
+    {
+        $this->insertAccount();
+        $this->authenticateAsAccount();
+        $this->app->instance(AccountImageConverterServiceInterface::class, new class implements AccountImageConverterServiceInterface
+        {
+            public function convertToIcon(string $contents): AccountIcon
+            {
+                throw new InvalidArgumentException('画像をWebPへ変換できません。');
+            }
+
+            public function convertToHeader(string $contents): AccountHeader
+            {
+                throw new InvalidArgumentException('画像をWebPへ変換できません。');
+            }
+        });
+
+        $this->patch('/api/my/account', ['icon_image' => UploadedFile::fake()->image('icon.png', 128, 128)])
+            ->assertUnprocessable();
     }
 
     public function test_deletes_the_icon_when_requested(): void

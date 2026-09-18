@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Account;
 
+use App\Rules\AccountImageDimensions;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -36,9 +37,9 @@ final class UpdateAccountProfileRequest extends FormRequest
             'social_links.*.social_url' => ['required', 'url'],
             'favorite_tag_identifiers' => ['sometimes', 'array'],
             'favorite_tag_identifiers.*' => ['required', 'uuid'],
-            'icon_image' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:5120'],
+            'icon_image' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:5120', new AccountImageDimensions(2048, 2048, 2048 * 2048)],
             'icon_image_deleted' => ['sometimes', 'boolean'],
-            'header_image' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:10240'],
+            'header_image' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:10240', new AccountImageDimensions(2560, 1440, 2560 * 1440)],
             'header_image_deleted' => ['sometimes', 'boolean'],
         ];
     }

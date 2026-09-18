@@ -5,8 +5,13 @@ declare(strict_types=1);
 namespace Tests\Feature\Account\Presentation;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use InvalidArgumentException;
+use Src\Account\Application\Service\AccountImageConverterServiceInterface;
+use Src\Account\Domain\ValueObject\AccountHeader;
+use Src\Account\Domain\ValueObject\AccountIcon;
 use Src\Authentication\Domain\ValueObject\SocialLoginProvider;
 use Src\Authentication\Infrastructure\Mail\RegistrationPasscodeMail;
 use Src\Authentication\Infrastructure\Service\LaravelPendingSocialRegistrationSessionService;
@@ -67,6 +72,58 @@ final class CreateAccountActionTest extends TestCase
         $this->postJson('/api/accounts', $this->validPayload())->assertUnauthorized();
 
         $this->assertDatabaseCount('accounts', 1);
+    }
+
+    public function test_rejects_a_header_that_exceeds_the_dimension_limit_before_conversion(): void
+    {
+        $this->insertFavoriteTag();
+        session()->put('registration_verified_email_address', 'verified@example.com');
+        $payload = $this->validPayload();
+        $payload['header_image'] = UploadedFile::fake()->image('header.png', 2560, 1441);
+
+        $this->post('/api/accounts', $payload)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('header_image');
+
+        $this->assertDatabaseCount('accounts', 0);
+    }
+
+    public function test_rejects_an_icon_that_exceeds_the_dimension_limit_before_conversion(): void
+    {
+        $this->insertFavoriteTag();
+        session()->put('registration_verified_email_address', 'verified@example.com');
+        $payload = $this->validPayload();
+        $payload['icon_image'] = UploadedFile::fake()->image('icon.png', 2049, 2048);
+
+        $this->post('/api/accounts', $payload)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('icon_image');
+
+        $this->assertDatabaseCount('accounts', 0);
+    }
+
+    public function test_returns_unprocessable_when_image_conversion_fails(): void
+    {
+        $this->insertFavoriteTag();
+        session()->put('registration_verified_email_address', 'verified@example.com');
+        $this->app->instance(AccountImageConverterServiceInterface::class, new class implements AccountImageConverterServiceInterface
+        {
+            public function convertToIcon(string $contents): AccountIcon
+            {
+                throw new InvalidArgumentException('画像をWebPへ変換できません。');
+            }
+
+            public function convertToHeader(string $contents): AccountHeader
+            {
+                throw new InvalidArgumentException('画像をWebPへ変換できません。');
+            }
+        });
+        $payload = $this->validPayload();
+        $payload['header_image'] = UploadedFile::fake()->image('header.png', 640, 320);
+
+        $this->post('/api/accounts', $payload)->assertUnprocessable();
+
+        $this->assertDatabaseCount('accounts', 0);
     }
 
     public function test_creates_and_links_an_account_from_a_pending_social_registration_without_a_passcode(): void

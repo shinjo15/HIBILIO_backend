@@ -7,6 +7,7 @@ namespace App\Http\Actions\Account;
 use App\Http\Requests\Account\CreateAccountRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
+use InvalidArgumentException;
 use RuntimeException;
 use Src\Account\Application\Service\AccountImageConverterServiceInterface;
 use Src\Account\Application\Usecase\Command\CreateAccount\CreateAccountInterface;
@@ -52,6 +53,8 @@ final readonly class CreateAccountAction
             return new Response('', 401);
         } catch (DuplicateEmailAddressException $exception) {
             return new JsonResponse(['message' => $exception->getMessage()], 422);
+        } catch (InvalidArgumentException) {
+            return new Response('', 422);
         }
     }
 }
