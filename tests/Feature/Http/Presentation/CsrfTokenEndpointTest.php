@@ -23,4 +23,34 @@ final class CsrfTokenEndpointTest extends TestCase
         self::assertIsString($csrfToken);
         self::assertSame($this->app['session.store']->token(), $csrfToken);
     }
+
+    public function test_allows_credentialed_csrf_token_requests_from_an_allowed_origin(): void
+    {
+        $this->getJson('/api/csrf-token', ['Origin' => 'http://localhost:5173'])
+            ->assertOk()
+            ->assertHeader('Access-Control-Allow-Origin', 'http://localhost:5173')
+            ->assertHeader('Access-Control-Allow-Credentials', 'true');
+    }
+
+    public function test_allows_csrf_header_on_preflight_from_an_allowed_origin(): void
+    {
+        $this->call('OPTIONS', '/api/my/account', [], [], [], [
+            'HTTP_ORIGIN' => 'http://localhost:5173',
+            'HTTP_ACCESS_CONTROL_REQUEST_METHOD' => 'PATCH',
+            'HTTP_ACCESS_CONTROL_REQUEST_HEADERS' => 'content-type, x-csrf-token',
+        ])
+            ->assertNoContent()
+            ->assertHeader('Access-Control-Allow-Origin', 'http://localhost:5173')
+            ->assertHeader('Access-Control-Allow-Credentials', 'true')
+            ->assertHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS')
+            ->assertHeader('Access-Control-Allow-Headers', 'Content-Type, X-CSRF-TOKEN');
+    }
+
+    public function test_does_not_allow_an_unapproved_origin(): void
+    {
+        $this->getJson('/api/csrf-token', ['Origin' => 'https://untrusted.example'])
+            ->assertOk()
+            ->assertHeaderMissing('Access-Control-Allow-Origin')
+            ->assertHeaderMissing('Access-Control-Allow-Credentials');
+    }
 }
