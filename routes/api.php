@@ -18,6 +18,7 @@ use App\Http\Actions\Account\GetMyBlocksAction;
 use App\Http\Actions\Account\GetMyFollowingAccountsAction;
 use App\Http\Actions\Account\GetMyRoutinePostsAction;
 use App\Http\Actions\Account\GetPopularRoutinePostsAction;
+use App\Http\Actions\Account\GetReceivedFollowRequestsAction;
 use App\Http\Actions\Account\RejectFollowRequestAction;
 use App\Http\Actions\Account\RemoveBlockAction;
 use App\Http\Actions\Account\SearchAccountsAction;
@@ -62,6 +63,7 @@ Route::middleware('web')->group(static function (): void {
     Route::get('/my/account', GetMyAccountAction::class);
     Route::get('/my/following', GetMyFollowingAccountsAction::class);
     Route::get('/my/blocks', GetMyBlocksAction::class);
+    Route::get('/my/follow-requests', GetReceivedFollowRequestsAction::class);
     Route::patch('/my/account', UpdateAccountProfileAction::class);
     Route::patch('/my/account/visibility', ChangeAccountVisibilityAction::class);
     Route::patch('/my/account/ui-mode', ChangeAccountUiModeAction::class);
