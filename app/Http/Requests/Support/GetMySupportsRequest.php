@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Support;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Http\Requests\PaginatedRequest;
 use Src\Support\Application\Usecase\Query\GetMySupports\GetMySupportsInput;
 
-final class GetMySupportsRequest extends FormRequest
+final class GetMySupportsRequest extends PaginatedRequest
 {
     public function authorize(): bool
     {
@@ -19,25 +19,15 @@ final class GetMySupportsRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
-            'page' => ['nullable', 'integer', 'min:1'],
-            'number_of_items_per_page' => ['nullable', 'integer', 'min:1'],
-        ];
+        return $this->paginationRules();
     }
 
     public function toInput(string $accountIdentifier): GetMySupportsInput
     {
         return new GetMySupportsInput(
             accountIdentifier: $accountIdentifier,
-            page: $this->positiveInteger('page', 1),
-            numberOfItemsPerPage: $this->positiveInteger('number_of_items_per_page', 20),
+            page: $this->page(),
+            numberOfItemsPerPage: $this->numberOfItemsPerPage(),
         );
-    }
-
-    private function positiveInteger(string $key, int $default): int
-    {
-        $value = $this->validated($key);
-
-        return is_numeric($value) ? (int) $value : $default;
     }
 }

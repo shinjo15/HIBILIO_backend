@@ -94,12 +94,11 @@ final class GetPopularRoutinePostsActionTest extends TestCase
             ->assertJsonPath('posts.0.post_identifier', '12121212-1212-4121-8121-121212121212');
     }
 
-    public function test_requires_pagination_parameters(): void
+    public function test_uses_default_pagination_parameters(): void
     {
-        $this->withSession(['account_identifier' => '11111111-1111-4111-8111-111111111111'])
-            ->getJson('/api/posts/popular')
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['page', 'number_of_items_per_page']);
+        $this->getJson('/api/posts/popular')
+            ->assertOk()
+            ->assertExactJson(['posts' => [], 'total' => 0]);
     }
 
     private function insertAccount(string $identifier, string $name, string $status, string $visibility = 'public'): void

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Account;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Http\Requests\PaginatedRequest;
 use Src\Account\Application\Usecase\Query\GetPopularRoutinePosts\GetPopularRoutinePostsInput;
 
-final class GetPopularRoutinePostsRequest extends FormRequest
+final class GetPopularRoutinePostsRequest extends PaginatedRequest
 {
     public function authorize(): bool
     {
@@ -17,18 +17,15 @@ final class GetPopularRoutinePostsRequest extends FormRequest
     /** @return array<string, list<string>> */
     public function rules(): array
     {
-        return [
-            'page' => ['required', 'integer', 'min:1'],
-            'number_of_items_per_page' => ['required', 'integer', 'min:1'],
-        ];
+        return $this->paginationRules();
     }
 
     public function toInput(?string $accountIdentifier): GetPopularRoutinePostsInput
     {
         return new GetPopularRoutinePostsInput(
             accountIdentifier: $accountIdentifier,
-            page: (int) $this->validated('page'),
-            numberOfItemsPerPage: (int) $this->validated('number_of_items_per_page'),
+            page: $this->page(),
+            numberOfItemsPerPage: $this->numberOfItemsPerPage(),
         );
     }
 }
