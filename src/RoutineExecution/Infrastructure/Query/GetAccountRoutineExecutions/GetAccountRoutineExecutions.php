@@ -13,6 +13,7 @@ use Src\RoutineExecution\Application\Usecase\Query\GetAccountRoutineExecutions\G
 use Src\RoutineExecution\Application\Usecase\Query\GetAccountRoutineExecutions\GetAccountRoutineExecutionsOutputPort;
 use Src\Shared\Domain\Exception\BlockedAccountVisibilityException;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
+use Src\Shared\Infrastructure\Query\Account\PrivateAccountVisibility;
 use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
 use Src\Shared\Infrastructure\Query\Post\PostInteractionState;
 
@@ -30,6 +31,7 @@ final class GetAccountRoutineExecutions implements GetAccountRoutineExecutionsIn
             ->join('routine_executions', 'posts.routine_execution_identifier', '=', 'routine_executions.routine_execution_identifier')
             ->join('routines', 'routine_executions.routine_identifier', '=', 'routines.routine_identifier')
             ->join('accounts', 'routine_executions.executor_account_identifier', '=', 'accounts.account_identifier')
+            ->join('accounts as routine_authors', 'routines.account_identifier', '=', 'routine_authors.account_identifier')
             ->where('routine_executions.executor_account_identifier', $input->accountIdentifier())
             ->whereColumn('posts.routine_identifier', 'routine_executions.routine_identifier')
             ->where('posts.post_category', 'action')
@@ -43,7 +45,10 @@ final class GetAccountRoutineExecutions implements GetAccountRoutineExecutionsIn
 
         if ($input->viewerAccountIdentifier() !== null) {
             BlockVisibility::exclude($query, $input->viewerAccountIdentifier(), 'accounts.account_identifier');
+            BlockVisibility::exclude($query, $input->viewerAccountIdentifier(), 'routine_authors.account_identifier');
         }
+        PrivateAccountVisibility::exclude($query, $input->viewerAccountIdentifier(), 'accounts.account_identifier', 'accounts.visibility');
+        PrivateAccountVisibility::exclude($query, $input->viewerAccountIdentifier(), 'routine_authors.account_identifier', 'routine_authors.visibility');
 
         PostInteractionState::selectSupported($query, $input->viewerAccountIdentifier(), 'posts.post_identifier');
 

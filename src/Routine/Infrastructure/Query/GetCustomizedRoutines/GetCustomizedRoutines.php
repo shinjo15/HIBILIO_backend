@@ -12,6 +12,7 @@ use Src\Routine\Application\Usecase\Query\GetCustomizedRoutines\GetCustomizedRou
 use Src\Routine\Application\Usecase\Query\GetCustomizedRoutines\GetCustomizedRoutinesOutputPort;
 use Src\Shared\Domain\Exception\BlockedAccountVisibilityException;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
+use Src\Shared\Infrastructure\Query\Account\PrivateAccountVisibility;
 use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
 
 final class GetCustomizedRoutines implements GetCustomizedRoutinesInterface
@@ -34,6 +35,7 @@ final class GetCustomizedRoutines implements GetCustomizedRoutinesInterface
         if ($input->viewerAccountIdentifier() !== null) {
             BlockVisibility::exclude($parentRoutineQuery, $input->viewerAccountIdentifier(), 'accounts.account_identifier');
         }
+        PrivateAccountVisibility::exclude($parentRoutineQuery, $input->viewerAccountIdentifier(), 'accounts.account_identifier', 'accounts.visibility');
 
         $parentRoutineExists = $parentRoutineQuery->exists();
 
@@ -64,6 +66,7 @@ final class GetCustomizedRoutines implements GetCustomizedRoutinesInterface
         if ($input->viewerAccountIdentifier() !== null) {
             BlockVisibility::exclude($query, $input->viewerAccountIdentifier(), 'accounts.account_identifier');
         }
+        PrivateAccountVisibility::exclude($query, $input->viewerAccountIdentifier(), 'accounts.account_identifier', 'accounts.visibility');
 
         $paginator = $query->paginate($input->numberOfItemsPerPage(), ['*'], 'page', $input->page());
 

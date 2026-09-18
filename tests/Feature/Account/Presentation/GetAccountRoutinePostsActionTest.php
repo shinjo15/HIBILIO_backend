@@ -54,4 +54,31 @@ final class GetAccountRoutinePostsActionTest extends TestCase
     {
         $this->getJson('/api/my/posts')->assertUnauthorized();
     }
+
+    public function test_returns_private_accounts_posts_only_to_the_owner_and_approved_follower(): void
+    {
+        $ownerIdentifier = '11111111-1111-4111-8111-111111111111';
+        $followerIdentifier = '22222222-2222-4222-8222-222222222222';
+        $routineIdentifier = '33333333-3333-4333-8333-333333333333';
+        $postIdentifier = '44444444-4444-4444-8444-444444444444';
+        DB::table('accounts')->insert([
+            ['account_identifier' => $ownerIdentifier, 'account_name' => '鍵Account', 'email_address' => 'owner@example.com', 'available' => true, 'status' => 'active', 'visibility' => 'private', 'created_at' => now(), 'updated_at' => now()],
+            ['account_identifier' => $followerIdentifier, 'account_name' => '承認済みFollower', 'email_address' => 'follower@example.com', 'available' => true, 'status' => 'active', 'visibility' => 'public', 'created_at' => now(), 'updated_at' => now()],
+        ]);
+        DB::table('follows')->insert(['following_account_identifier' => $followerIdentifier, 'followed_account_identifier' => $ownerIdentifier, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('routines')->insert(['routine_identifier' => $routineIdentifier, 'account_identifier' => $ownerIdentifier, 'routine_name' => '鍵Routine', 'available' => true, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('posts')->insert(['post_identifier' => $postIdentifier, 'routine_identifier' => $routineIdentifier, 'post_category' => 'routine', 'available' => true, 'created_at' => now(), 'updated_at' => now()]);
+
+        $this->getJson("/api/accounts/{$ownerIdentifier}/posts")
+            ->assertOk()
+            ->assertExactJson(['items' => [], 'total' => 0]);
+
+        foreach ([$ownerIdentifier, $followerIdentifier] as $viewerIdentifier) {
+            $this->withSession(['account_identifier' => $viewerIdentifier])
+                ->getJson("/api/accounts/{$ownerIdentifier}/posts")
+                ->assertOk()
+                ->assertJsonPath('total', 1)
+                ->assertJsonPath('items.0.post_identifier', $postIdentifier);
+        }
+    }
 }

@@ -13,6 +13,7 @@ use Src\Account\Application\Usecase\Query\GetAccountRoutinePosts\GetAccountRouti
 use Src\Account\Application\Usecase\Query\GetAccountRoutinePosts\GetAccountRoutinePostsOutputPort;
 use Src\Shared\Domain\Exception\BlockedAccountVisibilityException;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
+use Src\Shared\Infrastructure\Query\Account\PrivateAccountVisibility;
 use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
 use Src\Shared\Infrastructure\Query\Post\PostInteractionState;
 
@@ -49,6 +50,7 @@ final class GetAccountRoutinePosts implements GetAccountRoutinePostsInterface
         if ($input->viewerAccountIdentifier() !== null) {
             BlockVisibility::exclude($query, $input->viewerAccountIdentifier(), 'accounts.account_identifier');
         }
+        PrivateAccountVisibility::exclude($query, $input->viewerAccountIdentifier(), 'accounts.account_identifier', 'accounts.visibility');
 
         PostInteractionState::selectLiked($query, $input->viewerAccountIdentifier(), 'posts.post_identifier');
 

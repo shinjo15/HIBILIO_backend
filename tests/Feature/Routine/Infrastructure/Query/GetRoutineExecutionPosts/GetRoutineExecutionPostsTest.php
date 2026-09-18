@@ -142,6 +142,16 @@ final class GetRoutineExecutionPostsTest extends TestCase
 
     private function createRoutine(string $routineIdentifier, bool $available = true): void
     {
+        DB::table('accounts')->insertOrIgnore([
+            'account_identifier' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+            'account_name' => 'Routine作成者',
+            'email_address' => 'routine-author@example.com',
+            'available' => true,
+            'status' => 'active',
+            'created_at' => '2026-09-07 09:00:00',
+            'updated_at' => '2026-09-07 09:00:00',
+        ]);
+
         DB::table('routines')->insert([
             'routine_identifier' => $routineIdentifier,
             'routine_name' => '朝活',

@@ -136,7 +136,28 @@ final class GetRoutineExecutionDetailsActionTest extends TestCase
             ->assertNotFound();
     }
 
-    private function account(string $identifier, string $name, string $status = 'active'): void
+    public function test_hides_a_private_routines_execution_from_anonymous_viewers(): void
+    {
+        $authorIdentifier = '11111111-1111-4111-8111-111111111111';
+        $executorIdentifier = '22222222-2222-4222-8222-222222222222';
+        $followerIdentifier = '33333333-3333-4333-8333-333333333333';
+        $routineIdentifier = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+        $executionIdentifier = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+        $this->account($authorIdentifier, '鍵Routine作成者', 'active', 'private');
+        $this->account($executorIdentifier, '実行者');
+        $this->account($followerIdentifier, '承認済みFollower');
+        $this->routine($routineIdentifier, $authorIdentifier, '鍵Routine', null);
+        $this->routineExecution($executionIdentifier, $routineIdentifier, $executorIdentifier, '2026-09-02 09:00:00', null);
+        $this->executionPost('cccccccc-cccc-4ccc-8ccc-cccccccccccc', $routineIdentifier, $executionIdentifier, '2026-09-02 10:00:00', 0);
+        DB::table('follows')->insert(['following_account_identifier' => $followerIdentifier, 'followed_account_identifier' => $authorIdentifier, 'created_at' => now(), 'updated_at' => now()]);
+
+        $this->getJson("/api/routine-executions/{$executionIdentifier}")->assertNotFound();
+        $this->withSession(['account_identifier' => $followerIdentifier])
+            ->getJson("/api/routine-executions/{$executionIdentifier}")
+            ->assertOk();
+    }
+
+    private function account(string $identifier, string $name, string $status = 'active', string $visibility = 'public'): void
     {
         DB::table('accounts')->insert([
             'account_identifier' => $identifier,
@@ -144,6 +165,7 @@ final class GetRoutineExecutionDetailsActionTest extends TestCase
             'email_address' => "{$identifier}@example.com",
             'available' => true,
             'status' => $status,
+            'visibility' => $visibility,
             'created_at' => now(),
             'updated_at' => now(),
         ]);

@@ -11,6 +11,7 @@ use Src\Routine\Application\Usecase\Query\GetRoutineDetails\GetRoutineDetailsInt
 use Src\Routine\Application\Usecase\Query\GetRoutineDetails\GetRoutineDetailsOutput;
 use Src\Routine\Application\Usecase\Query\GetRoutineDetails\GetRoutineDetailsOutputPort;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
+use Src\Shared\Infrastructure\Query\Account\PrivateAccountVisibility;
 use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
 
 final class GetRoutineDetails implements GetRoutineDetailsInterface
@@ -45,6 +46,7 @@ final class GetRoutineDetails implements GetRoutineDetailsInterface
         if ($input->viewerAccountIdentifier() !== null) {
             BlockVisibility::exclude($query, $input->viewerAccountIdentifier(), 'accounts.account_identifier');
         }
+        PrivateAccountVisibility::exclude($query, $input->viewerAccountIdentifier(), 'accounts.account_identifier', 'accounts.visibility');
 
         $routine = $query->first();
 

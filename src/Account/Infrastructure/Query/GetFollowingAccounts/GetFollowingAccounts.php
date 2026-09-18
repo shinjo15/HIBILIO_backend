@@ -12,6 +12,7 @@ use Src\Account\Application\Usecase\Query\GetFollowingAccounts\GetFollowingAccou
 use Src\Account\Application\Usecase\Query\GetFollowingAccounts\GetFollowingAccountsOutputPort;
 use Src\Shared\Domain\Exception\BlockedAccountVisibilityException;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
+use Src\Shared\Infrastructure\Query\Account\PrivateAccountVisibility;
 use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
 
 final class GetFollowingAccounts implements GetFollowingAccountsInterface
@@ -33,6 +34,7 @@ final class GetFollowingAccounts implements GetFollowingAccountsInterface
         if ($input->viewerAccountIdentifier() !== null) {
             BlockVisibility::exclude($query, $input->viewerAccountIdentifier(), 'accounts.account_identifier');
         }
+        PrivateAccountVisibility::exclude($query, $input->viewerAccountIdentifier(), 'accounts.account_identifier', 'accounts.visibility');
 
         $accounts = $query->get(['accounts.account_identifier', 'accounts.account_name', 'accounts.account_bio'])
             ->map(fn (object $account): array => ['accountIdentifier' => (string) $account->account_identifier, 'accountName' => (string) $account->account_name, 'accountBio' => $account->account_bio === null ? null : (string) $account->account_bio, 'iconImageUrl' => $this->accountImageUrlService->iconImageUrl(new AccountIdentifier((string) $account->account_identifier))])
