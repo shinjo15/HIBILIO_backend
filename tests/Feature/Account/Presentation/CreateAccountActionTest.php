@@ -79,7 +79,7 @@ final class CreateAccountActionTest extends TestCase
         $this->insertFavoriteTag();
         session()->put('registration_verified_email_address', 'verified@example.com');
         $payload = $this->validPayload();
-        $payload['header_image'] = UploadedFile::fake()->image('header.png', 2560, 1441);
+        $payload['header_image'] = UploadedFile::fake()->image('header.png', 1920, 1081);
 
         $this->post('/api/accounts', $payload)
             ->assertUnprocessable()
@@ -93,7 +93,7 @@ final class CreateAccountActionTest extends TestCase
         $this->insertFavoriteTag();
         session()->put('registration_verified_email_address', 'verified@example.com');
         $payload = $this->validPayload();
-        $payload['icon_image'] = UploadedFile::fake()->image('icon.png', 2049, 2048);
+        $payload['icon_image'] = UploadedFile::fake()->image('icon.png', 1025, 1024);
 
         $this->post('/api/accounts', $payload)
             ->assertUnprocessable()

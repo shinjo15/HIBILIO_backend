@@ -102,7 +102,7 @@ final class UpdateAccountProfileActionTest extends TestCase
         $this->authenticateAsAccount();
 
         $this->patch('/api/my/account', [
-            'icon_image' => UploadedFile::fake()->image('icon.png', 2049, 2048),
+            'icon_image' => UploadedFile::fake()->image('icon.png', 1025, 1024),
         ])->assertUnprocessable()->assertJsonValidationErrors('icon_image');
 
         Storage::disk('account_images')->assertMissing('accounts/11111111-1111-4111-8111-111111111111/icon/icon.webp');
@@ -115,7 +115,7 @@ final class UpdateAccountProfileActionTest extends TestCase
         $this->authenticateAsAccount();
 
         $this->patch('/api/my/account', [
-            'header_image' => UploadedFile::fake()->image('header.png', 2560, 1441),
+            'header_image' => UploadedFile::fake()->image('header.png', 1920, 1081),
         ])->assertUnprocessable()->assertJsonValidationErrors('header_image');
 
         Storage::disk('account_images')->assertMissing('accounts/11111111-1111-4111-8111-111111111111/header/header.webp');

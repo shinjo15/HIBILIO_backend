@@ -20,10 +20,10 @@ final readonly class AccountHeader
         if (
             $image[0] < 640
             || $image[1] < 320
-            || $image[0] > 2560
-            || $image[1] > 1440
+            || $image[0] > 1920
+            || $image[1] > 1080
         ) {
-            throw new InvalidArgumentException('ヘッダー画像は640×320〜2560×1440ピクセルである必要があります。');
+            throw new InvalidArgumentException('ヘッダー画像は640×320〜1920×1080ピクセルである必要があります。');
         }
 
         if (strlen($contents) > 10 * 1024 * 1024) {
