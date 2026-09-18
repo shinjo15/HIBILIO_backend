@@ -28,7 +28,15 @@ final class GetAccountDetails implements GetAccountDetailsInterface
             BlockVisibility::exclude($query, $input->viewerAccountIdentifier(), 'accounts.account_identifier');
         }
 
-        $account = $query->first(['account_identifier', 'account_name', 'account_bio', 'ui_mode']);
+        $query->select(['account_identifier', 'account_name', 'account_bio', 'visibility', 'ui_mode']);
+
+        if ($input->viewerAccountIdentifier() === null) {
+            $query->selectRaw('0 as has_pending_follow_request');
+        } else {
+            $query->selectSub($this->hasPendingFollowRequest($input->viewerAccountIdentifier()), 'has_pending_follow_request');
+        }
+
+        $account = $query->first();
 
         if ($account === null) {
             return new GetAccountDetailsOutput(null);
@@ -60,11 +68,22 @@ final class GetAccountDetails implements GetAccountDetailsInterface
             'accountIdentifier' => (string) $account->account_identifier,
             'name' => (string) $account->account_name,
             'bio' => $account->account_bio === null ? null : (string) $account->account_bio,
+            'visibility' => (string) $account->visibility,
+            'hasPendingFollowRequest' => (bool) $account->has_pending_follow_request,
             'uiMode' => (string) $account->ui_mode,
             'favoriteTags' => $favoriteTags,
             'socialLinks' => $socialLinks,
             'iconImageUrl' => $this->accountImageUrlService->iconImageUrl(new AccountIdentifier((string) $account->account_identifier)),
             'headerImageUrl' => $this->accountImageUrlService->headerImageUrl(new AccountIdentifier((string) $account->account_identifier)),
         ]);
+    }
+
+    private function hasPendingFollowRequest(string $viewerAccountIdentifier): mixed
+    {
+        return DB::table('follow_requests')
+            ->selectRaw('count(*) > 0')
+            ->where('requesting_account_identifier', $viewerAccountIdentifier)
+            ->whereColumn('target_account_identifier', 'accounts.account_identifier')
+            ->where('status', 'pending');
     }
 }

@@ -30,6 +30,8 @@ final readonly class GetAccountDetailsAction
             'account_identifier' => $accountDetails['accountIdentifier'],
             'account_name' => $accountDetails['name'],
             'account_bio' => $accountDetails['bio'],
+            'visibility' => $accountDetails['visibility'],
+            'has_pending_follow_request' => $accountDetails['hasPendingFollowRequest'],
             'icon_image_url' => $accountDetails['iconImageUrl'],
             'header_image_url' => $accountDetails['headerImageUrl'],
             'favorite_tags' => array_map(static fn (array $tag): array => [

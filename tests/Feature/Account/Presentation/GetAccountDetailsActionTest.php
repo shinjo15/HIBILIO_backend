@@ -25,6 +25,8 @@ final class GetAccountDetailsActionTest extends TestCase
                 'account_identifier' => $accountIdentifier,
                 'account_name' => '公開アカウント',
                 'account_bio' => null,
+                'visibility' => 'public',
+                'has_pending_follow_request' => false,
                 'icon_image_url' => null,
                 'header_image_url' => null,
                 'favorite_tags' => [],
@@ -91,7 +93,40 @@ final class GetAccountDetailsActionTest extends TestCase
             ->assertJsonPath('header_image_url', null);
     }
 
-    private function insertAccount(string $identifier, bool $available, string $status, string $name, ?string $bio): void
+    public function test_returns_pending_follow_request_state_for_the_authenticated_viewer(): void
+    {
+        $viewerIdentifier = '11111111-1111-4111-8111-111111111111';
+        $targetIdentifier = '22222222-2222-4222-8222-222222222222';
+        $this->insertAccount($viewerIdentifier, true, 'active', '申請者', null);
+        $this->insertAccount($targetIdentifier, true, 'active', '鍵Account', null, 'private');
+        DB::table('follow_requests')->insert([
+            'requesting_account_identifier' => $viewerIdentifier,
+            'target_account_identifier' => $targetIdentifier,
+            'status' => 'pending',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->withSession(['account_identifier' => $viewerIdentifier])
+            ->getJson("/api/accounts/{$targetIdentifier}")
+            ->assertOk()
+            ->assertJsonPath('visibility', 'private')
+            ->assertJsonPath('has_pending_follow_request', true);
+
+        foreach (['approved', 'rejected'] as $status) {
+            DB::table('follow_requests')->where([
+                'requesting_account_identifier' => $viewerIdentifier,
+                'target_account_identifier' => $targetIdentifier,
+            ])->update(['status' => $status]);
+
+            $this->withSession(['account_identifier' => $viewerIdentifier])
+                ->getJson("/api/accounts/{$targetIdentifier}")
+                ->assertOk()
+                ->assertJsonPath('has_pending_follow_request', false);
+        }
+    }
+
+    private function insertAccount(string $identifier, bool $available, string $status, string $name, ?string $bio, string $visibility = 'public'): void
     {
         DB::table('accounts')->insert([
             'account_identifier' => $identifier,
@@ -100,6 +135,7 @@ final class GetAccountDetailsActionTest extends TestCase
             'email_address' => "{$identifier}@example.com",
             'available' => $available,
             'status' => $status,
+            'visibility' => $visibility,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
