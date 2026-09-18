@@ -6,6 +6,7 @@ namespace App\Http\Actions\Account;
 
 use App\Http\Requests\Account\UpdateAccountProfileRequest;
 use Illuminate\Http\Response;
+use InvalidArgumentException;
 use RuntimeException;
 use Src\Account\Application\Service\AccountImageConverterServiceInterface;
 use Src\Account\Application\Usecase\Command\UpdateAccountProfile\UpdateAccountProfileInterface;
@@ -36,6 +37,8 @@ final readonly class UpdateAccountProfileAction
             ));
         } catch (AccountNotFoundException) {
             return new Response('', 404);
+        } catch (InvalidArgumentException) {
+            return new Response('', 422);
         }
 
         return new Response('', 204);

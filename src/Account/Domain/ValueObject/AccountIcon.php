@@ -20,11 +20,11 @@ final readonly class AccountIcon
         if (
             $image[0] < 128
             || $image[1] < 128
-            || $image[0] > 2048
-            || $image[1] > 2048
+            || $image[0] > 1024
+            || $image[1] > 1024
             || $image[0] !== $image[1]
         ) {
-            throw new InvalidArgumentException('アイコン画像は128〜2048ピクセルの正方形である必要があります。');
+            throw new InvalidArgumentException('アイコン画像は128〜1024ピクセルの正方形である必要があります。');
         }
 
         if (strlen($contents) > 5 * 1024 * 1024) {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Account;
 
+use App\Rules\AccountImageDimensions;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Src\Account\Application\Usecase\Command\CreateAccount\CreateAccountInput;
@@ -36,8 +37,8 @@ final class CreateAccountRequest extends FormRequest
             'social_links.*.social_url' => ['required', 'url'],
             'favorite_tag_identifiers' => ['present', 'array'],
             'favorite_tag_identifiers.*' => ['required', 'uuid'],
-            'icon_image' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:5120'],
-            'header_image' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:10240'],
+            'icon_image' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:5120', new AccountImageDimensions(1024, 1024, 1024 * 1024)],
+            'header_image' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp', 'max:10240', new AccountImageDimensions(1920, 1080, 1920 * 1080)],
         ];
     }
 

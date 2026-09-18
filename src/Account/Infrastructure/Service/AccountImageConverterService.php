@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Src\Account\Infrastructure\Service;
 
-use RuntimeException;
+use InvalidArgumentException;
 use Src\Account\Application\Service\AccountImageConverterServiceInterface;
 use Src\Account\Domain\ValueObject\AccountHeader;
 use Src\Account\Domain\ValueObject\AccountIcon;
@@ -23,10 +23,14 @@ final class AccountImageConverterService implements AccountImageConverterService
 
     private function convertToWebp(string $contents): string
     {
-        $image = imagecreatefromstring($contents);
+        try {
+            $image = imagecreatefromstring($contents);
+        } catch (\Throwable) {
+            throw new InvalidArgumentException('画像をWebPへ変換できません。');
+        }
 
         if ($image === false) {
-            throw new RuntimeException('画像をWebPへ変換できません。');
+            throw new InvalidArgumentException('画像をWebPへ変換できません。');
         }
 
         ob_start();
@@ -35,7 +39,7 @@ final class AccountImageConverterService implements AccountImageConverterService
         imagedestroy($image);
 
         if (! $converted || $webp === false) {
-            throw new RuntimeException('画像をWebPへ変換できません。');
+            throw new InvalidArgumentException('画像をWebPへ変換できません。');
         }
 
         return $webp;
