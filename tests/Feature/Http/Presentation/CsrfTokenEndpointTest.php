@@ -32,6 +32,11 @@ final class CsrfTokenEndpointTest extends TestCase
             ->assertHeader('Access-Control-Allow-Credentials', 'true');
     }
 
+    public function test_includes_the_production_frontend_origin_in_the_default_allowed_origins(): void
+    {
+        self::assertContains('https://hibilio.com', config('cors.allowed_origins'));
+    }
+
     public function test_allows_csrf_header_on_preflight_from_an_allowed_origin(): void
     {
         $this->call('OPTIONS', '/api/my/account', [], [], [], [
