@@ -35,6 +35,8 @@ final class GetAccountDetailsTest extends TestCase
             'accountIdentifier' => $accountIdentifier,
             'name' => '公開アカウント',
             'bio' => '自己紹介',
+            'visibility' => 'public',
+            'hasPendingFollowRequest' => false,
             'uiMode' => 'system',
             'favoriteTags' => [
                 ['tagIdentifier' => 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'tagName' => '朝活'],
