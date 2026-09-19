@@ -50,6 +50,7 @@ final readonly class GetFollowingPostsAction
                     ], $post['routineActions']),
                     'post_like_count' => $post['postLikeCount'],
                     ...self::reactionFieldByCategory($post),
+                    ...self::executionSummaryFieldsByCategory($post),
                     'execution_count' => $post['executionCount'],
                     'customization_count' => $post['customizationCount'],
                 ], $result->posts()),
@@ -70,5 +71,17 @@ final readonly class GetFollowingPostsAction
         return $post['postCategory'] === 'routine'
             ? ['liked' => $post['liked']]
             : ['supported' => $post['supported']];
+    }
+
+    /** @param array{postCategory: string, supportCount: int, executedActionCount: int, routineExecutionMemo: ?string} $post */
+    private static function executionSummaryFieldsByCategory(array $post): array
+    {
+        return $post['postCategory'] === 'action'
+            ? [
+                'support_count' => $post['supportCount'],
+                'executed_action_count' => $post['executedActionCount'],
+                'routine_execution_memo' => $post['routineExecutionMemo'],
+            ]
+            : [];
     }
 }

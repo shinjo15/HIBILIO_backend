@@ -28,14 +28,20 @@ final class GetFollowingPostsActionTest extends TestCase
         $this->insertFollow($followingAccountIdentifier, $followedAccountIdentifier);
         $this->insertRoutine($routineIdentifier, $followedAccountIdentifier, null, '朝の集中ルーティン', 40);
         $this->insertRoutineExecution($routineExecutionIdentifier, $followedAccountIdentifier, $routineIdentifier);
+        DB::table('routine_executions')->where('routine_execution_identifier', $routineExecutionIdentifier)->update(['routine_execution_memo' => '集中できた']);
         $this->insertRoutine('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', $followedAccountIdentifier, $routineIdentifier, 'カスタマイズ版', 30);
         $this->insertRoutine('cccccccc-cccc-4ccc-8ccc-cccccccccccc', $unfollowedAccountIdentifier, null, '対象外ルーティン', 10);
         $this->insertTag('dddddddd-dddd-4ddd-8ddd-dddddddddddd', '朝活');
         $this->insertRoutineTag($routineIdentifier, 'dddddddd-dddd-4ddd-8ddd-dddddddddddd');
         $this->insertRoutineAction('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', $routineIdentifier, '水を飲む', 1);
         $this->insertRoutineAction('ffffffff-ffff-4fff-8fff-ffffffffffff', $routineIdentifier, 'ストレッチ', 5);
+        DB::table('routine_execution_actions')->insert([
+            ['routine_execution_identifier' => $routineExecutionIdentifier, 'routine_action_identifier' => 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', 'created_at' => '2026-09-04 10:30:00', 'updated_at' => '2026-09-04 10:30:00'],
+            ['routine_execution_identifier' => $routineExecutionIdentifier, 'routine_action_identifier' => 'ffffffff-ffff-4fff-8fff-ffffffffffff', 'created_at' => '2026-09-04 10:30:00', 'updated_at' => '2026-09-04 10:30:00'],
+        ]);
         $this->insertPost('12121212-1212-4121-8121-121212121212', $routineIdentifier, null, 'routine', 4, '2026-09-04 10:00:00');
         $this->insertPost('13131313-1313-4131-8131-131313131313', $routineIdentifier, $routineExecutionIdentifier, 'action', 0, '2026-09-04 11:00:00');
+        DB::table('posts')->where('post_identifier', '13131313-1313-4131-8131-131313131313')->update(['post_support_count' => 3]);
         $this->insertPost('14141414-1414-4141-8141-141414141414', 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', null, 'routine', 9, '2026-09-04 12:00:00');
         $this->insertSupport($followingAccountIdentifier, '13131313-1313-4131-8131-131313131313');
 
@@ -72,6 +78,9 @@ final class GetFollowingPostsActionTest extends TestCase
                             ],
                         ],
                         'post_like_count' => 0,
+                        'support_count' => 3,
+                        'executed_action_count' => 2,
+                        'routine_execution_memo' => '集中できた',
                         'supported' => true,
                         'execution_count' => 1,
                         'customization_count' => 1,

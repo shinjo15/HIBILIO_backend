@@ -23,6 +23,7 @@ final class GetFollowingPosts implements GetFollowingPostsInterface
         $query = DB::table('follows')
             ->join('routines', 'follows.followed_account_identifier', '=', 'routines.account_identifier')
             ->join('posts', 'routines.routine_identifier', '=', 'posts.routine_identifier')
+            ->leftJoin('routine_executions', 'posts.routine_execution_identifier', '=', 'routine_executions.routine_execution_identifier')
             ->join('accounts', 'routines.account_identifier', '=', 'accounts.account_identifier')
             ->where('follows.following_account_identifier', $input->accountIdentifier())
             ->where('routines.available', true)
@@ -33,12 +34,15 @@ final class GetFollowingPosts implements GetFollowingPostsInterface
                 'posts.routine_execution_identifier',
                 'posts.post_category',
                 'posts.post_like_count',
+                'posts.post_support_count',
                 'posts.created_at as posted_at',
+                'routine_executions.routine_execution_memo',
                 'routines.account_identifier',
                 'routines.routine_name',
                 'routines.routine_execution_minutes',
                 'accounts.account_name',
             ])
+            ->selectSub(DB::table('routine_execution_actions')->selectRaw('count(*)')->whereColumn('routine_execution_actions.routine_execution_identifier', 'routine_executions.routine_execution_identifier'), 'executed_action_count')
             ->selectSub($this->executionCount(), 'execution_count')
             ->selectSub($this->customizationCount(), 'customization_count')
             ->orderByDesc('posts.created_at')
@@ -77,6 +81,9 @@ final class GetFollowingPosts implements GetFollowingPostsInterface
                 'tags' => $tagsByRoutineIdentifier[(string) $record->routine_identifier] ?? [],
                 'routineActions' => $actionsByRoutineIdentifier[(string) $record->routine_identifier] ?? [],
                 'postLikeCount' => (int) $record->post_like_count,
+                'supportCount' => (int) $record->post_support_count,
+                'executedActionCount' => (int) $record->executed_action_count,
+                'routineExecutionMemo' => $record->routine_execution_memo === null ? null : (string) $record->routine_execution_memo,
                 'liked' => (bool) $record->liked,
                 'supported' => (bool) $record->supported,
                 'executionCount' => (int) $record->execution_count,
