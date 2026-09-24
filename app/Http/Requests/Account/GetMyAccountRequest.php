@@ -24,6 +24,7 @@ final class GetMyAccountRequest extends FormRequest
     {
         return new GetAccountDetailsInput(
             accountIdentifier: $accountIdentifier,
+            viewerAccountIdentifier: $accountIdentifier,
         );
     }
 }

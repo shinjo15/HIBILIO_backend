@@ -26,7 +26,14 @@ final readonly class GetAccountDetailsAction
             return new JsonResponse([], 404);
         }
 
-        return new JsonResponse([
+        if (! $accountDetails['isDetailed']) {
+            return new JsonResponse([
+                'account_identifier' => $accountDetails['accountIdentifier'],
+                'account_name' => $accountDetails['name'],
+            ]);
+        }
+
+        $response = [
             'account_identifier' => $accountDetails['accountIdentifier'],
             'account_name' => $accountDetails['name'],
             'account_bio' => $accountDetails['bio'],
@@ -42,6 +49,12 @@ final readonly class GetAccountDetailsAction
                 'social_type' => $socialLink['socialType'],
                 'social_url' => $socialLink['socialUrl'],
             ], $accountDetails['socialLinks']),
-        ]);
+        ];
+
+        if ($accountDetails['isFollowing'] !== null) {
+            $response['is_following'] = $accountDetails['isFollowing'];
+        }
+
+        return new JsonResponse($response);
     }
 }

@@ -27,7 +27,7 @@ final readonly class GetMyAccountAction
 
         $accountDetails = $this->getAccountDetails->execute($input)->accountDetails();
 
-        if ($accountDetails === null) {
+        if ($accountDetails === null || ! $accountDetails['isDetailed']) {
             return new JsonResponse([], 404);
         }
 

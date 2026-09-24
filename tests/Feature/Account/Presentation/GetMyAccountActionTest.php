@@ -56,6 +56,27 @@ final class GetMyAccountActionTest extends TestCase
         $this->getJson('/api/my/account')->assertUnauthorized();
     }
 
+    public function test_returns_full_details_for_the_authenticated_private_account(): void
+    {
+        $identifier = '11111111-1111-4111-8111-111111111111';
+        $this->insertAccount($identifier, true, 'active', '鍵Account', '自己紹介');
+        DB::table('accounts')->where('account_identifier', $identifier)->update(['visibility' => 'private']);
+
+        $this->withSession(['account_identifier' => $identifier])
+            ->getJson('/api/my/account')
+            ->assertOk()
+            ->assertExactJson([
+                'account_identifier' => $identifier,
+                'account_name' => '鍵Account',
+                'account_bio' => '自己紹介',
+                'icon_image_url' => null,
+                'header_image_url' => null,
+                'ui_mode' => 'system',
+                'favorite_tags' => [],
+                'social_links' => [],
+            ]);
+    }
+
     private function insertAccount(string $identifier, bool $available, string $status, string $name, ?string $bio): void
     {
         DB::table('accounts')->insert([
