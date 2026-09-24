@@ -7,6 +7,7 @@ namespace App\Http\Actions\Account;
 use App\Http\Requests\Account\GetMyAccountRequest;
 use Illuminate\Http\JsonResponse;
 use RuntimeException;
+use Src\Account\Application\Usecase\Query\GetAccountDetails\AccountDetails;
 use Src\Account\Application\Usecase\Query\GetAccountDetails\GetAccountDetailsInterface;
 use Src\Shared\Application\Service\AuthServiceInterface;
 
@@ -27,25 +28,25 @@ final readonly class GetMyAccountAction
 
         $accountDetails = $this->getAccountDetails->execute($input)->accountDetails();
 
-        if ($accountDetails === null) {
+        if (! $accountDetails instanceof AccountDetails) {
             return new JsonResponse([], 404);
         }
 
         return new JsonResponse([
-            'account_identifier' => $accountDetails['accountIdentifier'],
-            'account_name' => $accountDetails['name'],
-            'account_bio' => $accountDetails['bio'],
-            'icon_image_url' => $accountDetails['iconImageUrl'],
-            'header_image_url' => $accountDetails['headerImageUrl'],
-            'ui_mode' => $accountDetails['uiMode'],
+            'account_identifier' => $accountDetails->accountIdentifier,
+            'account_name' => $accountDetails->name,
+            'account_bio' => $accountDetails->bio,
+            'icon_image_url' => $accountDetails->iconImageUrl,
+            'header_image_url' => $accountDetails->headerImageUrl,
+            'ui_mode' => $accountDetails->uiMode,
             'favorite_tags' => array_map(static fn (array $tag): array => [
                 'tag_identifier' => $tag['tagIdentifier'],
                 'tag_name' => $tag['tagName'],
-            ], $accountDetails['favoriteTags']),
+            ], $accountDetails->favoriteTags),
             'social_links' => array_map(static fn (array $socialLink): array => [
                 'social_type' => $socialLink['socialType'],
                 'social_url' => $socialLink['socialUrl'],
-            ], $accountDetails['socialLinks']),
+            ], $accountDetails->socialLinks),
         ]);
     }
 }

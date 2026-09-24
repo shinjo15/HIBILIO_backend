@@ -6,6 +6,8 @@ namespace Src\Account\Application\Usecase\Query\GetAccountDetails;
 
 interface GetAccountDetailsOutputPort
 {
-    /** @return array<string, mixed>|null */
-    public function accountDetails(): ?array;
+    /**
+     * null: unavailable; AccountIdentity: identity only; AccountDetails: full details.
+     */
+    public function accountDetails(): AccountIdentity|AccountDetails|null;
 }
