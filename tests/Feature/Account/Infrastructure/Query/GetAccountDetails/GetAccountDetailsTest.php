@@ -7,8 +7,6 @@ namespace Tests\Feature\Account\Infrastructure\Query\GetAccountDetails;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Src\Account\Application\Service\AccountImageUrlServiceInterface;
-use Src\Account\Application\Usecase\Query\GetAccountDetails\AccountDetails;
-use Src\Account\Application\Usecase\Query\GetAccountDetails\AccountIdentity;
 use Src\Account\Application\Usecase\Query\GetAccountDetails\GetAccountDetailsInput;
 use Src\Account\Application\Usecase\Query\GetAccountDetails\GetAccountDetailsInterface;
 use Src\Account\Infrastructure\Query\GetAccountDetails\GetAccountDetails;
@@ -34,10 +32,11 @@ final class GetAccountDetailsTest extends TestCase
         $result = $this->app->make(GetAccountDetailsInterface::class)->execute(new GetAccountDetailsInput($accountIdentifier));
 
         self::assertInstanceOf(GetAccountDetails::class, $this->app->make(GetAccountDetailsInterface::class));
-        self::assertInstanceOf(AccountDetails::class, $result->accountDetails());
+
         self::assertSame([
             'accountIdentifier' => $accountIdentifier,
             'name' => '公開アカウント',
+            'isDetailed' => true,
             'bio' => '自己紹介',
             'visibility' => 'public',
             'hasPendingFollowRequest' => false,
@@ -54,7 +53,7 @@ final class GetAccountDetailsTest extends TestCase
             'iconImageUrl' => null,
             'headerImageUrl' => null,
             'isFollowing' => null,
-        ], get_object_vars($result->accountDetails()));
+        ], $result->accountDetails());
     }
 
     public function test_returns_null_for_unavailable_or_non_active_accounts(): void
@@ -82,7 +81,7 @@ final class GetAccountDetailsTest extends TestCase
         $query = $this->app->make(GetAccountDetailsInterface::class);
 
         self::assertNull($query->execute(new GetAccountDetailsInput($targetIdentifier))->accountDetails());
-        self::assertEquals(new AccountIdentity($targetIdentifier, '鍵Account'), $query->execute(new GetAccountDetailsInput($targetIdentifier, $viewerIdentifier))->accountDetails());
+        self::assertSame(['accountIdentifier' => $targetIdentifier, 'name' => '鍵Account', 'isDetailed' => false], $query->execute(new GetAccountDetailsInput($targetIdentifier, $viewerIdentifier))->accountDetails());
 
         DB::table('follows')->insert([
             'following_account_identifier' => $viewerIdentifier,
@@ -92,13 +91,13 @@ final class GetAccountDetailsTest extends TestCase
         ]);
 
         $followerDetails = $query->execute(new GetAccountDetailsInput($targetIdentifier, $viewerIdentifier))->accountDetails();
-        self::assertInstanceOf(AccountDetails::class, $followerDetails);
-        self::assertTrue($followerDetails->isFollowing);
-        self::assertSame('秘密の自己紹介', $followerDetails->bio);
+        self::assertTrue($followerDetails['isDetailed']);
+        self::assertTrue($followerDetails['isFollowing']);
+        self::assertSame('秘密の自己紹介', $followerDetails['bio']);
         $ownerDetails = $query->execute(new GetAccountDetailsInput($targetIdentifier, $targetIdentifier))->accountDetails();
-        self::assertInstanceOf(AccountDetails::class, $ownerDetails);
-        self::assertFalse($ownerDetails->isFollowing);
-        self::assertSame('秘密の自己紹介', $ownerDetails->bio);
+        self::assertTrue($ownerDetails['isDetailed']);
+        self::assertFalse($ownerDetails['isFollowing']);
+        self::assertSame('秘密の自己紹介', $ownerDetails['bio']);
     }
 
     public function test_reverse_follow_does_not_expose_private_details_or_generate_image_urls(): void
@@ -118,7 +117,7 @@ final class GetAccountDetailsTest extends TestCase
         $images->expects(self::never())->method('headerImageUrl');
         $query = new GetAccountDetails($images);
 
-        self::assertEquals(new AccountIdentity($target, '鍵Account'), $query->execute(new GetAccountDetailsInput($target, $viewer))->accountDetails());
+        self::assertSame(['accountIdentifier' => $target, 'name' => '鍵Account', 'isDetailed' => false], $query->execute(new GetAccountDetailsInput($target, $viewer))->accountDetails());
         self::assertNull($query->execute(new GetAccountDetailsInput($target))->accountDetails());
     }
 
