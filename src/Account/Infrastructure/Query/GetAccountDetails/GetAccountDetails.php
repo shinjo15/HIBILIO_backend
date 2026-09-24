@@ -31,15 +31,34 @@ final class GetAccountDetails implements GetAccountDetailsInterface
         $query->select(['account_identifier', 'account_name', 'account_bio', 'visibility', 'ui_mode']);
 
         if ($input->viewerAccountIdentifier() === null) {
-            $query->selectRaw('0 as has_pending_follow_request');
+            $query
+                ->selectRaw('0 as has_pending_follow_request')
+                ->selectRaw('0 as is_following');
         } else {
-            $query->selectSub($this->hasPendingFollowRequest($input->viewerAccountIdentifier()), 'has_pending_follow_request');
+            $query
+                ->selectSub($this->hasPendingFollowRequest($input->viewerAccountIdentifier()), 'has_pending_follow_request')
+                ->selectSub($this->isFollowing($input->viewerAccountIdentifier()), 'is_following');
         }
 
         $account = $query->first();
 
         if ($account === null) {
             return new GetAccountDetailsOutput(null);
+        }
+
+        if ($account->visibility === 'private' && $input->viewerAccountIdentifier() === null) {
+            return new GetAccountDetailsOutput(null);
+        }
+
+        $isOwnAccount = $input->viewerAccountIdentifier() === $account->account_identifier;
+        $isFollowing = ! $isOwnAccount && (bool) $account->is_following;
+
+        if ($account->visibility === 'private' && ! $isFollowing && ! $isOwnAccount) {
+            return new GetAccountDetailsOutput([
+                'accountIdentifier' => (string) $account->account_identifier,
+                'name' => (string) $account->account_name,
+                'isDetailed' => false,
+            ]);
         }
 
         $favoriteTags = DB::table('favorite_tags')
@@ -67,6 +86,8 @@ final class GetAccountDetails implements GetAccountDetailsInterface
         return new GetAccountDetailsOutput([
             'accountIdentifier' => (string) $account->account_identifier,
             'name' => (string) $account->account_name,
+            'isDetailed' => true,
+            'isFollowing' => $isFollowing,
             'bio' => $account->account_bio === null ? null : (string) $account->account_bio,
             'visibility' => (string) $account->visibility,
             'hasPendingFollowRequest' => (bool) $account->has_pending_follow_request,
@@ -85,5 +106,13 @@ final class GetAccountDetails implements GetAccountDetailsInterface
             ->where('requesting_account_identifier', $viewerAccountIdentifier)
             ->whereColumn('target_account_identifier', 'accounts.account_identifier')
             ->where('status', 'pending');
+    }
+
+    private function isFollowing(string $viewerAccountIdentifier): mixed
+    {
+        return DB::table('follows')
+            ->selectRaw('count(*) > 0')
+            ->where('following_account_identifier', $viewerAccountIdentifier)
+            ->whereColumn('followed_account_identifier', 'accounts.account_identifier');
     }
 }

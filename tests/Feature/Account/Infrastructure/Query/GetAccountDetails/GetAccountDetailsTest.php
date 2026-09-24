@@ -34,6 +34,8 @@ final class GetAccountDetailsTest extends TestCase
         self::assertSame([
             'accountIdentifier' => $accountIdentifier,
             'name' => '公開アカウント',
+            'isDetailed' => true,
+            'isFollowing' => false,
             'bio' => '自己紹介',
             'visibility' => 'public',
             'hasPendingFollowRequest' => false,
@@ -68,7 +70,33 @@ final class GetAccountDetailsTest extends TestCase
         self::assertNull($query->execute(new GetAccountDetailsInput($permanentlyBannedAccountIdentifier))->accountDetails());
     }
 
-    private function insertAccount(string $identifier, bool $available, string $status, string $name, ?string $bio): void
+    public function test_limits_private_account_details_to_followers_and_the_account_owner(): void
+    {
+        $viewerIdentifier = '11111111-1111-4111-8111-111111111111';
+        $targetIdentifier = '22222222-2222-4222-8222-222222222222';
+        $this->insertAccount($viewerIdentifier, true, 'active', '閲覧者', null);
+        $this->insertAccount($targetIdentifier, true, 'active', '鍵Account', '秘密の自己紹介', 'private');
+        $query = $this->app->make(GetAccountDetailsInterface::class);
+
+        self::assertNull($query->execute(new GetAccountDetailsInput($targetIdentifier))->accountDetails());
+        self::assertSame([
+            'accountIdentifier' => $targetIdentifier,
+            'name' => '鍵Account',
+            'isDetailed' => false,
+        ], $query->execute(new GetAccountDetailsInput($targetIdentifier, $viewerIdentifier))->accountDetails());
+
+        DB::table('follows')->insert([
+            'following_account_identifier' => $viewerIdentifier,
+            'followed_account_identifier' => $targetIdentifier,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        self::assertTrue($query->execute(new GetAccountDetailsInput($targetIdentifier, $viewerIdentifier))->accountDetails()['isFollowing']);
+        self::assertFalse($query->execute(new GetAccountDetailsInput($targetIdentifier, $targetIdentifier))->accountDetails()['isFollowing']);
+    }
+
+    private function insertAccount(string $identifier, bool $available, string $status, string $name, ?string $bio, string $visibility = 'public'): void
     {
         DB::table('accounts')->insert([
             'account_identifier' => $identifier,
@@ -77,6 +105,7 @@ final class GetAccountDetailsTest extends TestCase
             'email_address' => "{$identifier}@example.com",
             'available' => $available,
             'status' => $status,
+            'visibility' => $visibility,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
