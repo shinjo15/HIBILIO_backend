@@ -8,7 +8,9 @@ namespace Src\Account\Application\Usecase\Query\GetAccountDetails;
  * @phpstan-type AccountDetails array{
  *     accountIdentifier: string,
  *     name: string,
- *     isDetailed: false
+ *     isDetailed: false,
+ *     visibility: string,
+ *     hasPendingFollowRequest: bool
  * }|array{
  *     accountIdentifier: string,
  *     name: string,

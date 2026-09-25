@@ -93,7 +93,7 @@ final class GetAccountDetailsActionTest extends TestCase
             ->assertJsonPath('header_image_url', null);
     }
 
-    public function test_returns_only_the_identity_fields_for_a_pending_follow_request(): void
+    public function test_returns_the_minimum_private_account_details_with_pending_follow_request_state_for_an_authenticated_non_follower(): void
     {
         $viewerIdentifier = '11111111-1111-4111-8111-111111111111';
         $targetIdentifier = '22222222-2222-4222-8222-222222222222';
@@ -112,6 +112,8 @@ final class GetAccountDetailsActionTest extends TestCase
             ->assertExactJson([
                 'account_identifier' => $targetIdentifier,
                 'account_name' => '鍵Account',
+                'visibility' => 'private',
+                'has_pending_follow_request' => true,
             ]);
 
         foreach (['approved', 'rejected'] as $status) {
@@ -125,6 +127,8 @@ final class GetAccountDetailsActionTest extends TestCase
                 ->assertExactJson([
                     'account_identifier' => $targetIdentifier,
                     'account_name' => '鍵Account',
+                    'visibility' => 'private',
+                    'has_pending_follow_request' => false,
                 ]);
         }
     }
@@ -167,6 +171,8 @@ final class GetAccountDetailsActionTest extends TestCase
             ->assertExactJson([
                 'account_identifier' => $targetIdentifier,
                 'account_name' => '鍵Account',
+                'visibility' => 'private',
+                'has_pending_follow_request' => false,
             ]);
 
         DB::table('follows')->insert([

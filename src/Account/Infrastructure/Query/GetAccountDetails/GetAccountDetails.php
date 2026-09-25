@@ -59,6 +59,8 @@ final class GetAccountDetails implements GetAccountDetailsInterface
                 'accountIdentifier' => (string) $account->account_identifier,
                 'name' => (string) $account->account_name,
                 'isDetailed' => false,
+                'visibility' => (string) $account->visibility,
+                'hasPendingFollowRequest' => (bool) $account->has_pending_follow_request,
             ]);
         }
 
