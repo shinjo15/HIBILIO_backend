@@ -29,6 +29,8 @@ use Src\Account\Application\Usecase\Command\RejectFollowRequest\RejectFollowRequ
 use Src\Account\Application\Usecase\Command\RejectFollowRequest\RejectFollowRequestInterface;
 use Src\Account\Application\Usecase\Command\RemoveBlock\RemoveBlock;
 use Src\Account\Application\Usecase\Command\RemoveBlock\RemoveBlockInterface;
+use Src\Account\Application\Usecase\Command\RemoveFollowRequest\RemoveFollowRequest;
+use Src\Account\Application\Usecase\Command\RemoveFollowRequest\RemoveFollowRequestInterface;
 use Src\Account\Application\Usecase\Command\UpdateAccountProfile\UpdateAccountProfile;
 use Src\Account\Application\Usecase\Command\UpdateAccountProfile\UpdateAccountProfileInterface;
 use Src\Account\Application\Usecase\Query\GetAccountDetails\GetAccountDetailsInterface;
@@ -260,6 +262,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(CreateFollowInterface::class, CreateFollow::class);
         $this->app->bind(ApproveFollowRequestInterface::class, ApproveFollowRequest::class);
         $this->app->bind(RejectFollowRequestInterface::class, RejectFollowRequest::class);
+        $this->app->bind(RemoveFollowRequestInterface::class, RemoveFollowRequest::class);
         $this->app->bind(GetFollowingPostsInterface::class, GetFollowingPosts::class);
         $this->app->bind(GetFollowingAccountsInterface::class, GetFollowingAccounts::class);
         $this->app->bind(GetPopularRoutinePostsInterface::class, GetPopularRoutinePosts::class);
