@@ -36,6 +36,14 @@ final class FollowRequestRepository implements FollowRequestRepositoryInterface
         }
     }
 
+    public function delete(FollowRequest $followRequest): void
+    {
+        FollowRequestModel::query()
+            ->where('requesting_account_identifier', $followRequest->requestingAccountIdentifier()->value())
+            ->where('target_account_identifier', $followRequest->targetAccountIdentifier()->value())
+            ->delete();
+    }
+
     private function restore(?FollowRequestModel $model): ?FollowRequest
     {
         return $model === null ? null : new FollowRequest(new AccountIdentifier($model->requesting_account_identifier), new AccountIdentifier($model->target_account_identifier), FollowRequestStatus::from($model->status));

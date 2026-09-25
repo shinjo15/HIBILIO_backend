@@ -14,4 +14,6 @@ interface FollowRequestRepositoryInterface
     public function findForUpdate(AccountIdentifier $requestingAccountIdentifier, AccountIdentifier $targetAccountIdentifier): ?FollowRequest;
 
     public function save(FollowRequest $followRequest): void;
+
+    public function delete(FollowRequest $followRequest): void;
 }
