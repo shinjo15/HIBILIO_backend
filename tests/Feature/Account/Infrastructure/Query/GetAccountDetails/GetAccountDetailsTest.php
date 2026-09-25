@@ -81,7 +81,13 @@ final class GetAccountDetailsTest extends TestCase
         $query = $this->app->make(GetAccountDetailsInterface::class);
 
         self::assertNull($query->execute(new GetAccountDetailsInput($targetIdentifier))->accountDetails());
-        self::assertSame(['accountIdentifier' => $targetIdentifier, 'name' => '鍵Account', 'isDetailed' => false], $query->execute(new GetAccountDetailsInput($targetIdentifier, $viewerIdentifier))->accountDetails());
+        self::assertSame([
+            'accountIdentifier' => $targetIdentifier,
+            'name' => '鍵Account',
+            'isDetailed' => false,
+            'visibility' => 'private',
+            'hasPendingFollowRequest' => false,
+        ], $query->execute(new GetAccountDetailsInput($targetIdentifier, $viewerIdentifier))->accountDetails());
 
         DB::table('follows')->insert([
             'following_account_identifier' => $viewerIdentifier,
@@ -117,7 +123,13 @@ final class GetAccountDetailsTest extends TestCase
         $images->expects(self::never())->method('headerImageUrl');
         $query = new GetAccountDetails($images);
 
-        self::assertSame(['accountIdentifier' => $target, 'name' => '鍵Account', 'isDetailed' => false], $query->execute(new GetAccountDetailsInput($target, $viewer))->accountDetails());
+        self::assertSame([
+            'accountIdentifier' => $target,
+            'name' => '鍵Account',
+            'isDetailed' => false,
+            'visibility' => 'private',
+            'hasPendingFollowRequest' => false,
+        ], $query->execute(new GetAccountDetailsInput($target, $viewer))->accountDetails());
         self::assertNull($query->execute(new GetAccountDetailsInput($target))->accountDetails());
     }
 
