@@ -8,7 +8,6 @@ use App\Http\Requests\Account\GetSentFollowRequestsRequest;
 use Illuminate\Http\JsonResponse;
 use RuntimeException;
 use Src\Account\Application\Usecase\Query\GetSentFollowRequests\GetSentFollowRequestsInterface;
-use Src\Account\Application\Usecase\Query\GetSentFollowRequests\GetSentFollowRequestsOutput;
 use Src\Shared\Application\Service\AuthServiceInterface;
 
 final readonly class GetSentFollowRequestsAction
@@ -23,12 +22,12 @@ final readonly class GetSentFollowRequestsAction
             return new JsonResponse([], 401);
         }
 
-        return new JsonResponse(['follow_requests' => array_map(static fn (GetSentFollowRequestsOutput $followRequest): array => [
-            'account_identifier' => $followRequest->accountIdentifier(),
-            'account_name' => $followRequest->accountName(),
-            'account_bio' => $followRequest->accountBio(),
-            'icon_image_url' => $followRequest->iconImageUrl(),
-            'header_image_url' => $followRequest->headerImageUrl(),
+        return new JsonResponse(['follow_requests' => array_map(static fn (array $account): array => [
+            'account_identifier' => $account['accountIdentifier'],
+            'account_name' => $account['accountName'],
+            'account_bio' => $account['accountBio'],
+            'icon_image_url' => $account['iconImageUrl'],
+            'header_image_url' => $account['headerImageUrl'],
         ], $output->followRequests())]);
     }
 }
