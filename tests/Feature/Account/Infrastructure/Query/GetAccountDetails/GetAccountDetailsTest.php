@@ -85,8 +85,11 @@ final class GetAccountDetailsTest extends TestCase
             'accountIdentifier' => $targetIdentifier,
             'name' => '鍵Account',
             'isDetailed' => false,
+            'bio' => '秘密の自己紹介',
             'visibility' => 'private',
             'hasPendingFollowRequest' => false,
+            'iconImageUrl' => null,
+            'headerImageUrl' => null,
         ], $query->execute(new GetAccountDetailsInput($targetIdentifier, $viewerIdentifier))->accountDetails());
 
         DB::table('follows')->insert([
@@ -106,7 +109,7 @@ final class GetAccountDetailsTest extends TestCase
         self::assertSame('秘密の自己紹介', $ownerDetails['bio']);
     }
 
-    public function test_reverse_follow_does_not_expose_private_details_or_generate_image_urls(): void
+    public function test_reverse_follow_returns_minimum_private_profile_and_generates_image_urls(): void
     {
         $viewer = '11111111-1111-4111-8111-111111111111';
         $target = '22222222-2222-4222-8222-222222222222';
@@ -119,16 +122,19 @@ final class GetAccountDetailsTest extends TestCase
             'updated_at' => now(),
         ]);
         $images = $this->createMock(AccountImageUrlServiceInterface::class);
-        $images->expects(self::never())->method('iconImageUrl');
-        $images->expects(self::never())->method('headerImageUrl');
+        $images->expects(self::once())->method('iconImageUrl')->willReturn('https://images.example/icon');
+        $images->expects(self::once())->method('headerImageUrl')->willReturn('https://images.example/header');
         $query = new GetAccountDetails($images);
 
         self::assertSame([
             'accountIdentifier' => $target,
             'name' => '鍵Account',
             'isDetailed' => false,
+            'bio' => '秘密',
             'visibility' => 'private',
             'hasPendingFollowRequest' => false,
+            'iconImageUrl' => 'https://images.example/icon',
+            'headerImageUrl' => 'https://images.example/header',
         ], $query->execute(new GetAccountDetailsInput($target, $viewer))->accountDetails());
         self::assertNull($query->execute(new GetAccountDetailsInput($target))->accountDetails());
     }

@@ -9,8 +9,11 @@ namespace Src\Account\Application\Usecase\Query\GetAccountDetails;
  *     accountIdentifier: string,
  *     name: string,
  *     isDetailed: false,
+ *     bio: ?string,
  *     visibility: string,
- *     hasPendingFollowRequest: bool
+ *     hasPendingFollowRequest: bool,
+ *     iconImageUrl: ?string,
+ *     headerImageUrl: ?string
  * }|array{
  *     accountIdentifier: string,
  *     name: string,
@@ -29,7 +32,7 @@ namespace Src\Account\Application\Usecase\Query\GetAccountDetails;
 interface GetAccountDetailsOutputPort
 {
     /**
-     * null means unavailable. isDetailed=false returns identity only.
+     * null means unavailable. isDetailed=false returns the minimum public profile.
      * isFollowing is null for anonymous viewers, otherwise the viewer-to-account follow state.
      *
      * @return AccountDetails|null
