@@ -225,6 +225,8 @@ final class InMemoryFollowRequestRepository implements FollowRequestRepositoryIn
         $this->saved[] = $followRequest;
     }
 
+    public function delete(FollowRequest $followRequest): void {}
+
     private function matching(AccountIdentifier $requestingAccountIdentifier, AccountIdentifier $targetAccountIdentifier): ?FollowRequest
     {
         if ($this->existing?->requestingAccountIdentifier()->value() !== $requestingAccountIdentifier->value() || $this->existing?->targetAccountIdentifier()->value() !== $targetAccountIdentifier->value()) {
