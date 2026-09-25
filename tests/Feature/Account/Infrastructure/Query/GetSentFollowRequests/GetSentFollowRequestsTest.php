@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Src\Account\Application\Service\AccountImageUrlServiceInterface;
 use Src\Account\Application\Usecase\Query\GetSentFollowRequests\GetSentFollowRequestsInput;
 use Src\Account\Application\Usecase\Query\GetSentFollowRequests\GetSentFollowRequestsInterface;
+use Src\Account\Application\Usecase\Query\GetSentFollowRequests\GetSentFollowRequestsOutput;
 use Src\Account\Infrastructure\Query\GetSentFollowRequests\GetSentFollowRequests;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Tests\TestCase;
@@ -45,29 +46,28 @@ final class GetSentFollowRequestsTest extends TestCase
         $result = $this->app->make(GetSentFollowRequestsInterface::class)->execute(new GetSentFollowRequestsInput($requesting));
 
         self::assertInstanceOf(GetSentFollowRequests::class, $this->app->make(GetSentFollowRequestsInterface::class));
-        self::assertSame([
-            [
-                'accountIdentifier' => $sameTimeRejectedTarget,
-                'accountName' => '却下済み申請先',
-                'accountBio' => null,
-                'iconImageUrl' => "https://images.example/accounts/{$sameTimeRejectedTarget}/icon",
-                'headerImageUrl' => "https://images.example/accounts/{$sameTimeRejectedTarget}/header",
-            ],
-            [
-                'accountIdentifier' => $sameTimePendingTarget,
-                'accountName' => '保留中申請先',
-                'accountBio' => '保留中自己紹介',
-                'iconImageUrl' => "https://images.example/accounts/{$sameTimePendingTarget}/icon",
-                'headerImageUrl' => "https://images.example/accounts/{$sameTimePendingTarget}/header",
-            ],
-            [
-                'accountIdentifier' => $olderPendingTarget,
-                'accountName' => '古い申請先',
-                'accountBio' => '古い自己紹介',
-                'iconImageUrl' => "https://images.example/accounts/{$olderPendingTarget}/icon",
-                'headerImageUrl' => "https://images.example/accounts/{$olderPendingTarget}/header",
-            ],
-        ], $result->followRequests());
+        $followRequests = $result->followRequests();
+
+        self::assertCount(3, $followRequests);
+        self::assertContainsOnlyInstancesOf(GetSentFollowRequestsOutput::class, $followRequests);
+
+        self::assertSame($sameTimeRejectedTarget, $followRequests[0]->accountIdentifier());
+        self::assertSame('却下済み申請先', $followRequests[0]->accountName());
+        self::assertNull($followRequests[0]->accountBio());
+        self::assertSame("https://images.example/accounts/{$sameTimeRejectedTarget}/icon", $followRequests[0]->iconImageUrl());
+        self::assertSame("https://images.example/accounts/{$sameTimeRejectedTarget}/header", $followRequests[0]->headerImageUrl());
+
+        self::assertSame($sameTimePendingTarget, $followRequests[1]->accountIdentifier());
+        self::assertSame('保留中申請先', $followRequests[1]->accountName());
+        self::assertSame('保留中自己紹介', $followRequests[1]->accountBio());
+        self::assertSame("https://images.example/accounts/{$sameTimePendingTarget}/icon", $followRequests[1]->iconImageUrl());
+        self::assertSame("https://images.example/accounts/{$sameTimePendingTarget}/header", $followRequests[1]->headerImageUrl());
+
+        self::assertSame($olderPendingTarget, $followRequests[2]->accountIdentifier());
+        self::assertSame('古い申請先', $followRequests[2]->accountName());
+        self::assertSame('古い自己紹介', $followRequests[2]->accountBio());
+        self::assertSame("https://images.example/accounts/{$olderPendingTarget}/icon", $followRequests[2]->iconImageUrl());
+        self::assertSame("https://images.example/accounts/{$olderPendingTarget}/header", $followRequests[2]->headerImageUrl());
     }
 
     protected function setUp(): void

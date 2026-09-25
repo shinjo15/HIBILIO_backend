@@ -6,6 +6,6 @@ namespace Src\Account\Application\Usecase\Query\GetSentFollowRequests;
 
 interface GetSentFollowRequestsOutputPort
 {
-    /** @return list<array{accountIdentifier: string, accountName: string, accountBio: ?string, iconImageUrl: ?string, headerImageUrl: ?string}> */
+    /** @return list<GetSentFollowRequestsOutput> */
     public function followRequests(): array;
 }

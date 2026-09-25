@@ -4,13 +4,38 @@ declare(strict_types=1);
 
 namespace Src\Account\Application\Usecase\Query\GetSentFollowRequests;
 
-final readonly class GetSentFollowRequestsOutput implements GetSentFollowRequestsOutputPort
+final readonly class GetSentFollowRequestsOutput
 {
-    /** @param list<array{accountIdentifier: string, accountName: string, accountBio: ?string, iconImageUrl: ?string, headerImageUrl: ?string}> $followRequests */
-    public function __construct(private array $followRequests) {}
+    public function __construct(
+        private string $accountIdentifier,
+        private string $accountName,
+        private ?string $accountBio,
+        private ?string $iconImageUrl,
+        private ?string $headerImageUrl,
+    ) {}
 
-    public function followRequests(): array
+    public function accountIdentifier(): string
     {
-        return $this->followRequests;
+        return $this->accountIdentifier;
+    }
+
+    public function accountName(): string
+    {
+        return $this->accountName;
+    }
+
+    public function accountBio(): ?string
+    {
+        return $this->accountBio;
+    }
+
+    public function iconImageUrl(): ?string
+    {
+        return $this->iconImageUrl;
+    }
+
+    public function headerImageUrl(): ?string
+    {
+        return $this->headerImageUrl;
     }
 }

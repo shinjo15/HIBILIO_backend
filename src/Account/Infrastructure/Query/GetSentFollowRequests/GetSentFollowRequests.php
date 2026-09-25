@@ -9,6 +9,7 @@ use Src\Account\Application\Service\AccountImageUrlServiceInterface;
 use Src\Account\Application\Usecase\Query\GetSentFollowRequests\GetSentFollowRequestsInputPort;
 use Src\Account\Application\Usecase\Query\GetSentFollowRequests\GetSentFollowRequestsInterface;
 use Src\Account\Application\Usecase\Query\GetSentFollowRequests\GetSentFollowRequestsOutput;
+use Src\Account\Application\Usecase\Query\GetSentFollowRequests\GetSentFollowRequestsOutputList;
 use Src\Account\Application\Usecase\Query\GetSentFollowRequests\GetSentFollowRequestsOutputPort;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
@@ -25,15 +26,15 @@ final readonly class GetSentFollowRequests implements GetSentFollowRequestsInter
             ->orderByDesc('follow_requests.created_at')
             ->orderBy('follow_requests.target_account_identifier')
             ->get(['accounts.account_identifier', 'accounts.account_name', 'accounts.account_bio'])
-            ->map(fn (object $account): array => [
-                'accountIdentifier' => (string) $account->account_identifier,
-                'accountName' => (string) $account->account_name,
-                'accountBio' => $account->account_bio === null ? null : (string) $account->account_bio,
-                'iconImageUrl' => $this->accountImageUrlService->iconImageUrl(new AccountIdentifier((string) $account->account_identifier)),
-                'headerImageUrl' => $this->accountImageUrlService->headerImageUrl(new AccountIdentifier((string) $account->account_identifier)),
-            ])
+            ->map(fn (object $account): GetSentFollowRequestsOutput => new GetSentFollowRequestsOutput(
+                (string) $account->account_identifier,
+                (string) $account->account_name,
+                $account->account_bio === null ? null : (string) $account->account_bio,
+                $this->accountImageUrlService->iconImageUrl(new AccountIdentifier((string) $account->account_identifier)),
+                $this->accountImageUrlService->headerImageUrl(new AccountIdentifier((string) $account->account_identifier)),
+            ))
             ->all();
 
-        return new GetSentFollowRequestsOutput($followRequests);
+        return new GetSentFollowRequestsOutputList($followRequests);
     }
 }
