@@ -22,6 +22,7 @@ use App\Http\Actions\Account\GetReceivedFollowRequestsAction;
 use App\Http\Actions\Account\GetSentFollowRequestsAction;
 use App\Http\Actions\Account\RejectFollowRequestAction;
 use App\Http\Actions\Account\RemoveBlockAction;
+use App\Http\Actions\Account\RemoveFollowRequestAction;
 use App\Http\Actions\Account\SearchAccountsAction;
 use App\Http\Actions\Account\UpdateAccountProfileAction;
 use App\Http\Actions\Authentication\GenerateLoginPasscodeAction;
@@ -88,6 +89,7 @@ Route::middleware('web')->group(static function (): void {
     Route::post('/follows', CreateFollowAction::class);
     Route::post('/follow-requests/{requesting_account_identifier}/approve', ApproveFollowRequestAction::class)->whereUuid('requesting_account_identifier');
     Route::post('/follow-requests/{requesting_account_identifier}/reject', RejectFollowRequestAction::class)->whereUuid('requesting_account_identifier');
+    Route::delete('/follow-requests/{target_account_identifier}', RemoveFollowRequestAction::class)->whereUuid('target_account_identifier');
     Route::get('/following/posts', GetFollowingPostsAction::class);
     Route::get('/posts/popular', GetPopularRoutinePostsAction::class);
     Route::get('/posts/favorite_tags', GetFavoriteTagPostsAction::class);
