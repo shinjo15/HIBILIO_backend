@@ -6,6 +6,7 @@ namespace Tests\Feature\Account\Presentation;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Src\Shared\Application\Service\AuthServiceInterface;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Tests\TestCase;
@@ -24,6 +25,8 @@ final class GetMyAccountActionTest extends TestCase
         $this->app->instance(AuthServiceInterface::class, new class implements AuthServiceInterface
         {
             public function login(AccountIdentifier $accountIdentifier): void {}
+
+            public function logout(): void {}
 
             public function accountIdentifier(): string
             {
@@ -55,6 +58,32 @@ final class GetMyAccountActionTest extends TestCase
     public function test_returns_unauthorized_without_an_authenticated_account(): void
     {
         $this->getJson('/api/my/account')->assertUnauthorized();
+    }
+
+    public function test_restores_the_account_session_and_rotates_the_persistent_login_cookie(): void
+    {
+        $accountIdentifier = '11111111-1111-4111-8111-111111111111';
+        $selector = 'persistent-login-selector';
+        $validator = 'persistent-login-validator';
+        $this->insertAccount($accountIdentifier, true, 'active', 'ログインアカウント', '自己紹介');
+        DB::table('persistent_login_tokens')->insert([
+            'selector' => $selector,
+            'account_identifier' => $accountIdentifier,
+            'validator_hash' => Hash::make($validator),
+            'expires_at' => now()->addDay(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->withCredentials()
+            ->withCookie('hibilio_persistent_login', $selector.'.'.$validator)
+            ->getJson('/api/my/account')
+            ->assertOk()
+            ->assertCookie('hibilio_persistent_login');
+
+        self::assertSame($accountIdentifier, session('account_identifier'));
+        self::assertFalse(DB::table('persistent_login_tokens')->where('selector', $selector)->exists());
+        self::assertSame(1, DB::table('persistent_login_tokens')->count());
     }
 
     public function test_returns_full_details_for_the_authenticated_private_account(): void

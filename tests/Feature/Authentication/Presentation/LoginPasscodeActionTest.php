@@ -86,6 +86,7 @@ final class LoginPasscodeActionTest extends TestCase
     public function test_verification_establishes_an_account_session_and_deletes_the_challenge(): void
     {
         $challengeIdentifier = new LoginPasscodeChallengeIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87');
+        $this->insertAccount('user@example.com');
         $service = new RedisLoginPasscodeStateService;
         Redis::del('login-passcode:challenge:'.$challengeIdentifier->value());
         $service->register(new LoginPasscodeChallenge(
@@ -97,7 +98,8 @@ final class LoginPasscodeActionTest extends TestCase
 
         $this->withSession(['login_passcode_challenge_identifier' => $challengeIdentifier->value()])
             ->postJson('/api/login-passcodes/verification', ['passcode' => '123456'])
-            ->assertNoContent();
+            ->assertNoContent()
+            ->assertCookie(LaravelAuthService::PERSISTENT_LOGIN_COOKIE);
 
         self::assertNull($service->find($challengeIdentifier));
         self::assertSame('f0cfa1a3-1ac7-44af-9bf4-b36c9262f028', $this->app['session.store']->get(LaravelAuthService::SESSION_KEY));

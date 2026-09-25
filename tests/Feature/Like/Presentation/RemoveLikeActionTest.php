@@ -43,6 +43,8 @@ final class RemoveLikeActionTest extends TestCase
         {
             public function login(AccountIdentifier $accountIdentifier): void {}
 
+            public function logout(): void {}
+
             public function accountIdentifier(): string
             {
                 return 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';

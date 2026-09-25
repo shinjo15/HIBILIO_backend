@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Tests\Feature\Authentication\Presentation;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Src\Authentication\Application\Service\SocialLoginServiceInterface;
 use Src\Authentication\Application\Usecase\Command\CompleteSocialLogin\CompleteSocialLoginInterface;
 use Src\Authentication\Application\Usecase\Command\CompleteSocialLogin\CompleteSocialLoginOutput;
 use Src\Authentication\Domain\ValueObject\PendingSocialRegistration;
 use Src\Authentication\Domain\ValueObject\SocialLoginProvider;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
+use Src\Shared\Infrastructure\Service\LaravelAuthService;
 use Tests\TestCase;
 
 final class CompleteSocialLoginActionTest extends TestCase
@@ -26,12 +28,22 @@ final class CompleteSocialLoginActionTest extends TestCase
     public function test_existing_account_callback_redirects_to_frontend_home_and_logs_in(): void
     {
         $identifier = new AccountIdentifier('11111111-1111-4111-8111-111111111111');
+        DB::table('accounts')->insert([
+            'account_identifier' => $identifier->value(),
+            'account_name' => 'ソーシャルログインAccount',
+            'email_address' => 'social-login@example.com',
+            'available' => true,
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
         $this->mock(CompleteSocialLoginInterface::class, function ($mock) use ($identifier): void {
             $mock->shouldReceive('execute')->once()->andReturn(CompleteSocialLoginOutput::authenticated($identifier));
         });
 
         $this->get('/auth/social/google/callback?code=provider-code&state=state-value')
-            ->assertRedirect('https://frontend.example/');
+            ->assertRedirect('https://frontend.example/')
+            ->assertCookie(LaravelAuthService::PERSISTENT_LOGIN_COOKIE);
 
         self::assertSame($identifier->value(), session('account_identifier'));
     }

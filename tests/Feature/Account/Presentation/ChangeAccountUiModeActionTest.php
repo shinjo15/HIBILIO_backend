@@ -30,6 +30,8 @@ final class ChangeAccountUiModeActionTest extends TestCase
         {
             public function login(AccountIdentifier $accountIdentifier): void {}
 
+            public function logout(): void {}
+
             public function accountIdentifier(): string
             {
                 return '11111111-1111-4111-8111-111111111111';

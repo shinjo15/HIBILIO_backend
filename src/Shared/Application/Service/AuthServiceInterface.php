@@ -11,4 +11,6 @@ interface AuthServiceInterface
     public function login(AccountIdentifier $accountIdentifier): void;
 
     public function accountIdentifier(): ?string;
+
+    public function logout(): void;
 }

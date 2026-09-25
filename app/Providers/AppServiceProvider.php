@@ -99,9 +99,11 @@ use Src\Authentication\Application\UseCase\VerifyRegistrationPasscode\VerifyRegi
 use Src\Authentication\Application\UseCase\VerifyRegistrationPasscode\VerifyRegistrationPasscodeInterface;
 use Src\Authentication\Domain\Factory\LoginPasscodeChallengeFactoryInterface;
 use Src\Authentication\Domain\Factory\RegistrationPasscodeChallengeFactoryInterface;
+use Src\Authentication\Domain\Repository\PersistentLoginTokenRepositoryInterface;
 use Src\Authentication\Domain\Repository\SocialLoginConnectionRepositoryInterface;
 use Src\Authentication\Infrastructure\Factory\LoginPasscodeChallengeFactory;
 use Src\Authentication\Infrastructure\Factory\RegistrationPasscodeChallengeFactory;
+use Src\Authentication\Infrastructure\Repository\PersistentLoginTokenRepository;
 use Src\Authentication\Infrastructure\Repository\SocialLoginConnectionRepository;
 use Src\Authentication\Infrastructure\Service\CacheSocialLoginStateService;
 use Src\Authentication\Infrastructure\Service\LaravelPasscodeSessionService;
@@ -221,6 +223,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(SocialLoginStateServiceInterface::class, CacheSocialLoginStateService::class);
         $this->app->bind(SocialLoginServiceInterface::class, SocialLoginService::class);
         $this->app->bind(SocialLoginConnectionRepositoryInterface::class, SocialLoginConnectionRepository::class);
+        $this->app->bind(PersistentLoginTokenRepositoryInterface::class, PersistentLoginTokenRepository::class);
         $this->app->bind(StartSocialLoginInterface::class, StartSocialLogin::class);
         $this->app->bind(CompleteSocialLoginInterface::class, CompleteSocialLogin::class);
         $this->app->bind(UuidServiceInterface::class, LaravelUuidServices::class);

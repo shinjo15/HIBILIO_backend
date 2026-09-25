@@ -27,6 +27,7 @@ use App\Http\Actions\Account\SearchAccountsAction;
 use App\Http\Actions\Account\UpdateAccountProfileAction;
 use App\Http\Actions\Authentication\GenerateLoginPasscodeAction;
 use App\Http\Actions\Authentication\GenerateRegistrationPasscodeAction;
+use App\Http\Actions\Authentication\LogoutAction;
 use App\Http\Actions\Authentication\VerifyLoginPasscodeAction;
 use App\Http\Actions\Authentication\VerifyRegistrationPasscodeAction;
 use App\Http\Actions\Like\CreateLikeAction;
@@ -74,6 +75,7 @@ Route::middleware('web')->group(static function (): void {
     Route::get('/my/routine-executions', GetMyRoutineExecutionsAction::class);
     Route::post('/login-passcodes', GenerateLoginPasscodeAction::class)->middleware('throttle:passcode-send');
     Route::post('/login-passcodes/verification', VerifyLoginPasscodeAction::class);
+    Route::post('/logout', LogoutAction::class);
     Route::post('/registration-passcodes', GenerateRegistrationPasscodeAction::class)->middleware('throttle:passcode-send');
     Route::post('/registration-passcodes/verification', VerifyRegistrationPasscodeAction::class);
     Route::post('/routines', CreateRoutineAction::class);
