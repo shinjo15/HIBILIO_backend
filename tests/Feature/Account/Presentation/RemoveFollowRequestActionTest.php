@@ -39,7 +39,7 @@ final class RemoveFollowRequestActionTest extends TestCase
         $this->assertDatabaseMissing('follow_requests', ['requesting_account_identifier' => $requesting, 'target_account_identifier' => $target]);
     }
 
-    public function test_returns_not_found_for_an_approved_follow_request_without_affecting_the_follow(): void
+    public function test_returns_conflict_for_an_approved_follow_request_without_affecting_the_follow(): void
     {
         $requesting = '11111111-1111-4111-8111-111111111111';
         $target = '22222222-2222-4222-8222-222222222222';
@@ -48,7 +48,7 @@ final class RemoveFollowRequestActionTest extends TestCase
         $this->request($requesting, $target, 'approved');
         DB::table('follows')->insert(['following_account_identifier' => $requesting, 'followed_account_identifier' => $target, 'created_at' => now(), 'updated_at' => now()]);
 
-        $this->withSession(['account_identifier' => $requesting])->deleteJson("/api/follow-requests/{$target}")->assertNotFound();
+        $this->withSession(['account_identifier' => $requesting])->deleteJson("/api/follow-requests/{$target}")->assertConflict();
 
         $this->assertDatabaseHas('follow_requests', ['requesting_account_identifier' => $requesting, 'target_account_identifier' => $target, 'status' => 'approved']);
         $this->assertDatabaseHas('follows', ['following_account_identifier' => $requesting, 'followed_account_identifier' => $target]);

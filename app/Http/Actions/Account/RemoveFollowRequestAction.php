@@ -8,6 +8,7 @@ use App\Http\Requests\Account\RemoveFollowRequestRequest;
 use Illuminate\Http\Response;
 use RuntimeException;
 use Src\Account\Application\Usecase\Command\RemoveFollowRequest\RemoveFollowRequestInterface;
+use Src\Account\Domain\Exception\FollowRequestCannotBeRemovedException;
 use Src\Account\Domain\Exception\FollowRequestNotFoundException;
 use Src\Shared\Application\Service\AuthServiceInterface;
 
@@ -23,6 +24,8 @@ final readonly class RemoveFollowRequestAction
             return new Response('', 204);
         } catch (RuntimeException) {
             return new Response('', 401);
+        } catch (FollowRequestCannotBeRemovedException) {
+            return new Response('', 409);
         } catch (FollowRequestNotFoundException) {
             return new Response('', 404);
         }

@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Src\Account\Application\Usecase\Command\RemoveFollowRequest\RemoveFollowRequest;
 use Src\Account\Application\Usecase\Command\RemoveFollowRequest\RemoveFollowRequestInput;
 use Src\Account\Domain\Entity\FollowRequest;
+use Src\Account\Domain\Exception\FollowRequestCannotBeRemovedException;
 use Src\Account\Domain\Exception\FollowRequestNotFoundException;
 use Src\Account\Domain\Repository\FollowRequestRepositoryInterface;
 use Src\Account\Domain\ValueObject\FollowRequestStatus;
@@ -38,7 +39,7 @@ final class RemoveFollowRequestTest extends TestCase
     {
         $repository = new InMemoryFollowRequestRepository($this->followRequest(FollowRequestStatus::APPROVED));
 
-        $this->expectException(FollowRequestNotFoundException::class);
+        $this->expectException(FollowRequestCannotBeRemovedException::class);
 
         try {
             $this->useCase($repository)->execute($this->input());
