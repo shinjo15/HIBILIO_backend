@@ -59,8 +59,11 @@ final class GetAccountDetails implements GetAccountDetailsInterface
                 'accountIdentifier' => (string) $account->account_identifier,
                 'name' => (string) $account->account_name,
                 'isDetailed' => false,
+                'bio' => $account->account_bio === null ? null : (string) $account->account_bio,
                 'visibility' => (string) $account->visibility,
                 'hasPendingFollowRequest' => (bool) $account->has_pending_follow_request,
+                'iconImageUrl' => $this->accountImageUrlService->iconImageUrl(new AccountIdentifier((string) $account->account_identifier)),
+                'headerImageUrl' => $this->accountImageUrlService->headerImageUrl(new AccountIdentifier((string) $account->account_identifier)),
             ]);
         }
 

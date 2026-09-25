@@ -30,8 +30,11 @@ final readonly class GetAccountDetailsAction
             return new JsonResponse([
                 'account_identifier' => $accountDetails['accountIdentifier'],
                 'account_name' => $accountDetails['name'],
+                'account_bio' => $accountDetails['bio'],
                 'visibility' => $accountDetails['visibility'],
                 'has_pending_follow_request' => $accountDetails['hasPendingFollowRequest'],
+                'icon_image_url' => $accountDetails['iconImageUrl'],
+                'header_image_url' => $accountDetails['headerImageUrl'],
             ]);
         }
 

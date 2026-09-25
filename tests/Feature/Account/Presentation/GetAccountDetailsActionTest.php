@@ -98,7 +98,7 @@ final class GetAccountDetailsActionTest extends TestCase
         $viewerIdentifier = '11111111-1111-4111-8111-111111111111';
         $targetIdentifier = '22222222-2222-4222-8222-222222222222';
         $this->insertAccount($viewerIdentifier, true, 'active', '申請者', null);
-        $this->insertAccount($targetIdentifier, true, 'active', '鍵Account', null, 'private');
+        $this->insertAccount($targetIdentifier, true, 'active', '鍵Account', '公開する自己紹介', 'private');
         DB::table('follow_requests')->insert([
             'requesting_account_identifier' => $viewerIdentifier,
             'target_account_identifier' => $targetIdentifier,
@@ -106,14 +106,29 @@ final class GetAccountDetailsActionTest extends TestCase
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+        $this->app->instance(AccountImageUrlServiceInterface::class, new class implements AccountImageUrlServiceInterface
+        {
+            public function iconImageUrl(AccountIdentifier $accountIdentifier): ?string
+            {
+                return 'https://images.example/icon';
+            }
+
+            public function headerImageUrl(AccountIdentifier $accountIdentifier): ?string
+            {
+                return 'https://images.example/header';
+            }
+        });
 
         $this->withSession(['account_identifier' => $viewerIdentifier])
             ->getJson("/api/accounts/{$targetIdentifier}")
             ->assertExactJson([
                 'account_identifier' => $targetIdentifier,
                 'account_name' => '鍵Account',
+                'account_bio' => '公開する自己紹介',
                 'visibility' => 'private',
                 'has_pending_follow_request' => true,
+                'icon_image_url' => 'https://images.example/icon',
+                'header_image_url' => 'https://images.example/header',
             ]);
 
         foreach (['approved', 'rejected'] as $status) {
@@ -127,8 +142,11 @@ final class GetAccountDetailsActionTest extends TestCase
                 ->assertExactJson([
                     'account_identifier' => $targetIdentifier,
                     'account_name' => '鍵Account',
+                    'account_bio' => '公開する自己紹介',
                     'visibility' => 'private',
                     'has_pending_follow_request' => false,
+                    'icon_image_url' => 'https://images.example/icon',
+                    'header_image_url' => 'https://images.example/header',
                 ]);
         }
     }
@@ -171,8 +189,11 @@ final class GetAccountDetailsActionTest extends TestCase
             ->assertExactJson([
                 'account_identifier' => $targetIdentifier,
                 'account_name' => '鍵Account',
+                'account_bio' => '秘密の自己紹介',
                 'visibility' => 'private',
                 'has_pending_follow_request' => false,
+                'icon_image_url' => null,
+                'header_image_url' => null,
             ]);
 
         DB::table('follows')->insert([
