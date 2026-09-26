@@ -6,6 +6,7 @@ namespace Tests\Feature\Authentication\Application;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Src\Authentication\Application\Service\SocialLoginServiceInterface;
 use Src\Authentication\Application\Usecase\Command\CompleteSocialLogin\CompleteSocialLogin;
 use Src\Authentication\Application\Usecase\Command\CompleteSocialLogin\CompleteSocialLoginInput;
@@ -39,6 +40,19 @@ final class CompleteSocialLoginTest extends TestCase
         self::assertSame('verified@example.com', $output->pendingRegistration()?->emailAddress()->value());
         self::assertSame(0, DB::table('accounts')->count());
         self::assertSame(0, DB::table('social_login_connections')->count());
+        self::assertSame(0, DB::table('persistent_login_tokens')->count());
+    }
+
+    public function test_rejected_profile_does_not_create_a_persistent_login_token(): void
+    {
+        $this->mock(SocialLoginServiceInterface::class, function ($mock): void {
+            $mock->shouldReceive('authenticate')->once()->andReturn(null);
+        });
+
+        $output = $this->complete();
+
+        self::assertFalse($output->isAuthenticated());
+        self::assertSame(0, DB::table('persistent_login_tokens')->count());
     }
 
     public function test_existing_provider_connection_logs_into_its_account_without_using_the_email(): void
@@ -59,6 +73,7 @@ final class CompleteSocialLoginTest extends TestCase
         self::assertTrue($output->isAuthenticated());
         self::assertSame($accountIdentifier, $output->accountIdentifier()?->value());
         self::assertSame(1, DB::table('accounts')->count());
+        $this->assertPersistentLoginToken($output, $accountIdentifier);
     }
 
     public function test_existing_verified_email_is_linked_without_creating_a_duplicate_account(): void
@@ -77,6 +92,7 @@ final class CompleteSocialLoginTest extends TestCase
             'provider' => 'google',
             'provider_user_identifier' => 'google-user',
         ]);
+        $this->assertPersistentLoginToken($output, $accountIdentifier);
     }
 
     private function complete(): mixed
@@ -112,5 +128,16 @@ final class CompleteSocialLoginTest extends TestCase
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+    }
+
+    private function assertPersistentLoginToken(mixed $output, string $accountIdentifier): void
+    {
+        $persistentLoginToken = $output->persistentLoginToken();
+        self::assertNotNull($persistentLoginToken);
+        self::assertSame(1, DB::table('persistent_login_tokens')->count());
+        $storedToken = DB::table('persistent_login_tokens')->where('selector', $persistentLoginToken->selector())->first();
+        self::assertNotNull($storedToken);
+        self::assertSame($accountIdentifier, $storedToken->account_identifier);
+        self::assertTrue(Hash::check($persistentLoginToken->rawValidator(), $storedToken->validator_hash));
     }
 }
