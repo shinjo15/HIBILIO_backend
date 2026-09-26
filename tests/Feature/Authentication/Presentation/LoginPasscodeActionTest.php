@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Authentication\Presentation;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redis;
@@ -85,6 +86,7 @@ final class LoginPasscodeActionTest extends TestCase
 
     public function test_verification_establishes_an_account_session_and_deletes_the_challenge(): void
     {
+        $this->insertAccount('user@example.com');
         $challengeIdentifier = new LoginPasscodeChallengeIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87');
         $service = new RedisLoginPasscodeStateService;
         Redis::del('login-passcode:challenge:'.$challengeIdentifier->value());
@@ -95,13 +97,25 @@ final class LoginPasscodeActionTest extends TestCase
             new LoginPasscodeHash(Hash::make('123456')),
         ));
 
-        $this->withSession(['login_passcode_challenge_identifier' => $challengeIdentifier->value()])
-            ->postJson('/api/login-passcodes/verification', ['passcode' => '123456'])
-            ->assertNoContent();
+        Cookie::flushQueuedCookies();
+        $response = $this->withSession(['login_passcode_challenge_identifier' => $challengeIdentifier->value()])
+            ->postJson('/api/login-passcodes/verification', ['passcode' => '123456']);
+
+        $response->assertNoContent();
 
         self::assertNull($service->find($challengeIdentifier));
         self::assertSame('f0cfa1a3-1ac7-44af-9bf4-b36c9262f028', $this->app['session.store']->get(LaravelAuthService::SESSION_KEY));
         self::assertNull($this->app['session.store']->get('login_passcode_challenge_identifier'));
+        $cookies = Cookie::getQueuedCookies();
+        self::assertCount(1, $cookies);
+        self::assertTrue($cookies[0]->isSecure());
+        self::assertTrue($cookies[0]->isHttpOnly());
+        self::assertSame('lax', $cookies[0]->getSameSite());
+        [$selector, $validator] = explode('.', $cookies[0]->getValue(), 2);
+        $token = $this->app['db']->table('persistent_login_tokens')->where('selector', $selector)->first();
+        self::assertNotNull($token);
+        self::assertNotSame($validator, $token->validator_hash);
+        self::assertTrue(Hash::check($validator, $token->validator_hash));
     }
 
     public function test_verification_records_mismatch_and_returns_unauthorized(): void

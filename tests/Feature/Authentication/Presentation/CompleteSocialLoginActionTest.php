@@ -23,7 +23,7 @@ final class CompleteSocialLoginActionTest extends TestCase
         config(['services.frontend_url' => 'https://frontend.example']);
     }
 
-    public function test_existing_account_callback_redirects_to_frontend_home_and_logs_in(): void
+    public function test_existing_account_callback_redirects_to_frontend_home_without_direct_login(): void
     {
         $identifier = new AccountIdentifier('11111111-1111-4111-8111-111111111111');
         $this->mock(CompleteSocialLoginInterface::class, function ($mock) use ($identifier): void {
@@ -33,7 +33,7 @@ final class CompleteSocialLoginActionTest extends TestCase
         $this->get('/auth/social/google/callback?code=provider-code&state=state-value')
             ->assertRedirect('https://frontend.example/');
 
-        self::assertSame($identifier->value(), session('account_identifier'));
+        self::assertNull(session('account_identifier'));
     }
 
     public function test_unknown_account_callback_stores_pending_registration_and_redirects_without_identity_data(): void
