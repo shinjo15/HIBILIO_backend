@@ -60,6 +60,30 @@ final class GetMyAccountActionTest extends TestCase
         $this->getJson('/api/my/account')->assertUnauthorized();
     }
 
+    public function test_revokes_a_suspended_session_without_restoring_the_persistent_login_cookie(): void
+    {
+        $accountIdentifier = '11111111-1111-4111-8111-111111111111';
+        $selector = 'persistent-login-selector';
+        $this->insertAccount($accountIdentifier, true, 'temporarily_banned', '停止アカウント', null);
+        DB::table('persistent_login_tokens')->insert([
+            'selector' => $selector,
+            'account_identifier' => $accountIdentifier,
+            'validator_hash' => Hash::make('validator'),
+            'expires_at' => now()->addDay(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->withCredentials()
+            ->withSession(['account_identifier' => $accountIdentifier])
+            ->withCookie('hibilio_persistent_login', $selector.'.validator')
+            ->getJson('/api/my/account')
+            ->assertUnauthorized();
+
+        self::assertFalse(DB::table('persistent_login_tokens')->where('selector', $selector)->exists());
+        self::assertNull(session('account_identifier'));
+    }
+
     public function test_restores_the_account_session_and_rotates_the_persistent_login_cookie(): void
     {
         $accountIdentifier = '11111111-1111-4111-8111-111111111111';

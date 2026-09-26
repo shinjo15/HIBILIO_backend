@@ -6,6 +6,8 @@ namespace Tests\Feature\Account\Presentation;
 
 use Src\Account\Application\Usecase\Command\RemoveBlock\RemoveBlockInputPort;
 use Src\Account\Application\Usecase\Command\RemoveBlock\RemoveBlockInterface;
+use Src\Authentication\Application\Usecase\Query\GetAuthenticatedAccountState\GetAuthenticatedAccountStateInterface;
+use Src\Authentication\Application\Usecase\Query\GetAuthenticatedAccountState\GetAuthenticatedAccountStateOutput;
 use Src\Shared\Application\Service\AuthServiceInterface;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Tests\TestCase;
@@ -39,6 +41,13 @@ final class RemoveBlockActionTest extends TestCase
 
     private function authenticateAsAccount(): void
     {
+        $this->app->instance(GetAuthenticatedAccountStateInterface::class, new class implements GetAuthenticatedAccountStateInterface
+        {
+            public function execute(\Src\Authentication\Application\Usecase\Query\GetAuthenticatedAccountState\GetAuthenticatedAccountStateInputPort $input): GetAuthenticatedAccountStateOutput
+            {
+                return new GetAuthenticatedAccountStateOutput(true);
+            }
+        });
         $this->app->instance(AuthServiceInterface::class, new class implements AuthServiceInterface
         {
             public function login(AccountIdentifier $accountIdentifier): void {}

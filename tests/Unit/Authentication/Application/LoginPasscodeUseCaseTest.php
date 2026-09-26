@@ -14,6 +14,10 @@ use Src\Authentication\Application\Service\LoginPasscodeGeneratorServiceInterfac
 use Src\Authentication\Application\Service\LoginPasscodeHashServiceInterface;
 use Src\Authentication\Application\Service\LoginPasscodeMailServiceInterface;
 use Src\Authentication\Application\Service\LoginPasscodeStateServiceInterface;
+use Src\Authentication\Application\Usecase\Command\IssuePersistentLogin\IssuePersistentLoginInputPort;
+use Src\Authentication\Application\Usecase\Command\IssuePersistentLogin\IssuePersistentLoginInterface;
+use Src\Authentication\Application\Usecase\Command\IssuePersistentLogin\IssuePersistentLoginOutput;
+use Src\Authentication\Application\Usecase\Command\IssuePersistentLogin\IssuePersistentLoginOutputPort;
 use Src\Authentication\Application\UseCase\GenerateLoginPasscode\GenerateLoginPasscode;
 use Src\Authentication\Application\UseCase\GenerateLoginPasscode\GenerateLoginPasscodeInput;
 use Src\Authentication\Application\UseCase\VerifyLoginPasscode\VerifyLoginPasscode;
@@ -60,24 +64,28 @@ final class LoginPasscodeUseCaseTest extends TestCase
     {
         $state = new InMemoryLoginPasscodeState;
         $state->challenge = $this->challenge();
-        $result = (new VerifyLoginPasscode($state, new FakePasscodeHashService))->execute(
+        $issuePersistentLogin = new FakeIssuePersistentLogin;
+        $result = (new VerifyLoginPasscode($state, new FakePasscodeHashService, $issuePersistentLogin))->execute(
             new VerifyLoginPasscodeInput($state->challenge->identifier(), new LoginPasscode('123456')),
         );
 
         self::assertSame('f0cfa1a3-1ac7-44af-9bf4-b36c9262f028', $result->accountIdentifier()?->value());
         self::assertNull($state->challenge);
+        self::assertSame('f0cfa1a3-1ac7-44af-9bf4-b36c9262f028', $issuePersistentLogin->accountIdentifier?->value());
     }
 
     public function test_rejects_a_mismatched_or_missing_challenge(): void
     {
         $state = new InMemoryLoginPasscodeState;
         $state->challenge = $this->challenge();
-        $useCase = new VerifyLoginPasscode($state, new FakePasscodeHashService);
+        $issuePersistentLogin = new FakeIssuePersistentLogin;
+        $useCase = new VerifyLoginPasscode($state, new FakePasscodeHashService, $issuePersistentLogin);
 
         self::assertNull($useCase->execute(new VerifyLoginPasscodeInput($state->challenge->identifier(), new LoginPasscode('000000')))->accountIdentifier());
         self::assertSame(1, $state->failedAttempts);
         $state->challenge = null;
         self::assertNull($useCase->execute(new VerifyLoginPasscodeInput(new LoginPasscodeChallengeIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87'), new LoginPasscode('123456')))->accountIdentifier());
+        self::assertNull($issuePersistentLogin->accountIdentifier);
     }
 
     private function account(): Account
@@ -170,5 +178,17 @@ final class InMemoryLoginPasscodeState implements LoginPasscodeStateServiceInter
         $this->challenge = null;
 
         return $exists;
+    }
+}
+
+final class FakeIssuePersistentLogin implements IssuePersistentLoginInterface
+{
+    public ?AccountIdentifier $accountIdentifier = null;
+
+    public function execute(IssuePersistentLoginInputPort $input): IssuePersistentLoginOutputPort
+    {
+        $this->accountIdentifier = $input->accountIdentifier();
+
+        return new IssuePersistentLoginOutput;
     }
 }

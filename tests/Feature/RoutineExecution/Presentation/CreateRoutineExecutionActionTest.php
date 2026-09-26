@@ -7,6 +7,8 @@ namespace Tests\Feature\RoutineExecution\Presentation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Src\RoutineExecution\Application\UseCase\CreateRoutineExecution\CreateRoutineExecutionInputPort;
 use Src\RoutineExecution\Application\UseCase\CreateRoutineExecution\CreateRoutineExecutionInterface;
+use Src\Authentication\Application\Usecase\Query\GetAuthenticatedAccountState\GetAuthenticatedAccountStateInterface;
+use Src\Authentication\Application\Usecase\Query\GetAuthenticatedAccountState\GetAuthenticatedAccountStateOutput;
 use Src\Shared\Application\Service\AuthServiceInterface;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Tests\TestCase;
@@ -27,6 +29,13 @@ final class CreateRoutineExecutionActionTest extends TestCase
             }
         };
         $this->app->instance(CreateRoutineExecutionInterface::class, $createRoutineExecution);
+        $this->app->instance(GetAuthenticatedAccountStateInterface::class, new class implements GetAuthenticatedAccountStateInterface
+        {
+            public function execute(\Src\Authentication\Application\Usecase\Query\GetAuthenticatedAccountState\GetAuthenticatedAccountStateInputPort $input): GetAuthenticatedAccountStateOutput
+            {
+                return new GetAuthenticatedAccountStateOutput(true);
+            }
+        });
         $this->app->instance(AuthServiceInterface::class, new class implements AuthServiceInterface
         {
             public function login(AccountIdentifier $accountIdentifier): void {}

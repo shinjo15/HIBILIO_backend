@@ -35,6 +35,9 @@ final class CreateAccountActionTest extends TestCase
         $this->assertDatabaseHas('accounts', ['email_address' => 'verified@example.com', 'account_name' => '朝活ユーザー']);
         $this->assertDatabaseMissing('accounts', ['email_address' => 'untrusted@example.com']);
         self::assertNull($this->app['session.store']->get('registration_verified_email_address'));
+        self::assertNull(session('account_identifier'));
+        $this->assertDatabaseCount('persistent_login_tokens', 0);
+        $response->assertCookieMissing('hibilio_persistent_login');
     }
 
     public function test_rejects_account_creation_without_a_verified_registration_email_address(): void
@@ -136,7 +139,7 @@ final class CreateAccountActionTest extends TestCase
             'email_address' => 'private@example.com',
         ]);
 
-        $this->postJson('/api/accounts', $this->validPayload())->assertCreated();
+        $response = $this->postJson('/api/accounts', $this->validPayload())->assertCreated();
 
         $this->assertDatabaseHas('accounts', ['email_address' => 'private@example.com']);
         $this->assertDatabaseHas('social_login_connections', [
@@ -144,6 +147,8 @@ final class CreateAccountActionTest extends TestCase
             'provider_user_identifier' => 'apple-user',
         ]);
         self::assertNotNull(session('account_identifier'));
+        $this->assertDatabaseCount('persistent_login_tokens', 1);
+        $response->assertCookie('hibilio_persistent_login');
         self::assertNull(session(LaravelPendingSocialRegistrationSessionService::SESSION_KEY));
     }
 

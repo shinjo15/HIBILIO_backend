@@ -6,6 +6,8 @@ namespace Tests\Feature\Like\Presentation;
 
 use Src\Like\Application\UseCase\RemoveLike\RemoveLikeInputPort;
 use Src\Like\Application\UseCase\RemoveLike\RemoveLikeInterface;
+use Src\Authentication\Application\Usecase\Query\GetAuthenticatedAccountState\GetAuthenticatedAccountStateInterface;
+use Src\Authentication\Application\Usecase\Query\GetAuthenticatedAccountState\GetAuthenticatedAccountStateOutput;
 use Src\Shared\Application\Service\AuthServiceInterface;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Tests\TestCase;
@@ -39,6 +41,13 @@ final class RemoveLikeActionTest extends TestCase
 
     private function authenticateAsAccount(): void
     {
+        $this->app->instance(GetAuthenticatedAccountStateInterface::class, new class implements GetAuthenticatedAccountStateInterface
+        {
+            public function execute(\Src\Authentication\Application\Usecase\Query\GetAuthenticatedAccountState\GetAuthenticatedAccountStateInputPort $input): GetAuthenticatedAccountStateOutput
+            {
+                return new GetAuthenticatedAccountStateOutput(true);
+            }
+        });
         $this->app->instance(AuthServiceInterface::class, new class implements AuthServiceInterface
         {
             public function login(AccountIdentifier $accountIdentifier): void {}

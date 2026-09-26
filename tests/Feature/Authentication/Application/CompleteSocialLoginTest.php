@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\DB;
 use Src\Authentication\Application\Service\SocialLoginServiceInterface;
 use Src\Authentication\Application\Usecase\Command\CompleteSocialLogin\CompleteSocialLogin;
 use Src\Authentication\Application\Usecase\Command\CompleteSocialLogin\CompleteSocialLoginInput;
+use Src\Authentication\Application\Usecase\Command\IssuePersistentLogin\IssuePersistentLoginInputPort;
+use Src\Authentication\Application\Usecase\Command\IssuePersistentLogin\IssuePersistentLoginInterface;
+use Src\Authentication\Application\Usecase\Command\IssuePersistentLogin\IssuePersistentLoginOutput;
 use Src\Authentication\Domain\ValueObject\SocialLoginProvider;
 use Tests\TestCase;
 
@@ -18,6 +21,9 @@ final class CompleteSocialLoginTest extends TestCase
 
     public function test_unknown_verified_identity_does_not_create_an_account_and_returns_pending_registration(): void
     {
+        $this->mock(IssuePersistentLoginInterface::class, function ($mock): void {
+            $mock->shouldNotReceive('execute');
+        });
         $this->mock(SocialLoginServiceInterface::class, function ($mock): void {
             $mock->shouldReceive('authenticate')->once()->andReturn([
                 'provider_user_identifier' => 'google-user',
@@ -44,6 +50,7 @@ final class CompleteSocialLoginTest extends TestCase
     public function test_existing_provider_connection_logs_into_its_account_without_using_the_email(): void
     {
         $accountIdentifier = '22222222-2222-4222-8222-222222222222';
+        $this->expectPersistentLoginIssuedFor($accountIdentifier);
         $this->insertAccount($accountIdentifier, 'linked@example.com', 'Linked');
         DB::table('social_login_connections')->insert([
             'account_identifier' => $accountIdentifier,
@@ -64,6 +71,7 @@ final class CompleteSocialLoginTest extends TestCase
     public function test_existing_verified_email_is_linked_without_creating_a_duplicate_account(): void
     {
         $accountIdentifier = '33333333-3333-4333-8333-333333333333';
+        $this->expectPersistentLoginIssuedFor($accountIdentifier);
         $this->insertAccount($accountIdentifier, 'existing@example.com', 'Existing');
         $this->fakeProfile('google-user', 'existing@example.com');
 
@@ -96,6 +104,15 @@ final class CompleteSocialLoginTest extends TestCase
                 'provider_user_identifier' => $providerUserIdentifier,
                 'email_address' => $emailAddress,
             ]);
+        });
+    }
+
+    private function expectPersistentLoginIssuedFor(string $accountIdentifier): void
+    {
+        $this->mock(IssuePersistentLoginInterface::class, function ($mock) use ($accountIdentifier): void {
+            $mock->shouldReceive('execute')->once()->withArgs(function (IssuePersistentLoginInputPort $input) use ($accountIdentifier): bool {
+                return $input->accountIdentifier()->value() === $accountIdentifier;
+            })->andReturn(new IssuePersistentLoginOutput);
         });
     }
 

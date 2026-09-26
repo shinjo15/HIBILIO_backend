@@ -9,7 +9,6 @@ use Illuminate\Http\Response;
 use RuntimeException;
 use Src\Authentication\Application\Service\PasscodeSessionServiceInterface;
 use Src\Authentication\Application\UseCase\VerifyLoginPasscode\VerifyLoginPasscodeInterface;
-use Src\Shared\Application\Service\AuthServiceInterface;
 use Throwable;
 
 final readonly class VerifyLoginPasscodeAction
@@ -17,7 +16,7 @@ final readonly class VerifyLoginPasscodeAction
     public function __construct(
         private VerifyLoginPasscodeInterface $verifyLoginPasscode,
         private PasscodeSessionServiceInterface $passcodeSessionService,
-        private AuthServiceInterface $authService,
+
     ) {}
 
     public function __invoke(VerifyLoginPasscodeRequest $request): Response
@@ -38,7 +37,6 @@ final readonly class VerifyLoginPasscodeAction
         }
 
         $this->passcodeSessionService->clearChallengeIdentifier();
-        $this->authService->login($output->accountIdentifier());
 
         return new Response('', 204);
     }

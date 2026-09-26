@@ -12,7 +12,6 @@ use Src\Authentication\Application\Usecase\Command\CompleteSocialLogin\CompleteS
 use Src\Authentication\Domain\ValueObject\PendingSocialRegistration;
 use Src\Authentication\Domain\ValueObject\SocialLoginProvider;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
-use Src\Shared\Infrastructure\Service\LaravelAuthService;
 use Tests\TestCase;
 
 final class CompleteSocialLoginActionTest extends TestCase
@@ -42,10 +41,7 @@ final class CompleteSocialLoginActionTest extends TestCase
         });
 
         $this->get('/auth/social/google/callback?code=provider-code&state=state-value')
-            ->assertRedirect('https://frontend.example/')
-            ->assertCookie(LaravelAuthService::PERSISTENT_LOGIN_COOKIE);
-
-        self::assertSame($identifier->value(), session('account_identifier'));
+            ->assertRedirect('https://frontend.example/');
     }
 
     public function test_unknown_account_callback_stores_pending_registration_and_redirects_without_identity_data(): void

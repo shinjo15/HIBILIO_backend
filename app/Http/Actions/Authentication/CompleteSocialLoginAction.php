@@ -10,7 +10,6 @@ use Src\Authentication\Application\Service\PendingSocialRegistrationSessionServi
 use Src\Authentication\Application\Service\SocialLoginServiceInterface;
 use Src\Authentication\Application\Usecase\Command\CompleteSocialLogin\CompleteSocialLoginInterface;
 use Src\Authentication\Domain\ValueObject\SocialLoginProvider;
-use Src\Shared\Application\Service\AuthServiceInterface;
 use Throwable;
 
 final readonly class CompleteSocialLoginAction
@@ -19,7 +18,7 @@ final readonly class CompleteSocialLoginAction
         private CompleteSocialLoginInterface $completeSocialLogin,
         private PendingSocialRegistrationSessionServiceInterface $pendingRegistrationSession,
         private SocialLoginServiceInterface $socialLoginService,
-        private AuthServiceInterface $authService,
+
     ) {}
 
     public function __invoke(CompleteSocialLoginRequest $request): RedirectResponse
@@ -38,7 +37,6 @@ final readonly class CompleteSocialLoginAction
             $output = $this->completeSocialLogin->execute($request->toInput($sessionIdentifier));
             if ($output->isAuthenticated() && $output->accountIdentifier() !== null) {
                 $this->pendingRegistrationSession->clear();
-                $this->authService->login($output->accountIdentifier());
 
                 return $this->homeRedirect();
             }

@@ -14,7 +14,6 @@ use Src\Account\Application\Usecase\Command\CreateAccount\CreateAccountInterface
 use Src\Account\Domain\Exception\DuplicateEmailAddressException;
 use Src\Authentication\Application\Service\PendingSocialRegistrationSessionServiceInterface;
 use Src\Authentication\Application\Service\RegistrationPasscodeSessionServiceInterface;
-use Src\Shared\Application\Service\AuthServiceInterface;
 
 final readonly class CreateAccountAction
 {
@@ -23,7 +22,7 @@ final readonly class CreateAccountAction
         private AccountImageConverterServiceInterface $accountImageConverter,
         private RegistrationPasscodeSessionServiceInterface $registrationPasscodeSessionService,
         private PendingSocialRegistrationSessionServiceInterface $pendingSocialRegistrationSession,
-        private AuthServiceInterface $authService,
+
     ) {}
 
     public function __invoke(CreateAccountRequest $request): Response|JsonResponse
@@ -44,9 +43,6 @@ final readonly class CreateAccountAction
 
             $this->registrationPasscodeSessionService->clearVerifiedEmailAddress();
             $this->pendingSocialRegistrationSession->clear();
-            if ($pendingRegistration !== null) {
-                $this->authService->login($createAccountOutput->accountIdentifier());
-            }
 
             return new Response('', 201);
         } catch (RuntimeException) {
