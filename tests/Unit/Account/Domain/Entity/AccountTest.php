@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Src\Account\Domain\Entity\Account;
 use Src\Account\Domain\ValueObject\AccountBio;
 use Src\Account\Domain\ValueObject\AccountName;
+use Src\Account\Domain\ValueObject\AccountStatus;
 use Src\Account\Domain\ValueObject\EmailAddress;
 use Src\Account\Domain\ValueObject\FavoriteTagIdentifiers;
 use Src\Account\Domain\ValueObject\SocialLink;
@@ -49,6 +50,7 @@ final class AccountTest extends TestCase
         $this->assertSame($emailAddress, $account->emailAddress());
         $this->assertSame($socialLinks, $account->socialLinks());
         $this->assertSame($favoriteTagIdentifiers, $account->favoriteTagIdentifiers());
+        $this->assertTrue($account->isAvailable());
     }
 
     public function test_creates_an_account_without_a_bio(): void
@@ -91,5 +93,22 @@ final class AccountTest extends TestCase
             socialLinks: [new \stdClass],
             favoriteTagIdentifiers: new FavoriteTagIdentifiers([]),
         );
+    }
+
+    public function test_restores_an_unavailable_account(): void
+    {
+        $account = Account::restore(
+            new AccountIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87'),
+            new AccountName('朝活ユーザー'),
+            null,
+            new EmailAddress('user@example.com'),
+            [],
+            new FavoriteTagIdentifiers([]),
+            AccountStatus::ACTIVE,
+            null,
+            available: false,
+        );
+
+        $this->assertFalse($account->isAvailable());
     }
 }

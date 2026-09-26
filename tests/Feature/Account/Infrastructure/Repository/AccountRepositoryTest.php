@@ -96,6 +96,26 @@ final class AccountRepositoryTest extends TestCase
         ));
     }
 
+    public function test_restores_the_available_state_from_the_database(): void
+    {
+        DB::table('accounts')->insert([
+            'account_identifier' => '3b5581e9-16df-4879-b7d2-5d88dca6ab87',
+            'account_name' => 'Unavailable User',
+            'email_address' => 'unavailable@example.com',
+            'available' => false,
+            'status' => 'active',
+            'visibility' => 'public',
+            'ui_mode' => 'system',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $account = (new AccountRepository)->find(new AccountIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87'));
+
+        self::assertNotNull($account);
+        self::assertFalse($account->isAvailable());
+    }
+
     private function insertTag(): void
     {
         DB::table('tags')->insert([
