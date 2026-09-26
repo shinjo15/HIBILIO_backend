@@ -97,6 +97,8 @@ use Src\Authentication\Application\UseCase\GeneratePersistentLoginToken\Generate
 use Src\Authentication\Application\UseCase\GeneratePersistentLoginToken\GeneratePersistentLoginTokenInterface;
 use Src\Authentication\Application\UseCase\GenerateRegistrationPasscode\GenerateRegistrationPasscode;
 use Src\Authentication\Application\UseCase\GenerateRegistrationPasscode\GenerateRegistrationPasscodeInterface;
+use Src\Authentication\Application\UseCase\RevokePersistentLoginToken\RevokePersistentLoginToken;
+use Src\Authentication\Application\UseCase\RevokePersistentLoginToken\RevokePersistentLoginTokenInterface;
 use Src\Authentication\Application\UseCase\VerifyLoginPasscode\VerifyLoginPasscode;
 use Src\Authentication\Application\UseCase\VerifyLoginPasscode\VerifyLoginPasscodeInterface;
 use Src\Authentication\Application\UseCase\VerifyRegistrationPasscode\VerifyRegistrationPasscode;
@@ -224,6 +226,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(GenerateLoginPasscodeInterface::class, GenerateLoginPasscode::class);
         $this->app->bind(GeneratePersistentLoginTokenInterface::class, GeneratePersistentLoginToken::class);
         $this->app->bind(AuthenticateWithPersistentLoginTokenInterface::class, AuthenticateWithPersistentLoginToken::class);
+        $this->app->bind(RevokePersistentLoginTokenInterface::class, RevokePersistentLoginToken::class);
         $this->app->bind(VerifyLoginPasscodeInterface::class, VerifyLoginPasscode::class);
         $this->app->bind(RegistrationPasscodeMailServiceInterface::class, RegistrationPasscodeMailService::class);
         $this->app->bind(RegistrationPasscodeStateServiceInterface::class, RedisRegistrationPasscodeStateService::class);
