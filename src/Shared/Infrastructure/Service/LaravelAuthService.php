@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Src\Authentication\Domain\Entity\PersistentLoginToken;
 use Src\Authentication\Domain\Repository\PersistentLoginTokenRepositoryInterface;
+use Src\Authentication\Domain\ValueObject\PersistentLoginExpiresAt;
+use Src\Authentication\Domain\ValueObject\PersistentLoginSelector;
+use Src\Authentication\Domain\ValueObject\PersistentLoginValidatorHash;
 use Src\Shared\Application\Service\AuthServiceInterface;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
@@ -33,7 +36,7 @@ final readonly class LaravelAuthService implements AuthServiceInterface
         $this->request->session()->put(self::SESSION_KEY, $accountIdentifier->value());
         $this->issuePersistentLoginToken(
             $accountIdentifier,
-            (new DateTimeImmutable)->modify('+30 days'),
+            new PersistentLoginExpiresAt((new DateTimeImmutable)->modify('+30 days')),
             self::PERSISTENT_LOGIN_MINUTES,
         );
     }
@@ -80,20 +83,21 @@ final readonly class LaravelAuthService implements AuthServiceInterface
             return null;
         }
 
-        $token = $this->persistentLoginTokens->find($selector);
+        $persistentLoginSelector = new PersistentLoginSelector($selector);
+        $token = $this->persistentLoginTokens->find($persistentLoginSelector);
         if (
             $token === null
             || $token->isExpired(new DateTimeImmutable)
-            || ! Hash::check($validator, $token->validatorHash())
+            || ! Hash::check($validator, $token->validatorHash()->value())
             || ! $this->isActiveAccount($token->accountIdentifier()->value())
         ) {
-            $this->persistentLoginTokens->delete($selector);
+            $this->persistentLoginTokens->delete($persistentLoginSelector);
             $this->clearPersistentLoginCookie();
 
             return null;
         }
 
-        $this->persistentLoginTokens->delete($selector);
+        $this->persistentLoginTokens->delete($persistentLoginSelector);
         $this->request->session()->regenerate();
         $this->request->session()->put(self::SESSION_KEY, $token->accountIdentifier()->value());
         $this->issuePersistentLoginToken(
@@ -107,20 +111,20 @@ final readonly class LaravelAuthService implements AuthServiceInterface
 
     private function issuePersistentLoginToken(
         AccountIdentifier $accountIdentifier,
-        DateTimeImmutable $expiresAt,
+        PersistentLoginExpiresAt $expiresAt,
         int $cookieMinutes,
     ): void {
-        $selector = bin2hex(random_bytes(32));
+        $selector = new PersistentLoginSelector(bin2hex(random_bytes(32)));
         $validator = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
         $this->persistentLoginTokens->save(new PersistentLoginToken(
             $selector,
             $accountIdentifier,
-            Hash::make($validator),
+            new PersistentLoginValidatorHash(Hash::make($validator)),
             $expiresAt,
         ));
         Cookie::queue(Cookie::make(
             self::PERSISTENT_LOGIN_COOKIE,
-            $selector.'.'.$validator,
+            $selector->value().'.'.$validator,
             $cookieMinutes,
             '/',
             null,
@@ -131,9 +135,9 @@ final readonly class LaravelAuthService implements AuthServiceInterface
         ));
     }
 
-    private function remainingPersistentLoginMinutes(DateTimeImmutable $expiresAt): int
+    private function remainingPersistentLoginMinutes(PersistentLoginExpiresAt $expiresAt): int
     {
-        $remainingSeconds = $expiresAt->getTimestamp() - (new DateTimeImmutable)->getTimestamp();
+        $remainingSeconds = $expiresAt->value()->getTimestamp() - (new DateTimeImmutable)->getTimestamp();
 
         return max(0, intdiv($remainingSeconds + 59, 60));
     }
@@ -142,7 +146,7 @@ final readonly class LaravelAuthService implements AuthServiceInterface
     {
         [$selector] = $this->persistentLoginCookieParts();
         if ($selector !== null) {
-            $this->persistentLoginTokens->delete($selector);
+            $this->persistentLoginTokens->delete(new PersistentLoginSelector($selector));
         }
     }
 
