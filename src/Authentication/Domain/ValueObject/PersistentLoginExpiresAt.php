@@ -14,7 +14,7 @@ final readonly class PersistentLoginExpiresAt
         private DateTimeImmutable $value,
     ) {}
 
-    public static function fromIssuedAt(DateTimeImmutable $issuedAt): self
+    public static function createFromIssuedAt(DateTimeImmutable $issuedAt): self
     {
         return new self($issuedAt->modify(sprintf('+%d days', self::EXPIRATION_DAYS)));
     }

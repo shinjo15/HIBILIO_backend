@@ -55,7 +55,7 @@ final class PersistentLoginValueObjectsTest extends TestCase
     {
         $issuedAt = new DateTimeImmutable('2099-01-01 00:00:00');
 
-        $expiresAt = PersistentLoginExpiresAt::fromIssuedAt($issuedAt);
+        $expiresAt = PersistentLoginExpiresAt::createFromIssuedAt($issuedAt);
 
         self::assertSame(30, PersistentLoginExpiresAt::EXPIRATION_DAYS);
         self::assertSame('2099-01-31 00:00:00', $expiresAt->value()->format('Y-m-d H:i:s'));
