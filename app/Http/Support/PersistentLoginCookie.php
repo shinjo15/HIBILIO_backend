@@ -15,12 +15,27 @@ final class PersistentLoginCookie
             'persistent_login',
             $selector.':'.$rawValidator,
             $expiresAt,
-            config('session.path'),
+            '/',
             config('session.domain'),
-            config('session.secure'),
+            true,
             true,
             false,
-            config('session.same_site'),
+            Cookie::SAMESITE_LAX,
+        );
+    }
+
+    public static function forget(): Cookie
+    {
+        return Cookie::create(
+            'persistent_login',
+            null,
+            new DateTimeImmutable('-1 year'),
+            '/',
+            config('session.domain'),
+            true,
+            true,
+            false,
+            Cookie::SAMESITE_LAX,
         );
     }
 }

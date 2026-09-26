@@ -41,7 +41,9 @@ final class CompleteSocialLoginActionTest extends TestCase
         $cookie = $response->getCookie('persistent_login', false);
         self::assertNotNull($cookie);
         self::assertTrue($cookie->isHttpOnly());
-        self::assertSame(config('session.same_site'), $cookie->getSameSite());
+        self::assertTrue($cookie->isSecure());
+        self::assertSame('/', $cookie->getPath());
+        self::assertSame('lax', $cookie->getSameSite());
         $location = $response->headers->get('Location');
         self::assertIsString($location);
         self::assertStringNotContainsString('selector', $location);

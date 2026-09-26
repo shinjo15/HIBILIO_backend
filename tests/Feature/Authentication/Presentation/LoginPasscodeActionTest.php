@@ -108,7 +108,8 @@ final class LoginPasscodeActionTest extends TestCase
         self::assertNotNull($cookie);
         self::assertTrue($cookie->isHttpOnly());
         self::assertTrue($cookie->isSecure());
-        self::assertSame('strict', $cookie->getSameSite());
+        self::assertSame('lax', $cookie->getSameSite());
+        self::assertSame('/', $cookie->getPath());
         $decrypted = CookieValuePrefix::remove($this->app['encrypter']->decrypt(urldecode($cookie->getValue()), false));
         [$selector, $rawValidator] = explode(':', $decrypted, 2);
         $storedToken = $this->app['db']->table('persistent_login_tokens')->where('selector', $selector)->first();

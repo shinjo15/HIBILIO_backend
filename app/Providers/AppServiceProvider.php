@@ -85,6 +85,8 @@ use Src\Authentication\Application\Service\RegistrationPasscodeSessionServiceInt
 use Src\Authentication\Application\Service\RegistrationPasscodeStateServiceInterface;
 use Src\Authentication\Application\Service\SocialLoginServiceInterface;
 use Src\Authentication\Application\Service\SocialLoginStateServiceInterface;
+use Src\Authentication\Application\UseCase\AuthenticateWithPersistentLoginToken\AuthenticateWithPersistentLoginToken;
+use Src\Authentication\Application\UseCase\AuthenticateWithPersistentLoginToken\AuthenticateWithPersistentLoginTokenInterface;
 use Src\Authentication\Application\Usecase\Command\CompleteSocialLogin\CompleteSocialLogin;
 use Src\Authentication\Application\Usecase\Command\CompleteSocialLogin\CompleteSocialLoginInterface;
 use Src\Authentication\Application\Usecase\Command\StartSocialLogin\StartSocialLogin;
@@ -221,6 +223,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(PersistentLoginTokenFactoryInterface::class, PersistentLoginTokenFactory::class);
         $this->app->bind(GenerateLoginPasscodeInterface::class, GenerateLoginPasscode::class);
         $this->app->bind(GeneratePersistentLoginTokenInterface::class, GeneratePersistentLoginToken::class);
+        $this->app->bind(AuthenticateWithPersistentLoginTokenInterface::class, AuthenticateWithPersistentLoginToken::class);
         $this->app->bind(VerifyLoginPasscodeInterface::class, VerifyLoginPasscode::class);
         $this->app->bind(RegistrationPasscodeMailServiceInterface::class, RegistrationPasscodeMailService::class);
         $this->app->bind(RegistrationPasscodeStateServiceInterface::class, RedisRegistrationPasscodeStateService::class);
