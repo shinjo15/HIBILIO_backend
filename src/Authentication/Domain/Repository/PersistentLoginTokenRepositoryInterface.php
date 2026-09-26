@@ -13,5 +13,5 @@ interface PersistentLoginTokenRepositoryInterface
 
     public function save(PersistentLoginToken $token): void;
 
-    public function deleteBySelector(PersistentLoginSelector $selector): void;
+    public function deleteBySelector(PersistentLoginSelector $selector): bool;
 }

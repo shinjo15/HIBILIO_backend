@@ -43,8 +43,8 @@ final class PersistentLoginTokenRepository implements PersistentLoginTokenReposi
         ]);
     }
 
-    public function deleteBySelector(PersistentLoginSelector $selector): void
+    public function deleteBySelector(PersistentLoginSelector $selector): bool
     {
-        DB::table('persistent_login_tokens')->where('selector', $selector->value())->delete();
+        return DB::table('persistent_login_tokens')->where('selector', $selector->value())->delete() === 1;
     }
 }

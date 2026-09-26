@@ -86,7 +86,10 @@ final class InMemoryPersistentLoginTokens implements PersistentLoginTokenReposit
 
     public function save(PersistentLoginToken $token): void {}
 
-    public function deleteBySelector(PersistentLoginSelector $selector): void {}
+    public function deleteBySelector(PersistentLoginSelector $selector): bool
+    {
+        return false;
+    }
 }
 final class FixedHashService implements HashServiceInterface
 {

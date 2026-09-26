@@ -62,7 +62,8 @@ final class PersistentLoginTokenRepositoryTest extends TestCase
         $repository = $this->app->make(PersistentLoginTokenRepositoryInterface::class);
         $repository->save($token);
 
-        $repository->deleteBySelector(new PersistentLoginSelector('persistent-login-selector'));
+        self::assertTrue($repository->deleteBySelector(new PersistentLoginSelector('persistent-login-selector')));
+        self::assertFalse($repository->deleteBySelector(new PersistentLoginSelector('persistent-login-selector')));
 
         self::assertNull($repository->findBySelector(new PersistentLoginSelector('persistent-login-selector')));
         $this->assertDatabaseMissing('persistent_login_tokens', ['selector' => 'persistent-login-selector']);
