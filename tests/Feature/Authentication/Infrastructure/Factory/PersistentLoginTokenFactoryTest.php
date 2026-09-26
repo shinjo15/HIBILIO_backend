@@ -42,4 +42,21 @@ final class PersistentLoginTokenFactoryTest extends TestCase
         self::assertTrue(Hash::check($generatedToken->rawValidator(), $generatedToken->persistentLoginToken()->validatorHash()->value()));
         self::assertSame('2099-01-31 00:00:00', $generatedToken->persistentLoginToken()->expiresAt()->value()->format('Y-m-d H:i:s'));
     }
+
+    public function test_rotates_credentials_without_extending_the_existing_expiry(): void
+    {
+        $factory = new PersistentLoginTokenFactory($this->app->make(HashServiceInterface::class));
+        $existing = $factory->create(
+            new AccountIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87'),
+            new DateTimeImmutable('2099-01-01 00:00:00'),
+        );
+
+        $rotated = $factory->rotate($existing->persistentLoginToken());
+
+        self::assertNotSame($existing->persistentLoginToken()->selector()->value(), $rotated->persistentLoginToken()->selector()->value());
+        self::assertNotSame($existing->rawValidator(), $rotated->rawValidator());
+        self::assertTrue(Hash::check($rotated->rawValidator(), $rotated->persistentLoginToken()->validatorHash()->value()));
+        self::assertFalse(Hash::check($existing->rawValidator(), $rotated->persistentLoginToken()->validatorHash()->value()));
+        self::assertSame($existing->persistentLoginToken()->expiresAt(), $rotated->persistentLoginToken()->expiresAt());
+    }
 }

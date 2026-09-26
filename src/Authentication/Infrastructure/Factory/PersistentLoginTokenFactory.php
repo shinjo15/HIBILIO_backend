@@ -20,6 +20,16 @@ final class PersistentLoginTokenFactory implements PersistentLoginTokenFactoryIn
 
     public function create(AccountIdentifier $accountIdentifier, DateTimeImmutable $issuedAt): GeneratedPersistentLoginToken
     {
+        return $this->generate($accountIdentifier, PersistentLoginExpiresAt::create($issuedAt));
+    }
+
+    public function rotate(PersistentLoginToken $existing): GeneratedPersistentLoginToken
+    {
+        return $this->generate($existing->accountIdentifier(), $existing->expiresAt());
+    }
+
+    private function generate(AccountIdentifier $accountIdentifier, PersistentLoginExpiresAt $expiresAt): GeneratedPersistentLoginToken
+    {
         $rawValidator = bin2hex(random_bytes(32));
 
         return new GeneratedPersistentLoginToken(
@@ -27,7 +37,7 @@ final class PersistentLoginTokenFactory implements PersistentLoginTokenFactoryIn
                 new PersistentLoginSelector(bin2hex(random_bytes(16))),
                 $accountIdentifier,
                 new PersistentLoginValidatorHash($this->hashService->hash($rawValidator)),
-                PersistentLoginExpiresAt::create($issuedAt),
+                $expiresAt,
             ),
             $rawValidator,
         );

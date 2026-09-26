@@ -64,6 +64,11 @@ final class RecordingPersistentLoginTokenFactory implements PersistentLoginToken
 
         return $this->generatedToken;
     }
+
+    public function rotate(PersistentLoginToken $existing): GeneratedPersistentLoginToken
+    {
+        return $this->generatedToken;
+    }
 }
 
 final class RecordingPersistentLoginTokenRepository implements PersistentLoginTokenRepositoryInterface
