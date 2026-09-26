@@ -91,6 +91,8 @@ use Src\Authentication\Application\Usecase\Command\StartSocialLogin\StartSocialL
 use Src\Authentication\Application\Usecase\Command\StartSocialLogin\StartSocialLoginInterface;
 use Src\Authentication\Application\UseCase\GenerateLoginPasscode\GenerateLoginPasscode;
 use Src\Authentication\Application\UseCase\GenerateLoginPasscode\GenerateLoginPasscodeInterface;
+use Src\Authentication\Application\UseCase\GeneratePersistentLoginToken\GeneratePersistentLoginToken;
+use Src\Authentication\Application\UseCase\GeneratePersistentLoginToken\GeneratePersistentLoginTokenInterface;
 use Src\Authentication\Application\UseCase\GenerateRegistrationPasscode\GenerateRegistrationPasscode;
 use Src\Authentication\Application\UseCase\GenerateRegistrationPasscode\GenerateRegistrationPasscodeInterface;
 use Src\Authentication\Application\UseCase\VerifyLoginPasscode\VerifyLoginPasscode;
@@ -98,10 +100,12 @@ use Src\Authentication\Application\UseCase\VerifyLoginPasscode\VerifyLoginPassco
 use Src\Authentication\Application\UseCase\VerifyRegistrationPasscode\VerifyRegistrationPasscode;
 use Src\Authentication\Application\UseCase\VerifyRegistrationPasscode\VerifyRegistrationPasscodeInterface;
 use Src\Authentication\Domain\Factory\LoginPasscodeChallengeFactoryInterface;
+use Src\Authentication\Domain\Factory\PersistentLoginTokenFactoryInterface;
 use Src\Authentication\Domain\Factory\RegistrationPasscodeChallengeFactoryInterface;
 use Src\Authentication\Domain\Repository\PersistentLoginTokenRepositoryInterface;
 use Src\Authentication\Domain\Repository\SocialLoginConnectionRepositoryInterface;
 use Src\Authentication\Infrastructure\Factory\LoginPasscodeChallengeFactory;
+use Src\Authentication\Infrastructure\Factory\PersistentLoginTokenFactory;
 use Src\Authentication\Infrastructure\Factory\RegistrationPasscodeChallengeFactory;
 use Src\Authentication\Infrastructure\Repository\PersistentLoginTokenRepository;
 use Src\Authentication\Infrastructure\Repository\SocialLoginConnectionRepository;
@@ -211,7 +215,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(LoginPasscodeStateServiceInterface::class, RedisLoginPasscodeStateService::class);
         $this->app->bind(PasscodeSessionServiceInterface::class, LaravelPasscodeSessionService::class);
         $this->app->bind(LoginPasscodeChallengeFactoryInterface::class, LoginPasscodeChallengeFactory::class);
+        $this->app->bind(PersistentLoginTokenFactoryInterface::class, PersistentLoginTokenFactory::class);
         $this->app->bind(GenerateLoginPasscodeInterface::class, GenerateLoginPasscode::class);
+        $this->app->bind(GeneratePersistentLoginTokenInterface::class, GeneratePersistentLoginToken::class);
         $this->app->bind(VerifyLoginPasscodeInterface::class, VerifyLoginPasscode::class);
         $this->app->bind(RegistrationPasscodeMailServiceInterface::class, RegistrationPasscodeMailService::class);
         $this->app->bind(RegistrationPasscodeStateServiceInterface::class, RedisRegistrationPasscodeStateService::class);
