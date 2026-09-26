@@ -173,11 +173,13 @@ use Src\RoutineExecution\Infrastructure\Query\GetRoutineExecutionDetails\GetRout
 use Src\RoutineExecution\Infrastructure\Repository\RoutineExecutionActionRepository;
 use Src\RoutineExecution\Infrastructure\Repository\RoutineExecutionRepository;
 use Src\Shared\Application\Service\AuthServiceInterface;
+use Src\Shared\Application\Service\HashServiceInterface;
 use Src\Shared\Application\Service\UuidServiceInterface;
 use Src\Shared\Application\Transaction\TransactionManagerInterface;
 use Src\Shared\Domain\Factory\PostFactoryInterface;
 use Src\Shared\Domain\Repository\PostRepositoryInterface;
 use Src\Shared\Infrastructure\Service\LaravelAuthService;
+use Src\Shared\Infrastructure\Service\LaravelHashService;
 use Src\Shared\Infrastructure\Transaction\LaravelTransactionManager;
 use Src\Support\Application\UseCase\CreateSupport\CreateSupport;
 use Src\Support\Application\UseCase\CreateSupport\CreateSupportInterface;
@@ -208,6 +210,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(AuthServiceInterface::class, LaravelAuthService::class);
+        $this->app->bind(HashServiceInterface::class, LaravelHashService::class);
 
         $this->app->bind(LoginPasscodeGeneratorServiceInterface::class, LoginPasscodeGeneratorService::class);
         $this->app->bind(LoginPasscodeHashServiceInterface::class, LoginPasscodeHashService::class);

@@ -26,10 +26,11 @@ final class LoginPasscodeInfrastructureTest extends TestCase
     public function test_hash_service_hashes_and_matches_passcodes(): void
     {
         $passcode = new LoginPasscode('123456');
-        $hash = (new LoginPasscodeHashService)->hash($passcode);
+        $hashService = $this->app->make(LoginPasscodeHashService::class);
+        $hash = $hashService->hash($passcode);
 
         self::assertTrue(Hash::check('123456', $hash->value()));
-        self::assertTrue((new LoginPasscodeHashService)->matches($passcode, $hash));
+        self::assertTrue($hashService->matches($passcode, $hash));
     }
 
     public function test_mail_service_sends_plain_japanese_passcode_email(): void
