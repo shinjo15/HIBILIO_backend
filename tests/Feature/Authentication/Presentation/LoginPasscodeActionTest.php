@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Authentication\Presentation;
 
+use Illuminate\Cookie\CookieValuePrefix;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
@@ -85,6 +86,9 @@ final class LoginPasscodeActionTest extends TestCase
 
     public function test_verification_establishes_an_account_session_and_deletes_the_challenge(): void
     {
+        config(['session.secure' => true, 'session.same_site' => 'strict']);
+        $issuedAt = new \DateTimeImmutable;
+        $this->insertAccount('user@example.com');
         $challengeIdentifier = new LoginPasscodeChallengeIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87');
         $service = new RedisLoginPasscodeStateService;
         Redis::del('login-passcode:challenge:'.$challengeIdentifier->value());
@@ -95,9 +99,27 @@ final class LoginPasscodeActionTest extends TestCase
             new LoginPasscodeHash(Hash::make('123456')),
         ));
 
-        $this->withSession(['login_passcode_challenge_identifier' => $challengeIdentifier->value()])
-            ->postJson('/api/login-passcodes/verification', ['passcode' => '123456'])
-            ->assertNoContent();
+        $response = $this->withSession(['login_passcode_challenge_identifier' => $challengeIdentifier->value()])
+            ->postJson('/api/login-passcodes/verification', ['passcode' => '123456']);
+        $response
+            ->assertNoContent()
+            ->assertCookie('persistent_login');
+        $cookie = $response->getCookie('persistent_login', false);
+        self::assertNotNull($cookie);
+        self::assertTrue($cookie->isHttpOnly());
+        self::assertTrue($cookie->isSecure());
+        self::assertSame('lax', $cookie->getSameSite());
+        self::assertSame('/', $cookie->getPath());
+        $decrypted = CookieValuePrefix::remove($this->app['encrypter']->decrypt(urldecode($cookie->getValue()), false));
+        [$selector, $rawValidator] = explode(':', $decrypted, 2);
+        $storedToken = $this->app['db']->table('persistent_login_tokens')->where('selector', $selector)->first();
+        self::assertNotNull($storedToken);
+        self::assertSame((new \DateTimeImmutable($storedToken->expires_at))->getTimestamp(), $cookie->getExpiresTime());
+        self::assertGreaterThanOrEqual($issuedAt->modify('+30 days')->getTimestamp(), $cookie->getExpiresTime());
+        self::assertLessThanOrEqual($issuedAt->modify('+30 days')->getTimestamp() + 1, $cookie->getExpiresTime());
+        self::assertSame('f0cfa1a3-1ac7-44af-9bf4-b36c9262f028', $storedToken->account_identifier);
+        self::assertNotSame($rawValidator, $storedToken->validator_hash);
+        self::assertTrue(Hash::check($rawValidator, $storedToken->validator_hash));
 
         self::assertNull($service->find($challengeIdentifier));
         self::assertSame('f0cfa1a3-1ac7-44af-9bf4-b36c9262f028', $this->app['session.store']->get(LaravelAuthService::SESSION_KEY));
@@ -118,7 +140,8 @@ final class LoginPasscodeActionTest extends TestCase
 
         $this->withSession(['login_passcode_challenge_identifier' => $challengeIdentifier->value()])
             ->postJson('/api/login-passcodes/verification', ['passcode' => '000000'])
-            ->assertUnauthorized();
+            ->assertUnauthorized()
+            ->assertCookieMissing('persistent_login');
 
         self::assertNotNull($service->find($challengeIdentifier));
     }
