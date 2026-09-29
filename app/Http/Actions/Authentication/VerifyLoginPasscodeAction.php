@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Actions\Authentication;
 
 use App\Http\Requests\Authentication\VerifyLoginPasscodeRequest;
+use App\Http\Support\PersistentLoginCookie;
 use Illuminate\Http\Response;
 use RuntimeException;
 use Src\Authentication\Application\Service\PasscodeSessionServiceInterface;
@@ -33,13 +34,17 @@ final readonly class VerifyLoginPasscodeAction
         } catch (Throwable) {
             return new Response('', 401);
         }
-        if ($output->accountIdentifier() === null) {
+        if ($output->accountIdentifier() === null || $output->persistentLoginToken() === null) {
             return new Response('', 401);
         }
 
         $this->passcodeSessionService->clearChallengeIdentifier();
         $this->authService->login($output->accountIdentifier());
 
-        return new Response('', 204);
+        return (new Response('', 204))->withCookie(PersistentLoginCookie::make(
+            $output->persistentLoginToken()->selector(),
+            $output->persistentLoginToken()->rawValidator(),
+            $output->persistentLoginToken()->expiresAt(),
+        ));
     }
 }

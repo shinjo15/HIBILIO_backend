@@ -29,6 +29,7 @@ final class Account
         private ?DateTimeImmutable $banUntil,
         private AccountVisibility $visibility,
         private AccountUiMode $uiMode,
+        private readonly bool $available,
     ) {}
 
     /** @param list<SocialLink> $socialLinks */
@@ -63,6 +64,7 @@ final class Account
             null,
             $visibility,
             $uiMode,
+            true,
         );
     }
 
@@ -78,8 +80,9 @@ final class Account
         ?DateTimeImmutable $banUntil,
         AccountVisibility $visibility = AccountVisibility::PUBLIC,
         AccountUiMode $uiMode = AccountUiMode::SYSTEM,
+        bool $available = true,
     ): self {
-        return new self($accountIdentifier, $accountName, $accountBio, $emailAddress, $socialLinks, $favoriteTagIdentifiers, $status, $banUntil, $visibility, $uiMode);
+        return new self($accountIdentifier, $accountName, $accountBio, $emailAddress, $socialLinks, $favoriteTagIdentifiers, $status, $banUntil, $visibility, $uiMode, $available);
     }
 
     public function active(): void
@@ -184,5 +187,10 @@ final class Account
     public function uiMode(): AccountUiMode
     {
         return $this->uiMode;
+    }
+
+    public function isAvailable(): bool
+    {
+        return $this->available;
     }
 }

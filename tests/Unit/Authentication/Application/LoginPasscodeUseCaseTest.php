@@ -16,6 +16,10 @@ use Src\Authentication\Application\Service\LoginPasscodeMailServiceInterface;
 use Src\Authentication\Application\Service\LoginPasscodeStateServiceInterface;
 use Src\Authentication\Application\UseCase\GenerateLoginPasscode\GenerateLoginPasscode;
 use Src\Authentication\Application\UseCase\GenerateLoginPasscode\GenerateLoginPasscodeInput;
+use Src\Authentication\Application\UseCase\GeneratePersistentLoginToken\GeneratePersistentLoginTokenInputPort;
+use Src\Authentication\Application\UseCase\GeneratePersistentLoginToken\GeneratePersistentLoginTokenInterface;
+use Src\Authentication\Application\UseCase\GeneratePersistentLoginToken\GeneratePersistentLoginTokenOutput;
+use Src\Authentication\Application\UseCase\GeneratePersistentLoginToken\GeneratePersistentLoginTokenOutputPort;
 use Src\Authentication\Application\UseCase\VerifyLoginPasscode\VerifyLoginPasscode;
 use Src\Authentication\Application\UseCase\VerifyLoginPasscode\VerifyLoginPasscodeInput;
 use Src\Authentication\Domain\Entity\LoginPasscodeChallenge;
@@ -60,24 +64,29 @@ final class LoginPasscodeUseCaseTest extends TestCase
     {
         $state = new InMemoryLoginPasscodeState;
         $state->challenge = $this->challenge();
-        $result = (new VerifyLoginPasscode($state, new FakePasscodeHashService))->execute(
+        $generator = new FakePersistentLoginTokenGenerator;
+        $result = (new VerifyLoginPasscode($state, new FakePasscodeHashService, $generator))->execute(
             new VerifyLoginPasscodeInput($state->challenge->identifier(), new LoginPasscode('123456')),
         );
 
         self::assertSame('f0cfa1a3-1ac7-44af-9bf4-b36c9262f028', $result->accountIdentifier()?->value());
         self::assertNull($state->challenge);
+        self::assertSame(1, $generator->calls);
+        self::assertSame('f0cfa1a3-1ac7-44af-9bf4-b36c9262f028', $generator->accountIdentifier?->value());
     }
 
     public function test_rejects_a_mismatched_or_missing_challenge(): void
     {
         $state = new InMemoryLoginPasscodeState;
         $state->challenge = $this->challenge();
-        $useCase = new VerifyLoginPasscode($state, new FakePasscodeHashService);
+        $generator = new FakePersistentLoginTokenGenerator;
+        $useCase = new VerifyLoginPasscode($state, new FakePasscodeHashService, $generator);
 
         self::assertNull($useCase->execute(new VerifyLoginPasscodeInput($state->challenge->identifier(), new LoginPasscode('000000')))->accountIdentifier());
         self::assertSame(1, $state->failedAttempts);
         $state->challenge = null;
         self::assertNull($useCase->execute(new VerifyLoginPasscodeInput(new LoginPasscodeChallengeIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87'), new LoginPasscode('123456')))->accountIdentifier());
+        self::assertSame(0, $generator->calls);
     }
 
     private function account(): Account
@@ -170,5 +179,24 @@ final class InMemoryLoginPasscodeState implements LoginPasscodeStateServiceInter
         $this->challenge = null;
 
         return $exists;
+    }
+}
+
+final class FakePersistentLoginTokenGenerator implements GeneratePersistentLoginTokenInterface
+{
+    public int $calls = 0;
+
+    public ?AccountIdentifier $accountIdentifier = null;
+
+    public function execute(GeneratePersistentLoginTokenInputPort $input): GeneratePersistentLoginTokenOutputPort
+    {
+        $this->calls++;
+        $this->accountIdentifier = $input->accountIdentifier();
+
+        return new GeneratePersistentLoginTokenOutput(
+            'selector',
+            'raw-validator',
+            new \DateTimeImmutable('2099-01-31 00:00:00'),
+        );
     }
 }

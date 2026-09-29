@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Actions\Authentication;
 
 use App\Http\Requests\Authentication\CompleteSocialLoginRequest;
+use App\Http\Support\PersistentLoginCookie;
 use Illuminate\Http\RedirectResponse;
 use Src\Authentication\Application\Service\PendingSocialRegistrationSessionServiceInterface;
 use Src\Authentication\Application\Service\SocialLoginServiceInterface;
@@ -36,11 +37,15 @@ final readonly class CompleteSocialLoginAction
 
         try {
             $output = $this->completeSocialLogin->execute($request->toInput($sessionIdentifier));
-            if ($output->isAuthenticated() && $output->accountIdentifier() !== null) {
+            if ($output->isAuthenticated() && $output->accountIdentifier() !== null && $output->persistentLoginToken() !== null) {
                 $this->pendingRegistrationSession->clear();
                 $this->authService->login($output->accountIdentifier());
 
-                return $this->homeRedirect();
+                return $this->homeRedirect()->withCookie(PersistentLoginCookie::make(
+                    $output->persistentLoginToken()->selector(),
+                    $output->persistentLoginToken()->rawValidator(),
+                    $output->persistentLoginToken()->expiresAt(),
+                ));
             }
 
             if ($output->pendingRegistration() !== null) {

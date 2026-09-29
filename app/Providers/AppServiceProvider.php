@@ -85,23 +85,33 @@ use Src\Authentication\Application\Service\RegistrationPasscodeSessionServiceInt
 use Src\Authentication\Application\Service\RegistrationPasscodeStateServiceInterface;
 use Src\Authentication\Application\Service\SocialLoginServiceInterface;
 use Src\Authentication\Application\Service\SocialLoginStateServiceInterface;
+use Src\Authentication\Application\UseCase\AuthenticateWithPersistentLoginToken\AuthenticateWithPersistentLoginToken;
+use Src\Authentication\Application\UseCase\AuthenticateWithPersistentLoginToken\AuthenticateWithPersistentLoginTokenInterface;
 use Src\Authentication\Application\Usecase\Command\CompleteSocialLogin\CompleteSocialLogin;
 use Src\Authentication\Application\Usecase\Command\CompleteSocialLogin\CompleteSocialLoginInterface;
 use Src\Authentication\Application\Usecase\Command\StartSocialLogin\StartSocialLogin;
 use Src\Authentication\Application\Usecase\Command\StartSocialLogin\StartSocialLoginInterface;
 use Src\Authentication\Application\UseCase\GenerateLoginPasscode\GenerateLoginPasscode;
 use Src\Authentication\Application\UseCase\GenerateLoginPasscode\GenerateLoginPasscodeInterface;
+use Src\Authentication\Application\UseCase\GeneratePersistentLoginToken\GeneratePersistentLoginToken;
+use Src\Authentication\Application\UseCase\GeneratePersistentLoginToken\GeneratePersistentLoginTokenInterface;
 use Src\Authentication\Application\UseCase\GenerateRegistrationPasscode\GenerateRegistrationPasscode;
 use Src\Authentication\Application\UseCase\GenerateRegistrationPasscode\GenerateRegistrationPasscodeInterface;
+use Src\Authentication\Application\UseCase\RevokePersistentLoginToken\RevokePersistentLoginToken;
+use Src\Authentication\Application\UseCase\RevokePersistentLoginToken\RevokePersistentLoginTokenInterface;
 use Src\Authentication\Application\UseCase\VerifyLoginPasscode\VerifyLoginPasscode;
 use Src\Authentication\Application\UseCase\VerifyLoginPasscode\VerifyLoginPasscodeInterface;
 use Src\Authentication\Application\UseCase\VerifyRegistrationPasscode\VerifyRegistrationPasscode;
 use Src\Authentication\Application\UseCase\VerifyRegistrationPasscode\VerifyRegistrationPasscodeInterface;
 use Src\Authentication\Domain\Factory\LoginPasscodeChallengeFactoryInterface;
+use Src\Authentication\Domain\Factory\PersistentLoginTokenFactoryInterface;
 use Src\Authentication\Domain\Factory\RegistrationPasscodeChallengeFactoryInterface;
+use Src\Authentication\Domain\Repository\PersistentLoginTokenRepositoryInterface;
 use Src\Authentication\Domain\Repository\SocialLoginConnectionRepositoryInterface;
 use Src\Authentication\Infrastructure\Factory\LoginPasscodeChallengeFactory;
+use Src\Authentication\Infrastructure\Factory\PersistentLoginTokenFactory;
 use Src\Authentication\Infrastructure\Factory\RegistrationPasscodeChallengeFactory;
+use Src\Authentication\Infrastructure\Repository\PersistentLoginTokenRepository;
 use Src\Authentication\Infrastructure\Repository\SocialLoginConnectionRepository;
 use Src\Authentication\Infrastructure\Service\CacheSocialLoginStateService;
 use Src\Authentication\Infrastructure\Service\LaravelPasscodeSessionService;
@@ -167,11 +177,13 @@ use Src\RoutineExecution\Infrastructure\Query\GetRoutineExecutionDetails\GetRout
 use Src\RoutineExecution\Infrastructure\Repository\RoutineExecutionActionRepository;
 use Src\RoutineExecution\Infrastructure\Repository\RoutineExecutionRepository;
 use Src\Shared\Application\Service\AuthServiceInterface;
+use Src\Shared\Application\Service\HashServiceInterface;
 use Src\Shared\Application\Service\UuidServiceInterface;
 use Src\Shared\Application\Transaction\TransactionManagerInterface;
 use Src\Shared\Domain\Factory\PostFactoryInterface;
 use Src\Shared\Domain\Repository\PostRepositoryInterface;
 use Src\Shared\Infrastructure\Service\LaravelAuthService;
+use Src\Shared\Infrastructure\Service\LaravelHashService;
 use Src\Shared\Infrastructure\Transaction\LaravelTransactionManager;
 use Src\Support\Application\UseCase\CreateSupport\CreateSupport;
 use Src\Support\Application\UseCase\CreateSupport\CreateSupportInterface;
@@ -202,6 +214,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(AuthServiceInterface::class, LaravelAuthService::class);
+        $this->app->bind(HashServiceInterface::class, LaravelHashService::class);
 
         $this->app->bind(LoginPasscodeGeneratorServiceInterface::class, LoginPasscodeGeneratorService::class);
         $this->app->bind(LoginPasscodeHashServiceInterface::class, LoginPasscodeHashService::class);
@@ -209,7 +222,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(LoginPasscodeStateServiceInterface::class, RedisLoginPasscodeStateService::class);
         $this->app->bind(PasscodeSessionServiceInterface::class, LaravelPasscodeSessionService::class);
         $this->app->bind(LoginPasscodeChallengeFactoryInterface::class, LoginPasscodeChallengeFactory::class);
+        $this->app->bind(PersistentLoginTokenFactoryInterface::class, PersistentLoginTokenFactory::class);
         $this->app->bind(GenerateLoginPasscodeInterface::class, GenerateLoginPasscode::class);
+        $this->app->bind(GeneratePersistentLoginTokenInterface::class, GeneratePersistentLoginToken::class);
+        $this->app->bind(AuthenticateWithPersistentLoginTokenInterface::class, AuthenticateWithPersistentLoginToken::class);
+        $this->app->bind(RevokePersistentLoginTokenInterface::class, RevokePersistentLoginToken::class);
         $this->app->bind(VerifyLoginPasscodeInterface::class, VerifyLoginPasscode::class);
         $this->app->bind(RegistrationPasscodeMailServiceInterface::class, RegistrationPasscodeMailService::class);
         $this->app->bind(RegistrationPasscodeStateServiceInterface::class, RedisRegistrationPasscodeStateService::class);
@@ -221,6 +238,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(SocialLoginStateServiceInterface::class, CacheSocialLoginStateService::class);
         $this->app->bind(SocialLoginServiceInterface::class, SocialLoginService::class);
         $this->app->bind(SocialLoginConnectionRepositoryInterface::class, SocialLoginConnectionRepository::class);
+        $this->app->bind(PersistentLoginTokenRepositoryInterface::class, PersistentLoginTokenRepository::class);
         $this->app->bind(StartSocialLoginInterface::class, StartSocialLogin::class);
         $this->app->bind(CompleteSocialLoginInterface::class, CompleteSocialLogin::class);
         $this->app->bind(UuidServiceInterface::class, LaravelUuidServices::class);

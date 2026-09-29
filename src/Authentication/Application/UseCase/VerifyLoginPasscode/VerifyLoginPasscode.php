@@ -6,12 +6,15 @@ namespace Src\Authentication\Application\UseCase\VerifyLoginPasscode;
 
 use Src\Authentication\Application\Service\LoginPasscodeHashServiceInterface;
 use Src\Authentication\Application\Service\LoginPasscodeStateServiceInterface;
+use Src\Authentication\Application\UseCase\GeneratePersistentLoginToken\GeneratePersistentLoginTokenInput;
+use Src\Authentication\Application\UseCase\GeneratePersistentLoginToken\GeneratePersistentLoginTokenInterface;
 
 final readonly class VerifyLoginPasscode implements VerifyLoginPasscodeInterface
 {
     public function __construct(
         private LoginPasscodeStateServiceInterface $stateService,
         private LoginPasscodeHashServiceInterface $hashService,
+        private GeneratePersistentLoginTokenInterface $persistentLoginTokenGenerator,
     ) {}
 
     public function execute(VerifyLoginPasscodeInput $input): VerifyLoginPasscodeOutput
@@ -31,6 +34,11 @@ final readonly class VerifyLoginPasscode implements VerifyLoginPasscodeInterface
             return VerifyLoginPasscodeOutput::rejected();
         }
 
-        return VerifyLoginPasscodeOutput::authenticated($challenge->accountIdentifier());
+        $accountIdentifier = $challenge->accountIdentifier();
+
+        return VerifyLoginPasscodeOutput::authenticated(
+            $accountIdentifier,
+            $this->persistentLoginTokenGenerator->execute(new GeneratePersistentLoginTokenInput($accountIdentifier)),
+        );
     }
 }
