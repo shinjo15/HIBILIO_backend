@@ -47,6 +47,7 @@ use App\Http\Actions\RoutineExecution\GetMyRoutineExecutionsAction;
 use App\Http\Actions\RoutineExecution\GetRoutineExecutionDetailsAction;
 use App\Http\Actions\Support\GetMySupportsAction;
 use App\Http\Actions\Tag\GetPickupTagsAction;
+use App\Http\Actions\Tag\GetPopularTagsAction;
 use App\Http\Actions\Tag\GetTagsAction;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -89,6 +90,7 @@ Route::middleware('web')->group(static function (): void {
     Route::get('/routine-executions/{routine_execution_identifier}', GetRoutineExecutionDetailsAction::class)->whereUuid('routine_execution_identifier');
     Route::get('/tags', GetTagsAction::class);
     Route::get('/tags/pickup', GetPickupTagsAction::class);
+    Route::get('/tags/popular', GetPopularTagsAction::class);
     Route::post('/reports', CreateReportAction::class);
     Route::post('/follows', CreateFollowAction::class);
     Route::post('/follow-requests/{requesting_account_identifier}/approve', ApproveFollowRequestAction::class)->whereUuid('requesting_account_identifier');
