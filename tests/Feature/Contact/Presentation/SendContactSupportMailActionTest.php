@@ -10,9 +10,11 @@ use Illuminate\Support\Facades\Mail;
 use Src\Account\Domain\ValueObject\EmailAddress;
 use Src\Contact\Application\Service\ContactSupportMailServiceInterface;
 use Src\Contact\Domain\Entity\Contact;
+use Src\Contact\Domain\Repository\AccountRepositoryInterface as ContactAccountRepositoryInterface;
 use Src\Contact\Domain\Repository\ContactRepositoryInterface;
 use Src\Contact\Domain\ValueObject\ContactIdentifier;
 use Src\Contact\Infrastructure\Repository\ContactRepository;
+use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Tests\TestCase;
 
 final class SendContactSupportMailActionTest extends TestCase
@@ -50,6 +52,49 @@ final class SendContactSupportMailActionTest extends TestCase
 
             return true;
         });
+    }
+
+    public function test_uses_the_contact_account_repository_email_address_as_reply_to(): void
+    {
+        Mail::fake();
+        $this->insertAccount('3b5581e9-16df-4879-b7d2-5d88dca6ab87', 'account@example.com');
+        $this->app->instance(ContactAccountRepositoryInterface::class, new class implements ContactAccountRepositoryInterface
+        {
+            public function findEmailAddress(AccountIdentifier $accountIdentifier): ?EmailAddress
+            {
+                return new EmailAddress('contact-repository@example.com');
+            }
+        });
+
+        $this->withSession(['account_identifier' => '3b5581e9-16df-4879-b7d2-5d88dca6ab87'])
+            ->postJson('/api/contact-support', ['title' => 'お問い合わせ', 'content' => '内容です'])
+            ->assertNoContent();
+
+        Mail::assertSent('Src\\Contact\\Infrastructure\\Mail\\ContactSupportMail', function ($mail): bool {
+            self::assertTrue($mail->build()->hasReplyTo('contact-repository@example.com'));
+
+            return true;
+        });
+    }
+
+    public function test_does_not_send_or_persist_when_the_contact_account_repository_returns_no_email_address(): void
+    {
+        Mail::fake();
+        $this->insertAccount('3b5581e9-16df-4879-b7d2-5d88dca6ab87', 'account@example.com');
+        $this->app->instance(ContactAccountRepositoryInterface::class, new class implements ContactAccountRepositoryInterface
+        {
+            public function findEmailAddress(AccountIdentifier $accountIdentifier): ?EmailAddress
+            {
+                return null;
+            }
+        });
+
+        $this->withSession(['account_identifier' => '3b5581e9-16df-4879-b7d2-5d88dca6ab87'])
+            ->postJson('/api/contact-support', ['title' => 'お問い合わせ', 'content' => '内容です'])
+            ->assertUnauthorized();
+
+        Mail::assertNothingSent();
+        self::assertSame(0, DB::table('contacts')->count());
     }
 
     public function test_has_no_persisted_contact_while_mail_sends_then_saves_sent_contact_once(): void

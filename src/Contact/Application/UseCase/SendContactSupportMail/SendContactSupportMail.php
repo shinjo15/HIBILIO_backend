@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Src\Contact\Application\UseCase\SendContactSupportMail;
 
 use DateTimeImmutable;
-use Src\Account\Domain\Repository\AccountRepositoryInterface;
 use Src\Contact\Application\Service\ContactSupportMailServiceInterface;
 use Src\Contact\Domain\Exception\ContactAccountNotFoundException;
 use Src\Contact\Domain\Factory\ContactFactoryInterface;
+use Src\Contact\Domain\Repository\AccountRepositoryInterface;
 use Src\Contact\Domain\Repository\ContactRepositoryInterface;
 
 final readonly class SendContactSupportMail implements SendContactSupportMailInterface
@@ -22,15 +22,15 @@ final readonly class SendContactSupportMail implements SendContactSupportMailInt
 
     public function execute(SendContactSupportMailInputPort $input): void
     {
-        $account = $this->accountRepository->find($input->accountIdentifier());
-        if ($account === null) {
+        $emailAddress = $this->accountRepository->findEmailAddress($input->accountIdentifier());
+        if ($emailAddress === null) {
             throw new ContactAccountNotFoundException;
         }
 
-        $contact = $this->contactFactory->create($account->accountIdentifier(), $input->title(), $input->content());
+        $contact = $this->contactFactory->create($input->accountIdentifier(), $input->title(), $input->content());
 
         try {
-            $this->mailService->send($contact, $account->emailAddress());
+            $this->mailService->send($contact, $emailAddress);
         } catch (\Throwable $exception) {
             $contact->markFailed();
             $this->contactRepository->save($contact);
