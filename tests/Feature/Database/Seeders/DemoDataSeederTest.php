@@ -14,25 +14,51 @@ final class DemoDataSeederTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_seeds_idempotent_large_demo_data_with_consistent_relations_and_post_counts(): void
+    public function test_seeds_idempotent_launch_usable_demo_data_with_consistent_relations_and_posts(): void
     {
         $this->assertTrue(class_exists(DemoDataSeeder::class));
 
         Artisan::call('db:seed', ['--class' => DemoDataSeeder::class]);
         Artisan::call('db:seed', ['--class' => DemoDataSeeder::class]);
 
-        $this->assertSame(500, DB::table('accounts')->count());
-        $this->assertSame(499, DB::table('follows')->count());
+        $this->assertSame(250, DB::table('accounts')->count());
+        $this->assertSame(249, DB::table('follows')->count());
         $this->assertSame(40, DB::table('tags')->count());
-        $this->assertSame(4, DB::table('routines')->count());
-        $this->assertSame(8, DB::table('routine_actions')->count());
-        $this->assertSame(1_500, DB::table('routine_executions')->count());
-        $this->assertSame(1_500, DB::table('routine_execution_actions')->count());
-        $this->assertSame(1_000, DB::table('posts')->where('post_category', 'routine')->count());
-        $this->assertSame(1_502, DB::table('posts')->where('post_category', 'action')->count());
-        $this->assertSame(2_502, DB::table('posts')->count());
-        $this->assertSame(1_503, DB::table('likes')->count());
-        $this->assertSame(1_501, DB::table('supports')->count());
+        $this->assertSame(500, DB::table('routines')->count());
+        $this->assertSame(1_497, DB::table('routine_actions')->count());
+        $this->assertSame(700, DB::table('routine_executions')->count());
+        $this->assertSame(1_400, DB::table('routine_execution_actions')->count());
+        $this->assertSame(500, DB::table('posts')->where('post_category', 'routine')->count());
+        $this->assertSame(700, DB::table('posts')->where('post_category', 'action')->count());
+        $this->assertSame(1_200, DB::table('posts')->count());
+        $this->assertSame(702, DB::table('likes')->count());
+        $this->assertSame(701, DB::table('supports')->count());
+        $this->assertSame(0, DB::table('routines')
+            ->where('routine_name', 'like', '%（%')
+            ->count());
+        $this->assertSame(0, DB::table('routines')
+            ->where('account_identifier', 'like', '11000000-%')
+            ->select('account_identifier')
+            ->groupBy('account_identifier')
+            ->havingRaw('COUNT(*) != 2 OR COUNT(DISTINCT routine_name) != 2')
+            ->count());
+        $this->assertSame(0, DB::table('routines')
+            ->leftJoin('routine_actions', 'routine_actions.routine_identifier', '=', 'routines.routine_identifier')
+            ->select('routines.routine_identifier')
+            ->groupBy(['routines.routine_identifier', 'routines.routine_execution_minutes'])
+            ->havingRaw('routines.routine_execution_minutes != COALESCE(SUM(routine_actions.action_minutes), 0)')
+            ->count());
+
+        $this->assertSame(0, DB::table('posts')
+            ->where('post_category', 'routine')
+            ->whereNotNull('routine_execution_identifier')
+            ->count());
+        $this->assertSame(0, DB::table('posts')
+            ->where('post_category', 'routine')
+            ->select('routine_identifier')
+            ->groupBy('routine_identifier')
+            ->havingRaw('COUNT(*) != 1')
+            ->count());
 
         $this->assertSame(0, DB::table('posts')
             ->where('post_category', 'action')
@@ -46,6 +72,11 @@ final class DemoDataSeederTest extends TestCase
                 ->on('posts.routine_execution_identifier', '=', 'routine_executions.routine_execution_identifier')
                 ->where('posts.post_category', 'action'))
             ->whereNull('posts.post_identifier')
+            ->count());
+        $this->assertSame(0, DB::table('posts')
+            ->where('post_category', 'action')
+            ->join('routine_executions', 'routine_executions.routine_execution_identifier', '=', 'posts.routine_execution_identifier')
+            ->whereColumn('posts.routine_identifier', '!=', 'routine_executions.routine_identifier')
             ->count());
         $this->assertSame(0, DB::table('routine_executions')
             ->leftJoin('routine_execution_actions', 'routine_execution_actions.routine_execution_identifier', '=', 'routine_executions.routine_execution_identifier')
@@ -89,6 +120,29 @@ final class DemoDataSeederTest extends TestCase
                 ->whereNull('accounts.account_identifier')
                 ->orWhereNull('routines.routine_identifier'))
             ->count());
+        $this->assertSame(0, DB::table('routine_tags')
+            ->leftJoin('routines', 'routines.routine_identifier', '=', 'routine_tags.routine_identifier')
+            ->leftJoin('tags', 'tags.tag_identifier', '=', 'routine_tags.tag_identifier')
+            ->where(static fn ($query) => $query
+                ->whereNull('routines.routine_identifier')
+                ->orWhereNull('tags.tag_identifier'))
+            ->count());
+        $this->assertSame(0, DB::table('follows')
+            ->leftJoin('accounts as following_accounts', 'following_accounts.account_identifier', '=', 'follows.following_account_identifier')
+            ->leftJoin('accounts as followed_accounts', 'followed_accounts.account_identifier', '=', 'follows.followed_account_identifier')
+            ->where(static fn ($query) => $query
+                ->whereNull('following_accounts.account_identifier')
+                ->orWhereNull('followed_accounts.account_identifier'))
+            ->count());
+        foreach (['likes', 'supports'] as $reactionTable) {
+            $this->assertSame(0, DB::table($reactionTable)
+                ->leftJoin('accounts', 'accounts.account_identifier', '=', $reactionTable.'.account_identifier')
+                ->leftJoin('posts', 'posts.post_identifier', '=', $reactionTable.'.post_identifier')
+                ->where(static fn ($query) => $query
+                    ->whereNull('accounts.account_identifier')
+                    ->orWhereNull('posts.post_identifier'))
+                ->count());
+        }
 
         $this->assertSame(0, DB::table('posts')
             ->leftJoin('likes', 'likes.post_identifier', '=', 'posts.post_identifier')
@@ -168,7 +222,7 @@ final class DemoDataSeederTest extends TestCase
                 'pickup' => $pickup,
             ]);
         }
-        $this->assertSame(6, DB::table('routine_tags')->count());
+        $this->assertSame(1_000, DB::table('routine_tags')->count());
         foreach ([
             ['30000000-0000-4000-8000-000000000001', '20000000-0000-4000-8000-000000000001'],
             ['30000000-0000-4000-8000-000000000001', '20000000-0000-4000-8000-000000000002'],
@@ -190,7 +244,80 @@ final class DemoDataSeederTest extends TestCase
         $this->assertDatabaseHas('posts', [
             'post_identifier' => '60000000-0000-4000-8000-000000000002',
             'post_category' => 'action',
+            'routine_execution_identifier' => '70000000-0000-4000-8000-000000000001',
             'post_support_count' => 1,
+        ]);
+        foreach ([
+            ['就寝前の睡眠準備', '明日の準備を済ませて、眠る前の刺激を減らすルーティンです。', 'スマートフォンを充電場所に置く', 10, '睡眠'],
+            ['朝の軽い筋力トレーニング', '短時間でも体を動かして、一日を気持ちよく始めます。', 'スクワットをする', 10, '筋トレ'],
+            ['英語ニュースを読む', '興味のある話題を英語で読み、気になった表現を残します。', '知らない表現を三つメモする', 15, '語学'],
+            ['週末のキッチンリセット', '次の食事を作りやすくするため、キッチンを整えます。', '調理台を拭く', 10, '掃除'],
+        ] as [$routineName, $routineMemo, $actionName, $actionMinutes, $tagName]) {
+            $routine = DB::table('routines')->where('routine_name', $routineName)->first();
+            $this->assertNotNull($routine);
+            $this->assertSame($routineMemo, $routine->routine_memo);
+            $this->assertSame(1, DB::table('routine_actions')
+                ->where('routine_identifier', $routine->routine_identifier)
+                ->where('action_name', $actionName)
+                ->where('action_minutes', $actionMinutes)
+                ->count());
+            $this->assertSame(1, DB::table('routine_tags')
+                ->join('tags', 'tags.tag_identifier', '=', 'routine_tags.tag_identifier')
+                ->where('routine_tags.routine_identifier', $routine->routine_identifier)
+                ->where('tags.tag_name', $tagName)
+                ->count());
+        }
+    }
+
+    public function test_preserves_reaction_counts_of_an_unrelated_existing_post(): void
+    {
+        $timestamp = now();
+        $accountIdentifier = '90000000-0000-4000-8000-000000000001';
+        $routineIdentifier = '90000000-0000-4000-8000-000000000002';
+        $postIdentifier = '90000000-0000-4000-8000-000000000003';
+
+        DB::table('accounts')->insert([
+            'account_identifier' => $accountIdentifier,
+            'account_name' => '既存ユーザー',
+            'account_bio' => null,
+            'email_address' => 'existing-user@hibilio.local',
+            'available' => true,
+            'status' => 'active',
+            'ban_until' => null,
+            'visibility' => 'public',
+            'ui_mode' => 'system',
+            'created_at' => $timestamp,
+            'updated_at' => $timestamp,
+        ]);
+        DB::table('routines')->insert([
+            'routine_identifier' => $routineIdentifier,
+            'parent_routine_identifier' => null,
+            'routine_name' => '既存ルーティン',
+            'routine_memo' => '既存データです。',
+            'account_identifier' => $accountIdentifier,
+            'routine_execution_minutes' => 10,
+            'available' => true,
+            'created_at' => $timestamp,
+            'updated_at' => $timestamp,
+        ]);
+        DB::table('posts')->insert([
+            'post_identifier' => $postIdentifier,
+            'routine_identifier' => $routineIdentifier,
+            'routine_execution_identifier' => null,
+            'post_category' => 'routine',
+            'post_like_count' => 41,
+            'post_support_count' => 29,
+            'available' => true,
+            'created_at' => $timestamp,
+            'updated_at' => $timestamp,
+        ]);
+
+        Artisan::call('db:seed', ['--class' => DemoDataSeeder::class]);
+
+        $this->assertDatabaseHas('posts', [
+            'post_identifier' => $postIdentifier,
+            'post_like_count' => 41,
+            'post_support_count' => 29,
         ]);
     }
 }
