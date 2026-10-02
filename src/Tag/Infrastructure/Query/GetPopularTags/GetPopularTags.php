@@ -34,6 +34,7 @@ final class GetPopularTags implements GetPopularTagsInterface
             ->orderByDesc('routine_count')
             ->orderBy('tags.tag_name')
             ->orderBy('tags.tag_identifier')
+            ->limit(50)
             ->get([
                 'tags.tag_identifier',
                 'tags.tag_name',

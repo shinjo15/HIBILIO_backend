@@ -93,6 +93,26 @@ final class GetPopularTagsTest extends TestCase
         self::assertSame([], $result->tags());
     }
 
+    public function test_returns_only_the_first_fifty_tags_after_ranking(): void
+    {
+        $this->insertAccount('10000000-0000-4000-8000-000000000001');
+        $this->insertRoutine('30000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001');
+
+        for ($number = 1; $number <= 51; $number++) {
+            $this->insertTag(sprintf('20000000-0000-4000-8000-%012d', $number), sprintf('tag-%02d', $number));
+        }
+
+        $this->insertRoutineTag('30000000-0000-4000-8000-000000000001', '20000000-0000-4000-8000-000000000051');
+
+        $tags = (new GetPopularTags)->execute(new GetPopularTagsInput)->tags();
+
+        self::assertCount(50, $tags);
+        self::assertSame('tag-51', $tags[0]['tagName']);
+        self::assertSame(1, $tags[0]['routineCount']);
+        self::assertSame('tag-49', $tags[49]['tagName']);
+        self::assertNotContains('tag-50', array_column($tags, 'tagName'));
+    }
+
     public function test_counts_multiple_tags_with_a_single_query(): void
     {
         $this->insertAccount('10000000-0000-4000-8000-000000000001');
