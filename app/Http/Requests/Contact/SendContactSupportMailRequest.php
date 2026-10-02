@@ -6,6 +6,8 @@ namespace App\Http\Requests\Contact;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Src\Contact\Application\UseCase\SendContactSupportMail\SendContactSupportMailInput;
+use Src\Contact\Domain\ValueObject\ContactContent;
+use Src\Contact\Domain\ValueObject\ContactTitle;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
 final class SendContactSupportMailRequest extends FormRequest
@@ -27,6 +29,6 @@ final class SendContactSupportMailRequest extends FormRequest
     {
         $validated = $this->validated();
 
-        return new SendContactSupportMailInput(new AccountIdentifier($accountIdentifier), $validated['title'], $validated['content']);
+        return new SendContactSupportMailInput(new AccountIdentifier($accountIdentifier), new ContactTitle($validated['title']), new ContactContent($validated['content']));
     }
 }

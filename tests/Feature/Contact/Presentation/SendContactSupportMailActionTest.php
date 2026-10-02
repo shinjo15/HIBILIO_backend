@@ -9,7 +9,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Src\Account\Domain\ValueObject\EmailAddress;
 use Src\Contact\Application\Service\ContactSupportMailServiceInterface;
-use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
+use Src\Contact\Domain\Entity\Contact;
+use Src\Contact\Domain\Repository\ContactRepositoryInterface;
+use Src\Contact\Domain\ValueObject\ContactIdentifier;
+use Src\Contact\Infrastructure\Repository\ContactRepository;
 use Tests\TestCase;
 
 final class SendContactSupportMailActionTest extends TestCase
@@ -30,6 +33,13 @@ final class SendContactSupportMailActionTest extends TestCase
             ->postJson('/api/contact-support', ['title' => 'お問い合わせ', 'content' => '内容です']);
 
         $response->assertNoContent();
+        $this->assertDatabaseHas('contacts', [
+            'account_identifier' => '3b5581e9-16df-4879-b7d2-5d88dca6ab87',
+            'title' => 'お問い合わせ',
+            'content' => '内容です',
+            'status' => 'sent',
+        ]);
+        self::assertNotNull(DB::table('contacts')->value('sent_at'));
         Mail::assertSent('Src\\Contact\\Infrastructure\\Mail\\ContactSupportMail', function ($mail): bool {
             self::assertTrue($mail->hasTo('hibilio.support@gmail.com'));
             self::assertTrue($mail->build()->hasReplyTo('account@example.com'));
@@ -119,7 +129,7 @@ final class SendContactSupportMailActionTest extends TestCase
         $this->insertAccount('3b5581e9-16df-4879-b7d2-5d88dca6ab87', 'account@example.com');
         $this->app->instance(ContactSupportMailServiceInterface::class, new class implements ContactSupportMailServiceInterface
         {
-            public function send(AccountIdentifier $accountIdentifier, EmailAddress $replyTo, string $title, string $content): void
+            public function send(Contact $contact, EmailAddress $replyTo): void
             {
                 throw new \RuntimeException('Mail transport failed.');
             }
@@ -128,6 +138,77 @@ final class SendContactSupportMailActionTest extends TestCase
         $this->withSession(['account_identifier' => '3b5581e9-16df-4879-b7d2-5d88dca6ab87'])
             ->postJson('/api/contact-support', ['title' => 'お問い合わせ', 'content' => '内容です'])
             ->assertServerError();
+        $this->assertDatabaseHas('contacts', [
+            'account_identifier' => '3b5581e9-16df-4879-b7d2-5d88dca6ab87',
+            'title' => 'お問い合わせ',
+            'content' => '内容です',
+            'status' => 'failed',
+            'sent_at' => null,
+        ]);
+    }
+
+    public function test_does_not_send_mail_when_the_initial_pending_contact_save_fails(): void
+    {
+        Mail::fake();
+        $this->insertAccount('3b5581e9-16df-4879-b7d2-5d88dca6ab87', 'account@example.com');
+        $this->app->instance(ContactRepositoryInterface::class, new class implements ContactRepositoryInterface
+        {
+            public function find(ContactIdentifier $contactIdentifier): ?Contact
+            {
+                return null;
+            }
+
+            public function save(Contact $contact): void
+            {
+                throw new \RuntimeException('Contact persistence failed.');
+            }
+        });
+
+        $this->withSession(['account_identifier' => '3b5581e9-16df-4879-b7d2-5d88dca6ab87'])
+            ->postJson('/api/contact-support', ['title' => 'お問い合わせ', 'content' => '内容です'])
+            ->assertServerError();
+
+        Mail::assertNothingSent();
+    }
+
+    public function test_returns_an_error_and_keeps_the_contact_pending_when_final_status_save_fails_after_mail_sends(): void
+    {
+        Mail::fake();
+        $this->insertAccount('3b5581e9-16df-4879-b7d2-5d88dca6ab87', 'account@example.com');
+        $this->app->instance(ContactRepositoryInterface::class, new class(new ContactRepository) implements ContactRepositoryInterface
+        {
+            private int $saveCount = 0;
+
+            public function __construct(private ContactRepository $repository) {}
+
+            public function find(ContactIdentifier $contactIdentifier): ?Contact
+            {
+                return $this->repository->find($contactIdentifier);
+            }
+
+            public function save(Contact $contact): void
+            {
+                $this->saveCount++;
+                if ($this->saveCount === 2) {
+                    throw new \RuntimeException('Final contact status save failed.');
+                }
+
+                $this->repository->save($contact);
+            }
+        });
+
+        $this->withSession(['account_identifier' => '3b5581e9-16df-4879-b7d2-5d88dca6ab87'])
+            ->postJson('/api/contact-support', ['title' => 'お問い合わせ', 'content' => '内容です'])
+            ->assertServerError();
+
+        Mail::assertSent('Src\\Contact\\Infrastructure\\Mail\\ContactSupportMail', 1);
+        $this->assertDatabaseHas('contacts', [
+            'account_identifier' => '3b5581e9-16df-4879-b7d2-5d88dca6ab87',
+            'title' => 'お問い合わせ',
+            'content' => '内容です',
+            'status' => 'pending',
+            'sent_at' => null,
+        ]);
     }
 
     public function test_limits_contact_mail_to_three_per_hour_per_authenticated_account_without_affecting_another_account(): void
