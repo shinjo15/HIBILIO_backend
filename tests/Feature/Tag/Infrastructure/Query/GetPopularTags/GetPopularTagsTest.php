@@ -14,7 +14,7 @@ final class GetPopularTagsTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_returns_available_tags_with_distinct_public_routine_counts_in_popularity_order(): void
+    public function test_returns_only_tags_with_public_routines_in_popularity_order(): void
     {
         $this->insertAccount('10000000-0000-4000-8000-000000000001');
         $this->insertTag('20000000-0000-4000-8000-000000000001', '朝活');
@@ -46,7 +46,6 @@ final class GetPopularTagsTest extends TestCase
             ['tagIdentifier' => '20000000-0000-4000-8000-000000000002', 'tagName' => '読書', 'routineCount' => 2],
             ['tagIdentifier' => '20000000-0000-4000-8000-000000000005', 'tagName' => '読書', 'routineCount' => 1],
             ['tagIdentifier' => '20000000-0000-4000-8000-000000000003', 'tagName' => '運動', 'routineCount' => 1],
-            ['tagIdentifier' => '20000000-0000-4000-8000-000000000004', 'tagName' => '料理', 'routineCount' => 0],
         ], $result->tags());
     }
 
@@ -77,13 +76,7 @@ final class GetPopularTagsTest extends TestCase
 
         $result = (new GetPopularTags)->execute(new GetPopularTagsInput);
 
-        self::assertSame([
-            ['tagIdentifier' => '20000000-0000-4000-8000-000000000005', 'tagName' => '停止済み所有者', 'routineCount' => 0],
-            ['tagIdentifier' => '20000000-0000-4000-8000-000000000004', 'tagName' => '利用不可所有者', 'routineCount' => 0],
-            ['tagIdentifier' => '20000000-0000-4000-8000-000000000003', 'tagName' => '無効なルーティン', 'routineCount' => 0],
-            ['tagIdentifier' => '20000000-0000-4000-8000-000000000002', 'tagName' => '無効な紐付け', 'routineCount' => 0],
-            ['tagIdentifier' => '20000000-0000-4000-8000-000000000006', 'tagName' => '非公開所有者', 'routineCount' => 0],
-        ], $result->tags());
+        self::assertSame([], $result->tags());
     }
 
     public function test_returns_an_empty_list_when_there_are_no_tags(): void
@@ -96,21 +89,27 @@ final class GetPopularTagsTest extends TestCase
     public function test_returns_only_the_first_fifty_tags_after_ranking(): void
     {
         $this->insertAccount('10000000-0000-4000-8000-000000000001');
-        $this->insertRoutine('30000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001');
 
         for ($number = 1; $number <= 51; $number++) {
-            $this->insertTag(sprintf('20000000-0000-4000-8000-%012d', $number), sprintf('tag-%02d', $number));
+            $tagIdentifier = sprintf('20000000-0000-4000-8000-%012d', $number);
+            $routineIdentifier = sprintf('30000000-0000-4000-8000-%012d', $number);
+            $this->insertTag($tagIdentifier, sprintf('tag-%02d', $number));
+            $this->insertRoutine($routineIdentifier, '10000000-0000-4000-8000-000000000001');
+            $this->insertRoutineTag($routineIdentifier, $tagIdentifier);
         }
 
-        $this->insertRoutineTag('30000000-0000-4000-8000-000000000001', '20000000-0000-4000-8000-000000000051');
+        $this->insertRoutine('30000000-0000-4000-8000-000000000052', '10000000-0000-4000-8000-000000000001');
+        $this->insertRoutineTag('30000000-0000-4000-8000-000000000052', '20000000-0000-4000-8000-000000000051');
+        $this->insertTag('20000000-0000-4000-8000-000000000052', 'tag-00');
 
         $tags = (new GetPopularTags)->execute(new GetPopularTagsInput)->tags();
 
         self::assertCount(50, $tags);
         self::assertSame('tag-51', $tags[0]['tagName']);
-        self::assertSame(1, $tags[0]['routineCount']);
+        self::assertSame(2, $tags[0]['routineCount']);
         self::assertSame('tag-49', $tags[49]['tagName']);
         self::assertNotContains('tag-50', array_column($tags, 'tagName'));
+        self::assertNotContains('tag-00', array_column($tags, 'tagName'));
     }
 
     public function test_counts_multiple_tags_with_a_single_query(): void

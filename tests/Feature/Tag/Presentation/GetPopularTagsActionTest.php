@@ -12,7 +12,7 @@ final class GetPopularTagsActionTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_returns_ranked_tags_without_authentication_including_zero_count_tags(): void
+    public function test_returns_ranked_tags_without_authentication_excluding_zero_count_tags(): void
     {
         $this->insertAccount('10000000-0000-4000-8000-000000000001');
         $this->insertAccount('10000000-0000-4000-8000-000000000002', false);
@@ -39,9 +39,6 @@ final class GetPopularTagsActionTest extends TestCase
                 'tags' => [
                     ['tag_identifier' => '20000000-0000-4000-8000-000000000001', 'tag_name' => 'alpha', 'routine_count' => 2],
                     ['tag_identifier' => '20000000-0000-4000-8000-000000000002', 'tag_name' => 'beta', 'routine_count' => 1],
-                    ['tag_identifier' => '20000000-0000-4000-8000-000000000003', 'tag_name' => 'omega', 'routine_count' => 0],
-                    ['tag_identifier' => '20000000-0000-4000-8000-000000000005', 'tag_name' => 'private', 'routine_count' => 0],
-                    ['tag_identifier' => '20000000-0000-4000-8000-000000000004', 'tag_name' => 'unavailable-owner', 'routine_count' => 0],
                 ],
             ]);
     }
