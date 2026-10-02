@@ -6,7 +6,6 @@ namespace Src\Contact\Domain\ValueObject;
 
 enum ContactSendStatus: string
 {
-    case Pending = 'pending';
     case Sent = 'sent';
     case Failed = 'failed';
 }

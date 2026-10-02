@@ -15,7 +15,7 @@ use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
 final class ContactTest extends TestCase
 {
-    public function test_creates_a_pending_contact_and_transitions_to_sent_once(): void
+    public function test_creates_an_unresolved_contact_and_transitions_to_sent_once(): void
     {
         $contact = Contact::create(
             new ContactIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87'),
@@ -25,7 +25,7 @@ final class ContactTest extends TestCase
         );
         $sentAt = new DateTimeImmutable('2026-10-02 12:00:00');
 
-        self::assertSame(ContactSendStatus::Pending, $contact->sendStatus());
+        self::assertNull($contact->sendStatus());
         self::assertNull($contact->sentAt());
         $contact->markSent($sentAt);
 
@@ -35,7 +35,7 @@ final class ContactTest extends TestCase
         $contact->markSent($sentAt);
     }
 
-    public function test_transitions_pending_contact_to_failed_without_a_sent_at(): void
+    public function test_transitions_an_unresolved_contact_to_failed_without_a_sent_at(): void
     {
         $contact = Contact::create(
             new ContactIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87'),
@@ -70,5 +70,10 @@ final class ContactTest extends TestCase
         }
 
         self::assertSame(8, $invalidValueObjectCount);
+    }
+
+    public function test_has_only_sent_and_failed_persistable_statuses(): void
+    {
+        self::assertSame([ContactSendStatus::Sent, ContactSendStatus::Failed], ContactSendStatus::cases());
     }
 }

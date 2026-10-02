@@ -28,7 +28,6 @@ final readonly class SendContactSupportMail implements SendContactSupportMailInt
         }
 
         $contact = $this->contactFactory->create($account->accountIdentifier(), $input->title(), $input->content());
-        $this->contactRepository->save($contact);
 
         try {
             $this->mailService->send($contact, $account->emailAddress());

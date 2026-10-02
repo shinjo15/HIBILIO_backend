@@ -24,13 +24,18 @@ final class ContactRepository implements ContactRepositoryInterface
 
     public function save(Contact $contact): void
     {
+        $sendStatus = $contact->sendStatus();
+        if ($sendStatus === null) {
+            throw new \LogicException('未確定のお問い合わせは保存できません。');
+        }
+
         ContactModel::query()->updateOrCreate(
             ['contact_identifier' => $contact->contactIdentifier()->value()],
             [
                 'account_identifier' => $contact->accountIdentifier()->value(),
                 'title' => $contact->title()->value(),
                 'content' => $contact->content()->value(),
-                'status' => $contact->sendStatus()->value,
+                'status' => $sendStatus->value,
                 'sent_at' => $contact->sentAt(),
             ],
         );

@@ -13,7 +13,7 @@ use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
 final class ContactFactoryTest extends TestCase
 {
-    public function test_creates_a_pending_contact_with_the_uuid_service_identifier(): void
+    public function test_creates_an_unresolved_contact_with_the_uuid_service_identifier(): void
     {
         $contact = (new ContactFactory(new FixedContactUuidService))->create(
             new AccountIdentifier('f0cfa1a3-1ac7-44af-9bf4-b36c9262f028'),
@@ -22,7 +22,7 @@ final class ContactFactoryTest extends TestCase
         );
 
         self::assertSame('3b5581e9-16df-4879-b7d2-5d88dca6ab87', $contact->contactIdentifier()->value());
-        self::assertSame('pending', $contact->sendStatus()->value);
+        self::assertNull($contact->sendStatus());
     }
 }
 

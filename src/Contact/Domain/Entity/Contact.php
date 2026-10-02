@@ -19,7 +19,7 @@ final class Contact
         private readonly AccountIdentifier $accountIdentifier,
         private readonly ContactTitle $title,
         private readonly ContactContent $content,
-        private ContactSendStatus $sendStatus,
+        private ?ContactSendStatus $sendStatus,
         private ?DateTimeImmutable $sentAt,
     ) {
         $this->assertStatusAndSentAt();
@@ -27,7 +27,7 @@ final class Contact
 
     public static function create(ContactIdentifier $contactIdentifier, AccountIdentifier $accountIdentifier, ContactTitle $title, ContactContent $content): self
     {
-        return new self($contactIdentifier, $accountIdentifier, $title, $content, ContactSendStatus::Pending, null);
+        return new self($contactIdentifier, $accountIdentifier, $title, $content, null, null);
     }
 
     public static function restore(ContactIdentifier $contactIdentifier, AccountIdentifier $accountIdentifier, ContactTitle $title, ContactContent $content, ContactSendStatus $sendStatus, ?DateTimeImmutable $sentAt): self
@@ -37,8 +37,8 @@ final class Contact
 
     public function markSent(DateTimeImmutable $sentAt): void
     {
-        if ($this->sendStatus !== ContactSendStatus::Pending) {
-            throw new LogicException('送信待ちのお問い合わせのみ送信済みにできます。');
+        if ($this->sendStatus !== null) {
+            throw new LogicException('未確定のお問い合わせのみ送信済みにできます。');
         }
 
         $this->sendStatus = ContactSendStatus::Sent;
@@ -47,8 +47,8 @@ final class Contact
 
     public function markFailed(): void
     {
-        if ($this->sendStatus !== ContactSendStatus::Pending) {
-            throw new LogicException('送信待ちのお問い合わせのみ送信失敗にできます。');
+        if ($this->sendStatus !== null) {
+            throw new LogicException('未確定のお問い合わせのみ送信失敗にできます。');
         }
 
         $this->sendStatus = ContactSendStatus::Failed;
@@ -75,7 +75,7 @@ final class Contact
         return $this->content;
     }
 
-    public function sendStatus(): ContactSendStatus
+    public function sendStatus(): ?ContactSendStatus
     {
         return $this->sendStatus;
     }
@@ -87,11 +87,14 @@ final class Contact
 
     private function assertStatusAndSentAt(): void
     {
+        if ($this->sendStatus === null && $this->sentAt !== null) {
+            throw new LogicException('未確定のお問い合わせに送信日時は設定できません。');
+        }
         if ($this->sendStatus === ContactSendStatus::Sent && $this->sentAt === null) {
             throw new LogicException('送信済みのお問い合わせには送信日時が必要です。');
         }
-        if ($this->sendStatus !== ContactSendStatus::Sent && $this->sentAt !== null) {
-            throw new LogicException('送信待ちまたは送信失敗のお問い合わせに送信日時は設定できません。');
+        if ($this->sendStatus === ContactSendStatus::Failed && $this->sentAt !== null) {
+            throw new LogicException('送信失敗のお問い合わせに送信日時は設定できません。');
         }
     }
 }

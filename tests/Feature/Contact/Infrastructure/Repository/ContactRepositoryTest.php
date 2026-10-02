@@ -20,7 +20,7 @@ final class ContactRepositoryTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_saves_updates_and_restores_contact_delivery_state(): void
+    public function test_saves_and_restores_a_sent_contact(): void
     {
         $this->insertAccount();
         $contact = Contact::create(
@@ -31,16 +31,6 @@ final class ContactRepositoryTest extends TestCase
         );
         $repository = new ContactRepository;
 
-        $repository->save($contact);
-        self::assertDatabaseHas('contacts', [
-            'contact_identifier' => '3b5581e9-16df-4879-b7d2-5d88dca6ab87',
-            'account_identifier' => 'f0cfa1a3-1ac7-44af-9bf4-b36c9262f028',
-            'title' => 'お問い合わせ',
-            'content' => '内容です。',
-            'status' => 'pending',
-            'sent_at' => null,
-        ]);
-
         $contact->markSent(new DateTimeImmutable('2026-10-02 12:00:00'));
         $repository->save($contact);
         $restored = $repository->find(new ContactIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87'));
@@ -48,6 +38,39 @@ final class ContactRepositoryTest extends TestCase
         self::assertSame(ContactSendStatus::Sent, $restored?->sendStatus());
         self::assertSame('2026-10-02 12:00:00', $restored?->sentAt()?->format('Y-m-d H:i:s'));
         self::assertSame('f0cfa1a3-1ac7-44af-9bf4-b36c9262f028', $restored?->accountIdentifier()->value());
+    }
+
+    public function test_saves_a_failed_contact_with_no_sent_at(): void
+    {
+        $this->insertAccount();
+        $contact = Contact::create(
+            new ContactIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87'),
+            new AccountIdentifier('f0cfa1a3-1ac7-44af-9bf4-b36c9262f028'),
+            new ContactTitle('お問い合わせ'),
+            new ContactContent('内容です。'),
+        );
+        $contact->markFailed();
+
+        (new ContactRepository)->save($contact);
+
+        $this->assertDatabaseHas('contacts', [
+            'status' => 'failed',
+            'sent_at' => null,
+        ]);
+    }
+
+    public function test_rejects_saving_an_unresolved_contact(): void
+    {
+        $this->insertAccount();
+        $contact = Contact::create(
+            new ContactIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87'),
+            new AccountIdentifier('f0cfa1a3-1ac7-44af-9bf4-b36c9262f028'),
+            new ContactTitle('お問い合わせ'),
+            new ContactContent('内容です。'),
+        );
+
+        $this->expectException(\LogicException::class);
+        (new ContactRepository)->save($contact);
     }
 
     private function insertAccount(): void
