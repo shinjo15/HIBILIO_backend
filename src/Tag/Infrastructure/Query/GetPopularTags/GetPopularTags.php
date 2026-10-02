@@ -31,9 +31,11 @@ final class GetPopularTags implements GetPopularTagsInterface
             })
             ->where('tags.available', true)
             ->groupBy('tags.tag_identifier', 'tags.tag_name')
+            ->havingRaw('count(distinct case when accounts.account_identifier is not null then routines.routine_identifier end) > 0')
             ->orderByDesc('routine_count')
             ->orderBy('tags.tag_name')
             ->orderBy('tags.tag_identifier')
+            ->limit(50)
             ->get([
                 'tags.tag_identifier',
                 'tags.tag_name',
