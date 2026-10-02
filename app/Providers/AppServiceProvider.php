@@ -124,6 +124,10 @@ use Src\Authentication\Infrastructure\Service\RedisLoginPasscodeStateService;
 use Src\Authentication\Infrastructure\Service\RedisRegistrationPasscodeStateService;
 use Src\Authentication\Infrastructure\Service\RegistrationPasscodeMailService;
 use Src\Authentication\Infrastructure\Service\SocialLogin\SocialLoginService;
+use Src\Contact\Application\Service\ContactSupportMailServiceInterface;
+use Src\Contact\Application\UseCase\SendContactSupportMail\SendContactSupportMail;
+use Src\Contact\Application\UseCase\SendContactSupportMail\SendContactSupportMailInterface;
+use Src\Contact\Infrastructure\Service\LaravelContactSupportMailService;
 use Src\Like\Application\UseCase\CreateLike\CreateLike;
 use Src\Like\Application\UseCase\CreateLike\CreateLikeInterface;
 use Src\Like\Application\Usecase\Query\GetLikedRoutinePosts\GetLikedRoutinePostsInterface;
@@ -247,6 +251,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(AccountFactoryInterface::class, AccountFactory::class);
         $this->app->bind(AccountRepositoryInterface::class, AccountRepository::class);
         $this->app->bind(AccountRegistrationMailServiceInterface::class, LaravelAccountRegistrationMailService::class);
+        $this->app->bind(ContactSupportMailServiceInterface::class, LaravelContactSupportMailService::class);
+        $this->app->bind(SendContactSupportMailInterface::class, SendContactSupportMail::class);
         $this->app->bind(AccountImageConverterServiceInterface::class, AccountImageConverterService::class);
         $this->app->bind(AccountImageUrlServiceInterface::class, AccountImageUrlService::class);
         $this->app->bind(
@@ -343,5 +349,10 @@ class AppServiceProvider extends ServiceProvider
                 Limit::perMinutes(10, 5)->by('email:'.strtolower((string) $request->input('email_address')))->response($response),
             ];
         });
+
+        RateLimiter::for('contact-support-mail', static function (Request $request): Limit {
+            return Limit::perHour(3)->by('account:'.(string) $request->session()->get('account_identifier'));
+        });
+
     }
 }

@@ -31,6 +31,7 @@ use App\Http\Actions\Authentication\LogoutAction;
 use App\Http\Actions\Authentication\RestorePersistentLoginAction;
 use App\Http\Actions\Authentication\VerifyLoginPasscodeAction;
 use App\Http\Actions\Authentication\VerifyRegistrationPasscodeAction;
+use App\Http\Actions\Contact\SendContactSupportMailAction;
 use App\Http\Actions\Like\CreateLikeAction;
 use App\Http\Actions\Like\GetAccountLikedRoutinePostsAction;
 use App\Http\Actions\Like\GetMyLikedRoutinePostsAction;
@@ -92,6 +93,7 @@ Route::middleware('web')->group(static function (): void {
     Route::get('/tags/pickup', GetPickupTagsAction::class);
     Route::get('/tags/popular', GetPopularTagsAction::class);
     Route::post('/reports', CreateReportAction::class);
+    Route::post('/contact-support', SendContactSupportMailAction::class)->middleware('throttle:contact-support-mail');
     Route::post('/follows', CreateFollowAction::class);
     Route::post('/follow-requests/{requesting_account_identifier}/approve', ApproveFollowRequestAction::class)->whereUuid('requesting_account_identifier');
     Route::post('/follow-requests/{requesting_account_identifier}/reject', RejectFollowRequestAction::class)->whereUuid('requesting_account_identifier');
