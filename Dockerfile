@@ -1,4 +1,4 @@
-FROM php:8.4-cli
+FROM php:8.4.27-cli
 
 RUN apt-get update \
     && apt-get install --yes --no-install-recommends $PHPIZE_DEPS git libjpeg62-turbo-dev libonig-dev libpng-dev libsqlite3-dev libwebp-dev libzip-dev unzip \
