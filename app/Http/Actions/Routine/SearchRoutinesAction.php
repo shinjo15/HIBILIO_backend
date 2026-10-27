@@ -36,8 +36,32 @@ final readonly class SearchRoutinesAction
                     'tag_name' => $tag['tagName'],
                 ], $item['tags']),
                 'published_at' => $item['publishedAt'],
+                'posted_at' => $item['postedAt'],
+                'post_identifier' => $item['postIdentifier'],
+                'routine_execution_minutes' => $item['routineExecutionMinutes'],
+                'routine_actions' => array_map(static fn (array $action): array => [
+                    'routine_action_identifier' => $action['routineActionIdentifier'],
+                    'action_name' => $action['actionName'],
+                    'action_minutes' => $action['actionMinutes'],
+                ], $item['routineActions']),
+                'execution_count' => $item['executionCount'],
+                'customization_count' => $item['customizationCount'],
+                ...self::postFields($item),
             ], $output->items()),
             'total' => $output->total(),
         ]);
+    }
+
+    private static function postFields(array $item): array
+    {
+        return $item['itemType'] === 'routine'
+            ? ['post_like_count' => $item['postLikeCount'], 'liked' => $item['liked']]
+            : [
+                'post_like_count' => $item['postLikeCount'],
+                'support_count' => $item['supportCount'],
+                'supported' => $item['supported'],
+                'executed_action_count' => $item['executedActionCount'],
+                'routine_execution_memo' => $item['routineExecutionMemo'],
+            ];
     }
 }
