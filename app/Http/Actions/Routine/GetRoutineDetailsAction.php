@@ -27,7 +27,12 @@ final readonly class GetRoutineDetailsAction
         }
 
         return new JsonResponse([
-            'customization_origin' => CustomizationOriginResponse::from($routineDetails['customizationOrigin']),
+            'customization_origin' => $routineDetails['customizationOrigin'] === null ? null : [
+                'routine_identifier' => $routineDetails['customizationOrigin']['routineIdentifier'],
+                'routine_name' => $routineDetails['customizationOrigin']['routineName'],
+                'account_name' => $routineDetails['customizationOrigin']['accountName'],
+                'icon_image_url' => $routineDetails['customizationOrigin']['iconImageUrl'],
+            ],
             'account_identifier' => $routineDetails['accountIdentifier'],
             'account_name' => $routineDetails['accountName'],
             'icon_image_url' => $routineDetails['iconImageUrl'],

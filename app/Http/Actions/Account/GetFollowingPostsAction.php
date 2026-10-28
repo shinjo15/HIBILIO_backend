@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Actions\Account;
 
-use App\Http\Actions\Routine\CustomizationOriginResponse;
 use App\Http\Requests\Account\GetFollowingPostsRequest;
 use Illuminate\Http\JsonResponse;
 use RuntimeException;
@@ -70,7 +69,12 @@ final readonly class GetFollowingPostsAction
     private static function reactionFieldByCategory(array $post): array
     {
         return $post['postCategory'] === 'routine'
-            ? ['liked' => $post['liked'], 'customization_origin' => CustomizationOriginResponse::from($post['customizationOrigin'])]
+            ? ['liked' => $post['liked'], 'customization_origin' => $post['customizationOrigin'] === null ? null : [
+                'routine_identifier' => $post['customizationOrigin']['routineIdentifier'],
+                'routine_name' => $post['customizationOrigin']['routineName'],
+                'account_name' => $post['customizationOrigin']['accountName'],
+                'icon_image_url' => $post['customizationOrigin']['iconImageUrl'],
+            ]]
             : ['supported' => $post['supported']];
     }
 

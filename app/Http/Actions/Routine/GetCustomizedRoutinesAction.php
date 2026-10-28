@@ -34,7 +34,12 @@ final readonly class GetCustomizedRoutinesAction
         return new JsonResponse([
             'items' => array_map(static fn (array $routine): array => [
                 'routine_identifier' => $routine['routineIdentifier'],
-                'customization_origin' => CustomizationOriginResponse::from($routine['customizationOrigin']),
+                'customization_origin' => $routine['customizationOrigin'] === null ? null : [
+                    'routine_identifier' => $routine['customizationOrigin']['routineIdentifier'],
+                    'routine_name' => $routine['customizationOrigin']['routineName'],
+                    'account_name' => $routine['customizationOrigin']['accountName'],
+                    'icon_image_url' => $routine['customizationOrigin']['iconImageUrl'],
+                ],
                 'account_identifier' => $routine['accountIdentifier'],
                 'account_name' => $routine['accountName'],
                 'icon_image_url' => $routine['iconImageUrl'],

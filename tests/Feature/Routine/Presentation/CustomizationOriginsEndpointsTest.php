@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Src\Account\Application\Service\AccountImageUrlServiceInterface;
+use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Tests\TestCase;
 
 final class CustomizationOriginsEndpointsTest extends TestCase
@@ -104,6 +106,61 @@ final class CustomizationOriginsEndpointsTest extends TestCase
     }
 
     #[DataProvider('allActionEndpoints')]
+    public function test_each_action_returns_exact_origin_fields_with_icon(string $url, ?string $collection, string $viewer): void
+    {
+        $this->app->instance(AccountImageUrlServiceInterface::class, new class implements AccountImageUrlServiceInterface
+        {
+            public function iconImageUrl(AccountIdentifier $accountIdentifier): ?string
+            {
+                return 'https://images.example/'.$accountIdentifier->value();
+            }
+
+            public function headerImageUrl(AccountIdentifier $accountIdentifier): ?string
+            {
+                return null;
+            }
+        });
+        $response = $this->withSession(['account_identifier' => $viewer])->getJson($url)->assertOk();
+        $item = $collection === null ? $response->json() : $response->json($collection.'.0');
+        self::assertSame([
+            'routine_identifier' => self::PARENT,
+            'routine_name' => '親',
+            'account_name' => '作者',
+            'icon_image_url' => 'https://images.example/'.self::PARENT_AUTHOR,
+        ], $item['customization_origin']);
+    }
+
+    #[DataProvider('allActionEndpoints')]
+    public function test_each_action_returns_a_real_signed_parent_icon_url(string $url, ?string $collection, string $viewer): void
+    {
+        config(['account.images.storage' => 'local']);
+        $disk = Storage::persistentFake('account_images');
+        $disk->diskName('account_images')->shouldServeSignedUrls(true, fn () => app('url'));
+        $disk->put('accounts/'.self::PARENT_AUTHOR.'/icon/icon.webp', 'image-data');
+
+        $response = $this->withSession(['account_identifier' => $viewer])->getJson($url)->assertOk();
+        $item = $collection === null ? $response->json() : $response->json($collection.'.0');
+        $origin = $item['customization_origin'];
+        $iconUrl = $origin['icon_image_url'];
+        self::assertIsString($iconUrl);
+        self::assertSame([
+            'routine_identifier' => self::PARENT,
+            'routine_name' => '親',
+            'account_name' => '作者',
+            'icon_image_url' => $iconUrl,
+        ], $origin);
+        self::assertStringContainsString('accounts/'.self::PARENT_AUTHOR.'/icon/icon.webp', $iconUrl);
+        self::assertTrue(URL::hasValidSignature(Request::create($iconUrl), false));
+        parse_str((string) parse_url($iconUrl, PHP_URL_QUERY), $query);
+        self::assertArrayHasKey('expires', $query);
+        self::assertEqualsWithDelta(now()->addHour()->timestamp, (int) $query['expires'], 3);
+        $this->get($iconUrl)->assertOk();
+        $this->get($iconUrl.'&tampered=1')->assertForbidden();
+        $this->travel(61)->minutes();
+        $this->get($iconUrl)->assertForbidden();
+    }
+
+    #[DataProvider('allActionEndpoints')]
     public function test_each_action_uses_actual_viewer_for_parent_visibility(string $url, ?string $collection, string $viewer): void
     {
         $itemPath = $collection === null ? null : $collection.'.0';
@@ -114,7 +171,12 @@ final class CustomizationOriginsEndpointsTest extends TestCase
             return $itemPath === null ? $response->json() : $response->json($itemPath);
         };
         $base = $get($viewer);
-        self::assertSame(self::PARENT, $base['customization_origin']['routine_identifier']);
+        self::assertSame([
+            'routine_identifier' => self::PARENT,
+            'routine_name' => '親',
+            'account_name' => '作者',
+            'icon_image_url' => null,
+        ], $base['customization_origin']);
         self::assertSame('子', $base['routine_name']);
         self::assertSame(self::AUTHOR, $base['account_identifier']);
         DB::table('accounts')->where('account_identifier', self::PARENT_AUTHOR)->update(['visibility' => 'private']);
@@ -386,6 +448,7 @@ final class CustomizationOriginsEndpointsTest extends TestCase
     {
         self::assertDirectoryDoesNotExist(base_path('src/Routine/Application/Usecase/Query/GetCustomizationOrigins'));
         self::assertDirectoryDoesNotExist(base_path('src/Routine/Infrastructure/Query/GetCustomizationOrigins'));
+        self::assertFileDoesNotExist(app_path('Http/Actions/Routine/CustomizationOriginResponse.php'));
     }
 
     public function test_mixed_search_and_following_only_add_origin_to_routine_items(): void
@@ -399,7 +462,12 @@ final class CustomizationOriginsEndpointsTest extends TestCase
             $routineItem = collect($items)->firstWhere($type, 'routine');
             self::assertNotNull($executionItem);
             self::assertArrayNotHasKey('customization_origin', $executionItem);
-            self::assertSame(self::PARENT, $routineItem['customization_origin']['routine_identifier']);
+            self::assertSame([
+                'routine_identifier' => self::PARENT,
+                'routine_name' => '親',
+                'account_name' => '作者',
+                'icon_image_url' => null,
+            ], $routineItem['customization_origin']);
         }
     }
 }

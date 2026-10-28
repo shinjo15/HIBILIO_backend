@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Actions\Account;
 
-use App\Http\Actions\Routine\CustomizationOriginResponse;
 use App\Http\Requests\Account\GetMyRoutinePostsRequest;
 use Illuminate\Http\JsonResponse;
 use RuntimeException;
@@ -26,7 +25,12 @@ final readonly class GetMyRoutinePostsAction
 
         return new JsonResponse(['items' => array_map(static fn (array $post): array => [
             'post_identifier' => $post['postIdentifier'], 'routine_identifier' => $post['routineIdentifier'],
-            'customization_origin' => CustomizationOriginResponse::from($post['customizationOrigin']),
+            'customization_origin' => $post['customizationOrigin'] === null ? null : [
+                'routine_identifier' => $post['customizationOrigin']['routineIdentifier'],
+                'routine_name' => $post['customizationOrigin']['routineName'],
+                'account_name' => $post['customizationOrigin']['accountName'],
+                'icon_image_url' => $post['customizationOrigin']['iconImageUrl'],
+            ],
             'account_identifier' => $post['accountIdentifier'], 'account_name' => $post['accountName'],
             'icon_image_url' => $post['iconImageUrl'],
             'posted_at' => $post['postedAt'], 'routine_name' => $post['routineName'],
