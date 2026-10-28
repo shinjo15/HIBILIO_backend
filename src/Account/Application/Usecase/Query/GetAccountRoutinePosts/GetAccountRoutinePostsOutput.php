@@ -6,7 +6,7 @@ namespace Src\Account\Application\Usecase\Query\GetAccountRoutinePosts;
 
 final readonly class GetAccountRoutinePostsOutput implements GetAccountRoutinePostsOutputPort
 {
-    /** @param list<array<string, mixed>> $items */
+    /** @param list<array{customizationOrigin: array{routineIdentifier: string, routineName: string, accountName: string, iconImageUrl: ?string}|null, ...}> $items */
     public function __construct(private array $items, private int $total) {}
 
     public function items(): array

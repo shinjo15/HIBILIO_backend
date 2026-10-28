@@ -6,7 +6,7 @@ namespace Src\Account\Application\Usecase\Query\GetAccountRoutinePosts;
 
 interface GetAccountRoutinePostsOutputPort
 {
-    /** @return list<array<string, mixed>> */
+    /** @return list<array{customizationOrigin: array{routineIdentifier: string, routineName: string, accountName: string, iconImageUrl: ?string}|null, ...}> */
     public function items(): array;
 
     public function total(): int;

@@ -277,6 +277,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ChangeAccountUiModeInterface::class, ChangeAccountUiMode::class);
         $this->app->bind(GetAccountDetailsInterface::class, GetAccountDetails::class);
         $this->app->bind(GetAccountRoutinePostsInterface::class, GetAccountRoutinePosts::class);
+
         $this->app->bind(GetMyBlocksInterface::class, GetMyBlocks::class);
         $this->app->bind(GetReceivedFollowRequestsInterface::class, GetReceivedFollowRequests::class);
         $this->app->bind(GetSentFollowRequestsInterface::class, GetSentFollowRequests::class);

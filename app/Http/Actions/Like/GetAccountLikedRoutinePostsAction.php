@@ -31,6 +31,12 @@ final readonly class GetAccountLikedRoutinePostsAction
             'items' => array_map(static fn (array $item): array => [
                 'post_identifier' => $item['postIdentifier'],
                 'routine_identifier' => $item['routineIdentifier'],
+                'customization_origin' => $item['customizationOrigin'] === null ? null : [
+                    'routine_identifier' => $item['customizationOrigin']['routineIdentifier'],
+                    'routine_name' => $item['customizationOrigin']['routineName'],
+                    'account_name' => $item['customizationOrigin']['accountName'],
+                    'icon_image_url' => $item['customizationOrigin']['iconImageUrl'],
+                ],
                 'account_identifier' => $item['accountIdentifier'],
                 'account_name' => $item['accountName'],
                 'icon_image_url' => $item['iconImageUrl'],

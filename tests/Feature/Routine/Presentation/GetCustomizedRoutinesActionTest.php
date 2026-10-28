@@ -49,6 +49,7 @@ final class GetCustomizedRoutinesActionTest extends TestCase
                 'items' => [
                     [
                         'routine_identifier' => '99999999-9999-4999-8999-999999999999',
+                        'customization_origin' => ['routine_identifier' => $parentRoutineIdentifier, 'routine_name' => '親Routine', 'account_name' => '親作成者', 'icon_image_url' => "https://images.example/accounts/{$parentAccountIdentifier}/icon"],
                         'account_identifier' => $secondChildAccountIdentifier,
                         'account_name' => '二番目作成者',
                         'icon_image_url' => "https://images.example/accounts/{$secondChildAccountIdentifier}/icon",
@@ -61,6 +62,7 @@ final class GetCustomizedRoutinesActionTest extends TestCase
                     ],
                     [
                         'routine_identifier' => 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+                        'customization_origin' => ['routine_identifier' => $parentRoutineIdentifier, 'routine_name' => '親Routine', 'account_name' => '親作成者', 'icon_image_url' => "https://images.example/accounts/{$parentAccountIdentifier}/icon"],
                         'account_identifier' => $firstChildAccountIdentifier,
                         'account_name' => '一番目作成者',
                         'icon_image_url' => "https://images.example/accounts/{$firstChildAccountIdentifier}/icon",

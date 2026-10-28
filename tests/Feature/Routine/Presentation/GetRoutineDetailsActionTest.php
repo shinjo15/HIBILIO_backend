@@ -14,6 +14,23 @@ final class GetRoutineDetailsActionTest extends TestCase
     use InteractsWithAccountImageUrlService;
     use RefreshDatabase;
 
+    public function test_customized_routine_includes_its_direct_origin(): void
+    {
+        $author = '11111111-1111-4111-8111-111111111111';
+        $parent = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+        $child = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+        $this->insertAccount($author, true, 'active');
+        $this->insertRoutine($parent, $author, null, true, '親', null, null);
+        $this->insertRoutine($child, $author, $parent, true, '子', null, null);
+
+        $this->getJson("/api/routines/{$child}")
+            ->assertOk()
+            ->assertJsonPath('customization_origin.routine_identifier', $parent)
+            ->assertJsonPath('customization_origin.routine_name', '親')
+            ->assertJsonPath('customization_origin.account_name', '作成者')
+            ->assertJsonPath('customization_origin.icon_image_url', "https://images.example/accounts/{$author}/icon");
+    }
+
     public function test_returns_anonymous_public_routine_details_with_exact_json(): void
     {
         $accountIdentifier = '11111111-1111-4111-8111-111111111111';
@@ -37,6 +54,7 @@ final class GetRoutineDetailsActionTest extends TestCase
         $this->getJson("/api/routines/{$routineIdentifier}")
             ->assertOk()
             ->assertExactJson([
+                'customization_origin' => null,
                 'account_identifier' => $accountIdentifier,
                 'account_name' => '作成者',
                 'icon_image_url' => "https://images.example/accounts/{$accountIdentifier}/icon",

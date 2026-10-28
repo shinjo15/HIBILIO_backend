@@ -61,6 +61,16 @@ final class GetLikedRoutinePosts implements GetLikedRoutinePostsInterface
 
         PostInteractionState::selectLiked($query, $input->viewerAccountIdentifier(), 'posts.post_identifier');
 
+        $parents = DB::table('routines as parent_routines')->join('accounts as parent_accounts', 'parent_routines.account_identifier', '=', 'parent_accounts.account_identifier')
+            ->where('parent_routines.available', true)->where('parent_accounts.available', true)->where('parent_accounts.status', 'active')
+            ->select('parent_routines.routine_identifier', 'parent_routines.routine_name', 'parent_accounts.account_identifier', 'parent_accounts.account_name');
+        if ($input->viewerAccountIdentifier() !== null) {
+            BlockVisibility::exclude($parents, $input->viewerAccountIdentifier(), 'parent_accounts.account_identifier');
+        }
+        PrivateAccountVisibility::exclude($parents, $input->viewerAccountIdentifier(), 'parent_accounts.account_identifier', 'parent_accounts.visibility');
+        $query->leftJoinSub($parents, 'origin', 'origin.routine_identifier', '=', 'routines.parent_routine_identifier')
+            ->addSelect('origin.routine_identifier as origin_identifier', 'origin.routine_name as origin_name', 'origin.account_identifier as origin_author_identifier', 'origin.account_name as origin_author_name');
+
         $paginator = $query->paginate($input->numberOfItemsPerPage(), ['*'], 'page', $input->page());
 
         $routineIdentifiers = $paginator->getCollection()
@@ -72,11 +82,24 @@ final class GetLikedRoutinePosts implements GetLikedRoutinePostsInterface
 
         $tagsByRoutineIdentifier = $this->tagsByRoutineIdentifier($routineIdentifiers);
         $actionsByRoutineIdentifier = $this->actionsByRoutineIdentifier($routineIdentifiers);
+        $icons = [];
+        $origin = function (object $row) use (&$icons): ?array {
+            if ($row->origin_identifier === null) {
+                return null;
+            }
+            $author = (string) $row->origin_author_identifier;
+            if (! array_key_exists($author, $icons)) {
+                $icons[$author] = $this->accountImageUrlService->iconImageUrl(new AccountIdentifier($author));
+            }
+
+            return ['routineIdentifier' => (string) $row->origin_identifier, 'routineName' => (string) $row->origin_name, 'accountName' => (string) $row->origin_author_name, 'iconImageUrl' => $icons[$author]];
+        };
 
         $items = $paginator->getCollection()
             ->map(fn (object $record): array => [
                 'postIdentifier' => (string) $record->post_identifier,
                 'routineIdentifier' => (string) $record->routine_identifier,
+                'customizationOrigin' => $origin($record),
                 'accountIdentifier' => (string) $record->account_identifier,
                 'accountName' => (string) $record->account_name,
                 'iconImageUrl' => $this->accountImageUrlService->iconImageUrl(new AccountIdentifier((string) $record->account_identifier)),

@@ -36,6 +36,12 @@ final class GetAccountLikedRoutinePostsActionTest extends TestCase
                 'items' => [[
                     'post_identifier' => 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
                     'routine_identifier' => 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+                    'customization_origin' => [
+                        'routine_identifier' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+                        'routine_name' => '朝のストレッチ',
+                        'account_name' => 'Routine作成者',
+                        'icon_image_url' => "https://images.example/accounts/{$routineAuthorIdentifier}/icon",
+                    ],
                     'account_identifier' => $routineAuthorIdentifier,
                     'account_name' => 'Routine作成者',
                     'icon_image_url' => "https://images.example/accounts/{$routineAuthorIdentifier}/icon",

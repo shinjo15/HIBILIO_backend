@@ -33,6 +33,12 @@ final readonly class GetPopularRoutinePostsAction
                 'posts' => array_map(static fn (array $post): array => [
                     'post_identifier' => $post['postIdentifier'],
                     'routine_identifier' => $post['routineIdentifier'],
+                    'customization_origin' => $post['customizationOrigin'] === null ? null : [
+                        'routine_identifier' => $post['customizationOrigin']['routineIdentifier'],
+                        'routine_name' => $post['customizationOrigin']['routineName'],
+                        'account_name' => $post['customizationOrigin']['accountName'],
+                        'icon_image_url' => $post['customizationOrigin']['iconImageUrl'],
+                    ],
                     'post_category' => $post['postCategory'],
                     'account_identifier' => $post['accountIdentifier'],
                     'account_name' => $post['accountName'],

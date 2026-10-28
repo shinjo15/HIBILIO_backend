@@ -6,7 +6,7 @@ namespace Src\Account\Application\Usecase\Query\GetFollowingPosts;
 
 final readonly class GetFollowingPostsOutput implements GetFollowingPostsOutputPort
 {
-    /** @param list<array<string, mixed>> $posts */
+    /** @param list<array{postCategory: 'routine', customizationOrigin: array{routineIdentifier: string, routineName: string, accountName: string, iconImageUrl: ?string}|null, ...}|array{postCategory: 'action', customizationOrigin: null, ...}> $posts */
     public function __construct(
         private array $posts,
         private int $total,

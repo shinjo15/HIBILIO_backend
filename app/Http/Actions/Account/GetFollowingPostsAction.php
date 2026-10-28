@@ -69,7 +69,12 @@ final readonly class GetFollowingPostsAction
     private static function reactionFieldByCategory(array $post): array
     {
         return $post['postCategory'] === 'routine'
-            ? ['liked' => $post['liked']]
+            ? ['liked' => $post['liked'], 'customization_origin' => $post['customizationOrigin'] === null ? null : [
+                'routine_identifier' => $post['customizationOrigin']['routineIdentifier'],
+                'routine_name' => $post['customizationOrigin']['routineName'],
+                'account_name' => $post['customizationOrigin']['accountName'],
+                'icon_image_url' => $post['customizationOrigin']['iconImageUrl'],
+            ]]
             : ['supported' => $post['supported']];
     }
 
