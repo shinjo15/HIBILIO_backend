@@ -55,7 +55,7 @@ final readonly class SearchRoutinesAction
     private static function postFields(array $item): array
     {
         return $item['itemType'] === 'routine'
-            ? ['post_like_count' => $item['postLikeCount'], 'liked' => $item['liked']]
+            ? ['post_like_count' => $item['postLikeCount'], 'liked' => $item['liked'], 'customization_origin' => CustomizationOriginResponse::from($item['customizationOrigin'])]
             : [
                 'post_like_count' => $item['postLikeCount'],
                 'support_count' => $item['supportCount'],

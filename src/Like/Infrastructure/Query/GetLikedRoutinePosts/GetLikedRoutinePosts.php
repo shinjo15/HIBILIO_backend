@@ -11,6 +11,8 @@ use Src\Like\Application\Usecase\Query\GetLikedRoutinePosts\GetLikedRoutinePosts
 use Src\Like\Application\Usecase\Query\GetLikedRoutinePosts\GetLikedRoutinePostsInterface;
 use Src\Like\Application\Usecase\Query\GetLikedRoutinePosts\GetLikedRoutinePostsOutput;
 use Src\Like\Application\Usecase\Query\GetLikedRoutinePosts\GetLikedRoutinePostsOutputPort;
+use Src\Routine\Application\Usecase\Query\GetCustomizationOrigins\GetCustomizationOriginsInput;
+use Src\Routine\Application\Usecase\Query\GetCustomizationOrigins\GetCustomizationOriginsInterface;
 use Src\Shared\Domain\Exception\BlockedAccountVisibilityException;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Src\Shared\Infrastructure\Query\Account\PrivateAccountVisibility;
@@ -19,7 +21,7 @@ use Src\Shared\Infrastructure\Query\Post\PostInteractionState;
 
 final class GetLikedRoutinePosts implements GetLikedRoutinePostsInterface
 {
-    public function __construct(private AccountImageUrlServiceInterface $accountImageUrlService) {}
+    public function __construct(private AccountImageUrlServiceInterface $accountImageUrlService, private GetCustomizationOriginsInterface $getCustomizationOrigins) {}
 
     public function execute(GetLikedRoutinePostsInputPort $input): GetLikedRoutinePostsOutputPort
     {
@@ -72,11 +74,13 @@ final class GetLikedRoutinePosts implements GetLikedRoutinePostsInterface
 
         $tagsByRoutineIdentifier = $this->tagsByRoutineIdentifier($routineIdentifiers);
         $actionsByRoutineIdentifier = $this->actionsByRoutineIdentifier($routineIdentifiers);
+        $origins = $this->getCustomizationOrigins->execute(new GetCustomizationOriginsInput($routineIdentifiers, $input->viewerAccountIdentifier()))->originsByRoutineIdentifier();
 
         $items = $paginator->getCollection()
             ->map(fn (object $record): array => [
                 'postIdentifier' => (string) $record->post_identifier,
                 'routineIdentifier' => (string) $record->routine_identifier,
+                'customizationOrigin' => $origins[(string) $record->routine_identifier] ?? null,
                 'accountIdentifier' => (string) $record->account_identifier,
                 'accountName' => (string) $record->account_name,
                 'iconImageUrl' => $this->accountImageUrlService->iconImageUrl(new AccountIdentifier((string) $record->account_identifier)),

@@ -8,6 +8,8 @@ use DateTimeImmutable;
 use Illuminate\Support\Facades\DB;
 use Src\Account\Application\Service\AccountImageUrlServiceInterface;
 use Src\Account\Domain\ValueObject\AccountVisibility;
+use Src\Routine\Application\Usecase\Query\GetCustomizationOrigins\GetCustomizationOriginsInput;
+use Src\Routine\Application\Usecase\Query\GetCustomizationOrigins\GetCustomizationOriginsInterface;
 use Src\Routine\Application\Usecase\Query\SearchRoutines\SearchRoutinesInputPort;
 use Src\Routine\Application\Usecase\Query\SearchRoutines\SearchRoutinesInterface;
 use Src\Routine\Application\Usecase\Query\SearchRoutines\SearchRoutinesOutput;
@@ -18,7 +20,7 @@ use Src\Shared\Infrastructure\Query\Post\PostInteractionState;
 
 final class SearchRoutines implements SearchRoutinesInterface
 {
-    public function __construct(private AccountImageUrlServiceInterface $accountImageUrlService) {}
+    public function __construct(private AccountImageUrlServiceInterface $accountImageUrlService, private GetCustomizationOriginsInterface $getCustomizationOrigins) {}
 
     public function execute(SearchRoutinesInputPort $input): SearchRoutinesOutputPort
     {
@@ -85,6 +87,7 @@ final class SearchRoutines implements SearchRoutinesInterface
         $tagsByRoutineIdentifier = $this->tagsByRoutineIdentifier($routineIdentifiers);
         $actionsByRoutineIdentifier = $this->actionsByRoutineIdentifier($routineIdentifiers);
         $metricsByRoutineIdentifier = $this->metricsByRoutineIdentifier($routineIdentifiers);
+        $origins = $this->getCustomizationOrigins->execute(new GetCustomizationOriginsInput($paginator->getCollection()->where('item_type', 'routine')->pluck('routine_identifier')->unique()->values()->all(), $input->accountIdentifier()))->originsByRoutineIdentifier();
         $executionIdentifiers = $paginator->getCollection()
             ->pluck('routine_execution_identifier')
             ->filter()
@@ -94,7 +97,7 @@ final class SearchRoutines implements SearchRoutinesInterface
         $executedActionCounts = $this->executedActionCounts($executionIdentifiers);
 
         $items = $paginator->getCollection()
-            ->map(function (object $item) use ($actionsByRoutineIdentifier, $metricsByRoutineIdentifier, $tagsByRoutineIdentifier, $executedActionCounts): array {
+            ->map(function (object $item) use ($actionsByRoutineIdentifier, $metricsByRoutineIdentifier, $tagsByRoutineIdentifier, $executedActionCounts, $origins): array {
                 $routineIdentifier = (string) $item->routine_identifier;
 
                 return [
@@ -113,6 +116,7 @@ final class SearchRoutines implements SearchRoutinesInterface
                     'routineActions' => $actionsByRoutineIdentifier[$routineIdentifier] ?? [],
                     'executionCount' => $metricsByRoutineIdentifier[$routineIdentifier]['executionCount'] ?? 0,
                     'customizationCount' => $metricsByRoutineIdentifier[$routineIdentifier]['customizationCount'] ?? 0,
+                    'customizationOrigin' => $origins[$routineIdentifier] ?? null,
                     ...$this->postFields($item, $executedActionCounts),
                 ];
             })

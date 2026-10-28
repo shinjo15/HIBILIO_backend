@@ -11,12 +11,14 @@ use Src\Account\Application\Usecase\Query\GetFollowingPosts\GetFollowingPostsInp
 use Src\Account\Application\Usecase\Query\GetFollowingPosts\GetFollowingPostsInterface;
 use Src\Account\Application\Usecase\Query\GetFollowingPosts\GetFollowingPostsOutput;
 use Src\Account\Application\Usecase\Query\GetFollowingPosts\GetFollowingPostsOutputPort;
+use Src\Routine\Application\Usecase\Query\GetCustomizationOrigins\GetCustomizationOriginsInput;
+use Src\Routine\Application\Usecase\Query\GetCustomizationOrigins\GetCustomizationOriginsInterface;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Src\Shared\Infrastructure\Query\Post\PostInteractionState;
 
 final class GetFollowingPosts implements GetFollowingPostsInterface
 {
-    public function __construct(private AccountImageUrlServiceInterface $accountImageUrlService) {}
+    public function __construct(private AccountImageUrlServiceInterface $accountImageUrlService, private GetCustomizationOriginsInterface $getCustomizationOrigins) {}
 
     public function execute(GetFollowingPostsInputPort $input): GetFollowingPostsOutputPort
     {
@@ -61,11 +63,13 @@ final class GetFollowingPosts implements GetFollowingPostsInterface
 
         $tagsByRoutineIdentifier = $this->tagsByRoutineIdentifier($routineIdentifiers);
         $actionsByRoutineIdentifier = $this->actionsByRoutineIdentifier($routineIdentifiers);
+        $origins = $this->getCustomizationOrigins->execute(new GetCustomizationOriginsInput($paginator->getCollection()->where('post_category', 'routine')->pluck('routine_identifier')->unique()->values()->all(), $input->accountIdentifier()))->originsByRoutineIdentifier();
 
         $posts = $paginator->getCollection()
             ->map(fn (object $record): array => [
                 'postIdentifier' => (string) $record->post_identifier,
                 'routineIdentifier' => (string) $record->routine_identifier,
+                'customizationOrigin' => $origins[(string) $record->routine_identifier] ?? null,
                 'routineExecutionIdentifier' => $record->routine_execution_identifier === null
                     ? null
                     : (string) $record->routine_execution_identifier,

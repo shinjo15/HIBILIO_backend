@@ -11,6 +11,8 @@ use Src\Account\Application\Usecase\Query\GetAccountRoutinePosts\GetAccountRouti
 use Src\Account\Application\Usecase\Query\GetAccountRoutinePosts\GetAccountRoutinePostsInterface;
 use Src\Account\Application\Usecase\Query\GetAccountRoutinePosts\GetAccountRoutinePostsOutput;
 use Src\Account\Application\Usecase\Query\GetAccountRoutinePosts\GetAccountRoutinePostsOutputPort;
+use Src\Routine\Application\Usecase\Query\GetCustomizationOrigins\GetCustomizationOriginsInput;
+use Src\Routine\Application\Usecase\Query\GetCustomizationOrigins\GetCustomizationOriginsInterface;
 use Src\Shared\Domain\Exception\BlockedAccountVisibilityException;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Src\Shared\Infrastructure\Query\Account\PrivateAccountVisibility;
@@ -19,7 +21,7 @@ use Src\Shared\Infrastructure\Query\Post\PostInteractionState;
 
 final class GetAccountRoutinePosts implements GetAccountRoutinePostsInterface
 {
-    public function __construct(private AccountImageUrlServiceInterface $accountImageUrlService) {}
+    public function __construct(private AccountImageUrlServiceInterface $accountImageUrlService, private GetCustomizationOriginsInterface $getCustomizationOrigins) {}
 
     public function execute(GetAccountRoutinePostsInputPort $input): GetAccountRoutinePostsOutputPort
     {
@@ -60,10 +62,12 @@ final class GetAccountRoutinePosts implements GetAccountRoutinePostsInterface
             ->map(static fn (mixed $identifier): string => (string) $identifier)->unique()->values()->all();
         $tags = $this->tags($routineIdentifiers);
         $actions = $this->actions($routineIdentifiers);
+        $origins = $this->getCustomizationOrigins->execute(new GetCustomizationOriginsInput($routineIdentifiers, $input->viewerAccountIdentifier()))->originsByRoutineIdentifier();
 
         $items = $paginator->getCollection()->map(fn (object $post): array => [
             'postIdentifier' => (string) $post->post_identifier,
             'routineIdentifier' => (string) $post->routine_identifier,
+            'customizationOrigin' => $origins[(string) $post->routine_identifier] ?? null,
             'accountIdentifier' => (string) $post->account_identifier,
             'accountName' => (string) $post->account_name,
             'iconImageUrl' => $this->accountImageUrlService->iconImageUrl(new AccountIdentifier((string) $post->account_identifier)),

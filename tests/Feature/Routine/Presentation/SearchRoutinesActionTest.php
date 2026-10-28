@@ -14,6 +14,20 @@ final class SearchRoutinesActionTest extends TestCase
     use InteractsWithAccountImageUrlService;
     use RefreshDatabase;
 
+    public function test_search_routine_includes_its_origin(): void
+    {
+        $author = '11111111-1111-4111-8111-111111111111';
+        $parent = '22222222-2222-4222-8222-222222222222';
+        $child = '33333333-3333-4333-8333-333333333333';
+        $this->account($author, '作者');
+        $this->routine($parent, $author, '親', '2026-09-01 09:00:00');
+        $this->routine($child, $author, '子', '2026-09-02 09:00:00');
+        DB::table('routines')->where('routine_identifier', $child)->update(['parent_routine_identifier' => $parent]);
+
+        $this->getJson('/api/routines/search?title=子')->assertOk()
+            ->assertJsonPath('items.0.customization_origin.routine_identifier', $parent);
+    }
+
     public function test_returns_matching_routines_and_routine_execution_posts_in_descending_published_order(): void
     {
         $authorIdentifier = '11111111-1111-4111-8111-111111111111';
@@ -88,6 +102,7 @@ final class SearchRoutinesActionTest extends TestCase
                     [
                         'item_type' => 'routine',
                         'routine_identifier' => $routineIdentifier,
+                        'customization_origin' => null,
                         'routine_execution_identifier' => null,
                         'routine_name' => '朝のストレッチ',
                         'account_identifier' => $authorIdentifier,
@@ -219,7 +234,7 @@ final class SearchRoutinesActionTest extends TestCase
         $multipleItemQueryCount = count(DB::getQueryLog());
 
         self::assertSame($singleItemQueryCount, $multipleItemQueryCount);
-        self::assertLessThanOrEqual(6, $multipleItemQueryCount);
+        self::assertLessThanOrEqual(7, $multipleItemQueryCount);
     }
 
     public function test_returns_only_items_that_have_all_specified_tags(): void

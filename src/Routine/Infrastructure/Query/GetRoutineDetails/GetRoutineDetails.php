@@ -6,6 +6,8 @@ namespace Src\Routine\Infrastructure\Query\GetRoutineDetails;
 
 use Illuminate\Support\Facades\DB;
 use Src\Account\Application\Service\AccountImageUrlServiceInterface;
+use Src\Routine\Application\Usecase\Query\GetCustomizationOrigins\GetCustomizationOriginsInput;
+use Src\Routine\Application\Usecase\Query\GetCustomizationOrigins\GetCustomizationOriginsInterface;
 use Src\Routine\Application\Usecase\Query\GetRoutineDetails\GetRoutineDetailsInputPort;
 use Src\Routine\Application\Usecase\Query\GetRoutineDetails\GetRoutineDetailsInterface;
 use Src\Routine\Application\Usecase\Query\GetRoutineDetails\GetRoutineDetailsOutput;
@@ -16,7 +18,7 @@ use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
 
 final class GetRoutineDetails implements GetRoutineDetailsInterface
 {
-    public function __construct(private AccountImageUrlServiceInterface $accountImageUrlService) {}
+    public function __construct(private AccountImageUrlServiceInterface $accountImageUrlService, private GetCustomizationOriginsInterface $getCustomizationOrigins) {}
 
     public function execute(GetRoutineDetailsInputPort $input): GetRoutineDetailsOutputPort
     {
@@ -74,6 +76,7 @@ final class GetRoutineDetails implements GetRoutineDetailsInterface
             ->all();
 
         return new GetRoutineDetailsOutput([
+            'customizationOrigin' => $this->getCustomizationOrigins->execute(new GetCustomizationOriginsInput([$input->routineIdentifier()], $input->viewerAccountIdentifier()))->originsByRoutineIdentifier()[$input->routineIdentifier()] ?? null,
             'accountIdentifier' => (string) $routine->account_identifier,
             'accountName' => (string) $routine->account_name,
             'iconImageUrl' => $this->accountImageUrlService->iconImageUrl(new AccountIdentifier((string) $routine->account_identifier)),

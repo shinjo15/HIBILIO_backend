@@ -12,13 +12,15 @@ use Src\Account\Application\Usecase\Query\GetPopularRoutinePosts\GetPopularRouti
 use Src\Account\Application\Usecase\Query\GetPopularRoutinePosts\GetPopularRoutinePostsOutput;
 use Src\Account\Application\Usecase\Query\GetPopularRoutinePosts\GetPopularRoutinePostsOutputPort;
 use Src\Account\Domain\ValueObject\AccountVisibility;
+use Src\Routine\Application\Usecase\Query\GetCustomizationOrigins\GetCustomizationOriginsInput;
+use Src\Routine\Application\Usecase\Query\GetCustomizationOrigins\GetCustomizationOriginsInterface;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
 use Src\Shared\Infrastructure\Query\Post\PostInteractionState;
 
 final class GetPopularRoutinePosts implements GetPopularRoutinePostsInterface
 {
-    public function __construct(private AccountImageUrlServiceInterface $accountImageUrlService) {}
+    public function __construct(private AccountImageUrlServiceInterface $accountImageUrlService, private GetCustomizationOriginsInterface $getCustomizationOrigins) {}
 
     public function execute(GetPopularRoutinePostsInputPort $input): GetPopularRoutinePostsOutputPort
     {
@@ -67,11 +69,13 @@ final class GetPopularRoutinePosts implements GetPopularRoutinePostsInterface
 
         $tagsByRoutineIdentifier = $this->tagsByRoutineIdentifier($routineIdentifiers);
         $actionsByRoutineIdentifier = $this->actionsByRoutineIdentifier($routineIdentifiers);
+        $origins = $this->getCustomizationOrigins->execute(new GetCustomizationOriginsInput($routineIdentifiers, $input->accountIdentifier()))->originsByRoutineIdentifier();
 
         $posts = $paginator->getCollection()
             ->map(fn (object $record): array => [
                 'postIdentifier' => (string) $record->post_identifier,
                 'routineIdentifier' => (string) $record->routine_identifier,
+                'customizationOrigin' => $origins[(string) $record->routine_identifier] ?? null,
                 'postCategory' => (string) $record->post_category,
                 'accountIdentifier' => (string) $record->account_identifier,
                 'accountName' => (string) $record->account_name,

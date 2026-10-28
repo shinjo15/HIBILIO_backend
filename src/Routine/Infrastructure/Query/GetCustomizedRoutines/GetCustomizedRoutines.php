@@ -6,6 +6,8 @@ namespace Src\Routine\Infrastructure\Query\GetCustomizedRoutines;
 
 use Illuminate\Support\Facades\DB;
 use Src\Account\Application\Service\AccountImageUrlServiceInterface;
+use Src\Routine\Application\Usecase\Query\GetCustomizationOrigins\GetCustomizationOriginsInput;
+use Src\Routine\Application\Usecase\Query\GetCustomizationOrigins\GetCustomizationOriginsInterface;
 use Src\Routine\Application\Usecase\Query\GetCustomizedRoutines\GetCustomizedRoutinesInputPort;
 use Src\Routine\Application\Usecase\Query\GetCustomizedRoutines\GetCustomizedRoutinesInterface;
 use Src\Routine\Application\Usecase\Query\GetCustomizedRoutines\GetCustomizedRoutinesOutput;
@@ -17,7 +19,7 @@ use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
 
 final class GetCustomizedRoutines implements GetCustomizedRoutinesInterface
 {
-    public function __construct(private AccountImageUrlServiceInterface $accountImageUrlService) {}
+    public function __construct(private AccountImageUrlServiceInterface $accountImageUrlService, private GetCustomizationOriginsInterface $getCustomizationOrigins) {}
 
     public function execute(GetCustomizedRoutinesInputPort $input): GetCustomizedRoutinesOutputPort
     {
@@ -70,9 +72,12 @@ final class GetCustomizedRoutines implements GetCustomizedRoutinesInterface
 
         $paginator = $query->paginate($input->numberOfItemsPerPage(), ['*'], 'page', $input->page());
 
+        $origins = $this->getCustomizationOrigins->execute(new GetCustomizationOriginsInput($paginator->getCollection()->pluck('routine_identifier')->unique()->values()->all(), $input->viewerAccountIdentifier()))->originsByRoutineIdentifier();
+
         $items = $paginator->getCollection()
             ->map(fn (object $routine): array => [
                 'routineIdentifier' => (string) $routine->routine_identifier,
+                'customizationOrigin' => $origins[(string) $routine->routine_identifier] ?? null,
                 'accountIdentifier' => (string) $routine->account_identifier,
                 'accountName' => (string) $routine->account_name,
                 'iconImageUrl' => $this->accountImageUrlService->iconImageUrl(new AccountIdentifier((string) $routine->account_identifier)),

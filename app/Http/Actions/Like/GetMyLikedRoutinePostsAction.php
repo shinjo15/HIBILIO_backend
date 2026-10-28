@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Actions\Like;
 
+use App\Http\Actions\Routine\CustomizationOriginResponse;
 use App\Http\Requests\Like\GetMyLikedRoutinePostsRequest;
 use Illuminate\Http\JsonResponse;
 use RuntimeException;
@@ -31,6 +32,7 @@ final readonly class GetMyLikedRoutinePostsAction
             'items' => array_map(static fn (array $item): array => [
                 'post_identifier' => $item['postIdentifier'],
                 'routine_identifier' => $item['routineIdentifier'],
+                'customization_origin' => CustomizationOriginResponse::from($item['customizationOrigin']),
                 'account_identifier' => $item['accountIdentifier'],
                 'account_name' => $item['accountName'],
                 'icon_image_url' => $item['iconImageUrl'],
