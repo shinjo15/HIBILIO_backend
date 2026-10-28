@@ -234,7 +234,7 @@ final class SearchRoutinesActionTest extends TestCase
         $multipleItemQueryCount = count(DB::getQueryLog());
 
         self::assertSame($singleItemQueryCount, $multipleItemQueryCount);
-        self::assertLessThanOrEqual(7, $multipleItemQueryCount);
+        self::assertLessThanOrEqual(6, $multipleItemQueryCount);
     }
 
     public function test_returns_only_items_that_have_all_specified_tags(): void
@@ -522,6 +522,29 @@ final class SearchRoutinesActionTest extends TestCase
             ->assertJsonPath('total', 3)
             ->assertJsonPath('items.0.routine_identifier', $secondRoutineIdentifier)
             ->assertJsonPath('items.0.posted_at', null);
+    }
+
+    public function test_authenticated_search_paginates_union_with_viewer_visible_private_origin(): void
+    {
+        $viewer = '11111111-1111-4111-8111-111111111111';
+        $author = '22222222-2222-4222-8222-222222222222';
+        $parentAuthor = '33333333-3333-4333-8333-333333333333';
+        $parent = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+        $child = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+        $execution = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
+        $this->account($viewer, '閲覧者');
+        $this->account($author, '子作者');
+        $this->account($parentAuthor, '親作者', 'active', true, 'private');
+        $this->routine($parent, $parentAuthor, '元', '2026-09-01 09:00:00');
+        $this->routine($child, $author, '結合ページ', '2026-09-02 09:00:00');
+        DB::table('routines')->where('routine_identifier', $child)->update(['parent_routine_identifier' => $parent]);
+        DB::table('follows')->insert(['following_account_identifier' => $viewer, 'followed_account_identifier' => $parentAuthor, 'created_at' => now(), 'updated_at' => now()]);
+        $this->routineExecution($execution, $child, $author, '2026-09-03 10:00:00');
+        $this->executionPost('dddddddd-dddd-4ddd-8ddd-dddddddddddd', $child, $execution, '2026-09-03 10:00:00');
+
+        $first = $this->withSession(['account_identifier' => $viewer])->getJson('/api/routines/search?title=結合ページ&page=1&number_of_items_per_page=1')->assertOk()->assertJsonPath('total', 2)->assertJsonPath('items.0.item_type', 'routine_execution');
+        self::assertArrayNotHasKey('customization_origin', $first->json('items.0'));
+        $this->withSession(['account_identifier' => $viewer])->getJson('/api/routines/search?title=結合ページ&page=2&number_of_items_per_page=1')->assertOk()->assertJsonPath('total', 2)->assertJsonPath('items.0.item_type', 'routine')->assertJsonPath('items.0.routine_identifier', $child)->assertJsonPath('items.0.customization_origin.routine_identifier', $parent)->assertJsonPath('items.0.customization_origin.account_name', '親作者');
     }
 
     private function account(string $identifier, string $name, string $status = 'active', bool $available = true, string $visibility = 'public'): void

@@ -156,7 +156,6 @@ use Src\Report\Infrastructure\Repository\AccountRepository as ReportAccountRepos
 use Src\Report\Infrastructure\Repository\ReportRepository;
 use Src\Routine\Application\UseCase\CreateRoutine\CreateRoutine;
 use Src\Routine\Application\UseCase\CreateRoutine\CreateRoutineInterface;
-use Src\Routine\Application\Usecase\Query\GetCustomizationOrigins\GetCustomizationOriginsInterface;
 use Src\Routine\Application\Usecase\Query\GetCustomizedRoutines\GetCustomizedRoutinesInterface;
 use Src\Routine\Application\Usecase\Query\GetRoutineDetails\GetRoutineDetailsInterface;
 use Src\Routine\Application\Usecase\Query\GetRoutineExecutionPosts\GetRoutineExecutionPostsInterface;
@@ -167,7 +166,6 @@ use Src\Routine\Domain\Repository\RoutineActionRepositoryInterface;
 use Src\Routine\Domain\Repository\RoutineRepositoryInterface;
 use Src\Routine\Infrastructure\Factory\RoutineActionFactory;
 use Src\Routine\Infrastructure\Factory\RoutineFactory;
-use Src\Routine\Infrastructure\Query\GetCustomizationOrigins\GetCustomizationOrigins;
 use Src\Routine\Infrastructure\Query\GetCustomizedRoutines\GetCustomizedRoutines;
 use Src\Routine\Infrastructure\Query\GetRoutineDetails\GetRoutineDetails;
 use Src\Routine\Infrastructure\Query\GetRoutineExecutionPosts\GetRoutineExecutionPosts;
@@ -279,7 +277,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ChangeAccountUiModeInterface::class, ChangeAccountUiMode::class);
         $this->app->bind(GetAccountDetailsInterface::class, GetAccountDetails::class);
         $this->app->bind(GetAccountRoutinePostsInterface::class, GetAccountRoutinePosts::class);
-        $this->app->bind(GetCustomizationOriginsInterface::class, GetCustomizationOrigins::class);
+
         $this->app->bind(GetMyBlocksInterface::class, GetMyBlocks::class);
         $this->app->bind(GetReceivedFollowRequestsInterface::class, GetReceivedFollowRequests::class);
         $this->app->bind(GetSentFollowRequestsInterface::class, GetSentFollowRequests::class);

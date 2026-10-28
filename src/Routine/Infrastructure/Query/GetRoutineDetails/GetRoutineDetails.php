@@ -6,8 +6,6 @@ namespace Src\Routine\Infrastructure\Query\GetRoutineDetails;
 
 use Illuminate\Support\Facades\DB;
 use Src\Account\Application\Service\AccountImageUrlServiceInterface;
-use Src\Routine\Application\Usecase\Query\GetCustomizationOrigins\GetCustomizationOriginsInput;
-use Src\Routine\Application\Usecase\Query\GetCustomizationOrigins\GetCustomizationOriginsInterface;
 use Src\Routine\Application\Usecase\Query\GetRoutineDetails\GetRoutineDetailsInputPort;
 use Src\Routine\Application\Usecase\Query\GetRoutineDetails\GetRoutineDetailsInterface;
 use Src\Routine\Application\Usecase\Query\GetRoutineDetails\GetRoutineDetailsOutput;
@@ -18,7 +16,7 @@ use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
 
 final class GetRoutineDetails implements GetRoutineDetailsInterface
 {
-    public function __construct(private AccountImageUrlServiceInterface $accountImageUrlService, private GetCustomizationOriginsInterface $getCustomizationOrigins) {}
+    public function __construct(private AccountImageUrlServiceInterface $accountImageUrlService) {}
 
     public function execute(GetRoutineDetailsInputPort $input): GetRoutineDetailsOutputPort
     {
@@ -50,6 +48,17 @@ final class GetRoutineDetails implements GetRoutineDetailsInterface
         }
         PrivateAccountVisibility::exclude($query, $input->viewerAccountIdentifier(), 'accounts.account_identifier', 'accounts.visibility');
 
+        $parents = DB::table('routines as parent_routines')
+            ->join('accounts as parent_accounts', 'parent_routines.account_identifier', '=', 'parent_accounts.account_identifier')
+            ->where('parent_routines.available', true)->where('parent_accounts.available', true)->where('parent_accounts.status', 'active')
+            ->select('parent_routines.routine_identifier', 'parent_routines.routine_name', 'parent_accounts.account_identifier', 'parent_accounts.account_name');
+        if ($input->viewerAccountIdentifier() !== null) {
+            BlockVisibility::exclude($parents, $input->viewerAccountIdentifier(), 'parent_accounts.account_identifier');
+        }
+        PrivateAccountVisibility::exclude($parents, $input->viewerAccountIdentifier(), 'parent_accounts.account_identifier', 'parent_accounts.visibility');
+        $query->leftJoinSub($parents, 'origin', 'origin.routine_identifier', '=', 'routines.parent_routine_identifier')
+            ->addSelect('origin.routine_identifier as origin_identifier', 'origin.routine_name as origin_name', 'origin.account_identifier as origin_author_identifier', 'origin.account_name as origin_author_name');
+
         $routine = $query->first();
 
         if ($routine === null) {
@@ -76,7 +85,12 @@ final class GetRoutineDetails implements GetRoutineDetailsInterface
             ->all();
 
         return new GetRoutineDetailsOutput([
-            'customizationOrigin' => $this->getCustomizationOrigins->execute(new GetCustomizationOriginsInput([$input->routineIdentifier()], $input->viewerAccountIdentifier()))->originsByRoutineIdentifier()[$input->routineIdentifier()] ?? null,
+            'customizationOrigin' => $routine->origin_identifier === null ? null : [
+                'routineIdentifier' => (string) $routine->origin_identifier,
+                'routineName' => (string) $routine->origin_name,
+                'accountName' => (string) $routine->origin_author_name,
+                'iconImageUrl' => $this->accountImageUrlService->iconImageUrl(new AccountIdentifier((string) $routine->origin_author_identifier)),
+            ],
             'accountIdentifier' => (string) $routine->account_identifier,
             'accountName' => (string) $routine->account_name,
             'iconImageUrl' => $this->accountImageUrlService->iconImageUrl(new AccountIdentifier((string) $routine->account_identifier)),

@@ -6,7 +6,7 @@ namespace Src\Routine\Application\Usecase\Query\GetCustomizedRoutines;
 
 final readonly class GetCustomizedRoutinesOutput implements GetCustomizedRoutinesOutputPort
 {
-    /** @param list<array{routineIdentifier: string, accountIdentifier: string, accountName: string, routineName: string, routineMemo: ?string, routineExecutionMinutes: ?int, executionCount: int, customizationCount: int, likeCount: int}> $items */
+    /** @param list<array{routineIdentifier: string, accountIdentifier: string, accountName: string, iconImageUrl: ?string, routineName: string, routineMemo: ?string, routineExecutionMinutes: ?int, executionCount: int, customizationCount: int, likeCount: int, customizationOrigin: array{routineIdentifier: string, routineName: string, accountName: string, iconImageUrl: ?string}|null}> $items */
     public function __construct(
         private array $items,
         private int $total,

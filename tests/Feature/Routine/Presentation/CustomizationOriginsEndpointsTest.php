@@ -10,10 +10,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use PHPUnit\Framework\Attributes\DataProvider;
-use Src\Account\Application\Service\AccountImageUrlServiceInterface;
-use Src\Routine\Application\Usecase\Query\GetCustomizationOrigins\GetCustomizationOriginsInput;
-use Src\Routine\Infrastructure\Query\GetCustomizationOrigins\GetCustomizationOrigins;
-use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Tests\TestCase;
 
 final class CustomizationOriginsEndpointsTest extends TestCase
@@ -386,51 +382,10 @@ final class CustomizationOriginsEndpointsTest extends TestCase
         $spy->shouldHaveReceived('temporaryUrl')->once();
     }
 
-    public function test_batch_has_constant_database_queries_and_only_visible_unique_authors_are_looked_up(): void
+    public function test_origin_has_no_separate_query_or_application_port(): void
     {
-        $otherParent = '44444444-4444-4444-8444-444444444444';
-        $otherChild = '55555555-5555-4555-8555-555555555555';
-        $sameParentChild = '66666666-6666-4666-8666-666666666666';
-        DB::table('routines')->insert([
-            ['routine_identifier' => $otherParent, 'parent_routine_identifier' => null, 'account_identifier' => self::VIEWER, 'routine_name' => '親2', 'available' => true],
-            ['routine_identifier' => $otherChild, 'parent_routine_identifier' => $otherParent, 'account_identifier' => self::AUTHOR, 'routine_name' => '子2', 'available' => true],
-            ['routine_identifier' => $sameParentChild, 'parent_routine_identifier' => self::PARENT, 'account_identifier' => self::AUTHOR, 'routine_name' => '子3', 'available' => true],
-        ]);
-        $images = new class implements AccountImageUrlServiceInterface
-        {
-            public array $calls = [];
-
-            public function iconImageUrl(AccountIdentifier $id): ?string
-            {
-                $this->calls[] = $id->value();
-
-                return null;
-            }
-
-            public function headerImageUrl(AccountIdentifier $id): ?string
-            {
-                return null;
-            }
-        };
-        $query = new GetCustomizationOrigins($images);
-        DB::enableQueryLog();
-        DB::flushQueryLog();
-        $query->execute(new GetCustomizationOriginsInput([self::CHILD], null));
-        $single = count(DB::getQueryLog());
-        self::assertSame(1, $single);
-        DB::flushQueryLog();
-        $images->calls = [];
-        $origins = $query->execute(new GetCustomizationOriginsInput([self::CHILD, $sameParentChild, $otherChild], null))->originsByRoutineIdentifier();
-        self::assertSame($single, count(DB::getQueryLog()));
-        self::assertCount(3, $origins);
-        self::assertCount(2, $images->calls);
-        self::assertSame(1, count(array_filter($images->calls, fn (string $id): bool => $id === self::PARENT_AUTHOR)));
-        DB::table('accounts')->where('account_identifier', self::PARENT_AUTHOR)->update(['visibility' => 'private']);
-        $images->calls = [];
-        $result = $query->execute(new GetCustomizationOriginsInput([self::CHILD, $sameParentChild, $otherChild], null))->originsByRoutineIdentifier();
-        self::assertArrayNotHasKey(self::CHILD, $result);
-        self::assertNotContains(self::PARENT_AUTHOR, $images->calls);
-        DB::disableQueryLog();
+        self::assertDirectoryDoesNotExist(base_path('src/Routine/Application/Usecase/Query/GetCustomizationOrigins'));
+        self::assertDirectoryDoesNotExist(base_path('src/Routine/Infrastructure/Query/GetCustomizationOrigins'));
     }
 
     public function test_mixed_search_and_following_only_add_origin_to_routine_items(): void

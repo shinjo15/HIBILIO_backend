@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\DB;
 use Src\Account\Application\Service\AccountImageUrlServiceInterface;
 use Src\Account\Application\Usecase\Query\GetAccountRoutinePosts\GetAccountRoutinePostsInput;
 use Src\Account\Infrastructure\Query\GetAccountRoutinePosts\GetAccountRoutinePosts;
-use Src\Routine\Infrastructure\Query\GetCustomizationOrigins\GetCustomizationOrigins;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Tests\TestCase;
 
@@ -25,7 +24,7 @@ final class GetAccountRoutinePostsActionTest extends TestCase
         DB::table('posts')->insert(['post_identifier' => '33333333-3333-4333-8333-333333333333', 'routine_identifier' => '22222222-2222-4222-8222-222222222222', 'post_category' => 'routine', 'post_like_count' => 1, 'post_support_count' => 2, 'available' => true, 'created_at' => '2026-09-09 10:00:00', 'updated_at' => now()]);
         DB::table('likes')->insert(['account_identifier' => $accountIdentifier, 'post_identifier' => '33333333-3333-4333-8333-333333333333', 'created_at' => now(), 'updated_at' => now()]);
 
-        $images = new class implements AccountImageUrlServiceInterface
+        $result = (new GetAccountRoutinePosts(new class implements AccountImageUrlServiceInterface
         {
             public function iconImageUrl(AccountIdentifier $accountIdentifier): ?string
             {
@@ -36,8 +35,7 @@ final class GetAccountRoutinePostsActionTest extends TestCase
             {
                 return null;
             }
-        };
-        $result = (new GetAccountRoutinePosts($images, new GetCustomizationOrigins($images)))->execute(new GetAccountRoutinePostsInput($accountIdentifier, 1, 20, $accountIdentifier));
+        }))->execute(new GetAccountRoutinePostsInput($accountIdentifier, 1, 20, $accountIdentifier));
 
         self::assertSame("https://images.example/accounts/{$accountIdentifier}/icon", $result->items()[0]['iconImageUrl']);
         self::assertTrue($result->items()[0]['liked']);

@@ -11,14 +11,14 @@ use Src\Account\Application\Usecase\Query\GetFollowingPosts\GetFollowingPostsInp
 use Src\Account\Application\Usecase\Query\GetFollowingPosts\GetFollowingPostsInterface;
 use Src\Account\Application\Usecase\Query\GetFollowingPosts\GetFollowingPostsOutput;
 use Src\Account\Application\Usecase\Query\GetFollowingPosts\GetFollowingPostsOutputPort;
-use Src\Routine\Application\Usecase\Query\GetCustomizationOrigins\GetCustomizationOriginsInput;
-use Src\Routine\Application\Usecase\Query\GetCustomizationOrigins\GetCustomizationOriginsInterface;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
+use Src\Shared\Infrastructure\Query\Account\PrivateAccountVisibility;
+use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
 use Src\Shared\Infrastructure\Query\Post\PostInteractionState;
 
 final class GetFollowingPosts implements GetFollowingPostsInterface
 {
-    public function __construct(private AccountImageUrlServiceInterface $accountImageUrlService, private GetCustomizationOriginsInterface $getCustomizationOrigins) {}
+    public function __construct(private AccountImageUrlServiceInterface $accountImageUrlService) {}
 
     public function execute(GetFollowingPostsInputPort $input): GetFollowingPostsOutputPort
     {
@@ -52,6 +52,14 @@ final class GetFollowingPosts implements GetFollowingPostsInterface
 
         PostInteractionState::selectBoth($query, $input->accountIdentifier(), 'posts.post_identifier');
 
+        $parents = DB::table('routines as parent_routines')->join('accounts as parent_accounts', 'parent_routines.account_identifier', '=', 'parent_accounts.account_identifier')
+            ->where('parent_routines.available', true)->where('parent_accounts.available', true)->where('parent_accounts.status', 'active')
+            ->select('parent_routines.routine_identifier', 'parent_routines.routine_name', 'parent_accounts.account_identifier', 'parent_accounts.account_name');
+        BlockVisibility::exclude($parents, $input->accountIdentifier(), 'parent_accounts.account_identifier');
+        PrivateAccountVisibility::exclude($parents, $input->accountIdentifier(), 'parent_accounts.account_identifier', 'parent_accounts.visibility');
+        $query->leftJoinSub($parents, 'origin', 'origin.routine_identifier', '=', 'routines.parent_routine_identifier')
+            ->addSelect('origin.routine_identifier as origin_identifier', 'origin.routine_name as origin_name', 'origin.account_identifier as origin_author_identifier', 'origin.account_name as origin_author_name');
+
         $paginator = $query->paginate($input->numberOfItemsPerPage(), ['*'], 'page', $input->page());
 
         $routineIdentifiers = $paginator->getCollection()
@@ -63,13 +71,24 @@ final class GetFollowingPosts implements GetFollowingPostsInterface
 
         $tagsByRoutineIdentifier = $this->tagsByRoutineIdentifier($routineIdentifiers);
         $actionsByRoutineIdentifier = $this->actionsByRoutineIdentifier($routineIdentifiers);
-        $origins = $this->getCustomizationOrigins->execute(new GetCustomizationOriginsInput($paginator->getCollection()->where('post_category', 'routine')->pluck('routine_identifier')->unique()->values()->all(), $input->accountIdentifier()))->originsByRoutineIdentifier();
+        $icons = [];
+        $origin = function (object $row) use (&$icons): ?array {
+            if ($row->post_category !== 'routine' || $row->origin_identifier === null) {
+                return null;
+            }
+            $author = (string) $row->origin_author_identifier;
+            if (! array_key_exists($author, $icons)) {
+                $icons[$author] = $this->accountImageUrlService->iconImageUrl(new AccountIdentifier($author));
+            }
+
+            return ['routineIdentifier' => (string) $row->origin_identifier, 'routineName' => (string) $row->origin_name, 'accountName' => (string) $row->origin_author_name, 'iconImageUrl' => $icons[$author]];
+        };
 
         $posts = $paginator->getCollection()
             ->map(fn (object $record): array => [
                 'postIdentifier' => (string) $record->post_identifier,
                 'routineIdentifier' => (string) $record->routine_identifier,
-                'customizationOrigin' => $origins[(string) $record->routine_identifier] ?? null,
+                'customizationOrigin' => $origin($record),
                 'routineExecutionIdentifier' => $record->routine_execution_identifier === null
                     ? null
                     : (string) $record->routine_execution_identifier,

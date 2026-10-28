@@ -8,19 +8,18 @@ use DateTimeImmutable;
 use Illuminate\Support\Facades\DB;
 use Src\Account\Application\Service\AccountImageUrlServiceInterface;
 use Src\Account\Domain\ValueObject\AccountVisibility;
-use Src\Routine\Application\Usecase\Query\GetCustomizationOrigins\GetCustomizationOriginsInput;
-use Src\Routine\Application\Usecase\Query\GetCustomizationOrigins\GetCustomizationOriginsInterface;
 use Src\Routine\Application\Usecase\Query\SearchRoutines\SearchRoutinesInputPort;
 use Src\Routine\Application\Usecase\Query\SearchRoutines\SearchRoutinesInterface;
 use Src\Routine\Application\Usecase\Query\SearchRoutines\SearchRoutinesOutput;
 use Src\Routine\Application\Usecase\Query\SearchRoutines\SearchRoutinesOutputPort;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
+use Src\Shared\Infrastructure\Query\Account\PrivateAccountVisibility;
 use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
 use Src\Shared\Infrastructure\Query\Post\PostInteractionState;
 
 final class SearchRoutines implements SearchRoutinesInterface
 {
-    public function __construct(private AccountImageUrlServiceInterface $accountImageUrlService, private GetCustomizationOriginsInterface $getCustomizationOrigins) {}
+    public function __construct(private AccountImageUrlServiceInterface $accountImageUrlService) {}
 
     public function execute(SearchRoutinesInputPort $input): SearchRoutinesOutputPort
     {
@@ -42,6 +41,16 @@ final class SearchRoutines implements SearchRoutinesInterface
             ->selectSub($this->routinePostField('post_like_count'), 'post_like_count')
             ->selectRaw('null as post_support_count');
         $this->applySearchConditions($routineItems, $input, 'routines.account_identifier');
+
+        $parents = DB::table('routines as parent_routines')->join('accounts as parent_accounts', 'parent_routines.account_identifier', '=', 'parent_accounts.account_identifier')
+            ->where('parent_routines.available', true)->where('parent_accounts.available', true)->where('parent_accounts.status', 'active')
+            ->select('parent_routines.routine_identifier', 'parent_routines.routine_name', 'parent_accounts.account_identifier', 'parent_accounts.account_name');
+        if ($input->accountIdentifier() !== null) {
+            BlockVisibility::exclude($parents, $input->accountIdentifier(), 'parent_accounts.account_identifier');
+        }
+        PrivateAccountVisibility::exclude($parents, $input->accountIdentifier(), 'parent_accounts.account_identifier', 'parent_accounts.visibility');
+        $routineItems->leftJoinSub($parents, 'origin', 'origin.routine_identifier', '=', 'routines.parent_routine_identifier')
+            ->addSelect('origin.routine_identifier as origin_identifier', 'origin.routine_name as origin_name', 'origin.account_identifier as origin_author_identifier', 'origin.account_name as origin_author_name');
 
         $executionItems = DB::table('posts')
             ->join('routine_executions', 'posts.routine_execution_identifier', '=', 'routine_executions.routine_execution_identifier')
@@ -65,6 +74,10 @@ final class SearchRoutines implements SearchRoutinesInterface
                 'posts.post_identifier',
                 'posts.post_like_count',
                 'posts.post_support_count',
+                DB::raw('null as origin_identifier'),
+                DB::raw('null as origin_name'),
+                DB::raw('null as origin_author_identifier'),
+                DB::raw('null as origin_author_name'),
             ]);
         $this->applySearchConditions($executionItems, $input, 'routine_executions.executor_account_identifier');
         $this->applyRoutineAuthorSearchConditions($executionItems, $input);
@@ -87,7 +100,18 @@ final class SearchRoutines implements SearchRoutinesInterface
         $tagsByRoutineIdentifier = $this->tagsByRoutineIdentifier($routineIdentifiers);
         $actionsByRoutineIdentifier = $this->actionsByRoutineIdentifier($routineIdentifiers);
         $metricsByRoutineIdentifier = $this->metricsByRoutineIdentifier($routineIdentifiers);
-        $origins = $this->getCustomizationOrigins->execute(new GetCustomizationOriginsInput($paginator->getCollection()->where('item_type', 'routine')->pluck('routine_identifier')->unique()->values()->all(), $input->accountIdentifier()))->originsByRoutineIdentifier();
+        $icons = [];
+        $origin = function (object $row) use (&$icons): ?array {
+            if ($row->item_type !== 'routine' || $row->origin_identifier === null) {
+                return null;
+            }
+            $author = (string) $row->origin_author_identifier;
+            if (! array_key_exists($author, $icons)) {
+                $icons[$author] = $this->accountImageUrlService->iconImageUrl(new AccountIdentifier($author));
+            }
+
+            return ['routineIdentifier' => (string) $row->origin_identifier, 'routineName' => (string) $row->origin_name, 'accountName' => (string) $row->origin_author_name, 'iconImageUrl' => $icons[$author]];
+        };
         $executionIdentifiers = $paginator->getCollection()
             ->pluck('routine_execution_identifier')
             ->filter()
@@ -97,7 +121,7 @@ final class SearchRoutines implements SearchRoutinesInterface
         $executedActionCounts = $this->executedActionCounts($executionIdentifiers);
 
         $items = $paginator->getCollection()
-            ->map(function (object $item) use ($actionsByRoutineIdentifier, $metricsByRoutineIdentifier, $tagsByRoutineIdentifier, $executedActionCounts, $origins): array {
+            ->map(function (object $item) use ($actionsByRoutineIdentifier, $metricsByRoutineIdentifier, $tagsByRoutineIdentifier, $executedActionCounts, $origin): array {
                 $routineIdentifier = (string) $item->routine_identifier;
 
                 return [
@@ -116,7 +140,7 @@ final class SearchRoutines implements SearchRoutinesInterface
                     'routineActions' => $actionsByRoutineIdentifier[$routineIdentifier] ?? [],
                     'executionCount' => $metricsByRoutineIdentifier[$routineIdentifier]['executionCount'] ?? 0,
                     'customizationCount' => $metricsByRoutineIdentifier[$routineIdentifier]['customizationCount'] ?? 0,
-                    'customizationOrigin' => $origins[$routineIdentifier] ?? null,
+                    'customizationOrigin' => $origin($item),
                     ...$this->postFields($item, $executedActionCounts),
                 ];
             })
