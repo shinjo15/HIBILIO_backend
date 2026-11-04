@@ -190,6 +190,18 @@ Nginxは自らTLS終端して `HTTPS=on` をFPMへ渡します。任意のX-Forw
 `docker/nginx/cloudflare-realip.conf` に公式 https://www.cloudflare.com/ips-v4 / https://www.cloudflare.com/ips-v6 のCIDRを静的保持し、その送信元だけ `CF-Connecting-IP` を実IPとして復元します。非Cloudflare送信元の偽ヘッダーは無視します。FPMには復元したREMOTE_ADDRを渡すため、Laravelで全proxyをtrustする必要はありません。
 デプロイ前に両公式一覧との差分を確認し、更新時はincludeを修正してNginx imageを再ビルドしてください。origin自体のCloudflare以外からの到達制限は別途ホスト側で設定します。
 
+## 本番の初期タグ（明示実行のみ）
+
+`TagSeeder` は承認済みの初期タグ40件だけを追加します。ID・名前は既存 `DemoDataSeeder` のタグと同一で、新規行は `available=true`、先頭15件のみ `pickup=true`（残り25件はfalse）です。デモユーザー・投稿等は作成せず、`DemoDataSeeder` / `DatabaseSeeder` は呼びません。通常の `DatabaseSeeder` にも組み込んでいません。
+
+以下は本番サーバーで管理者が明示実行する手順です（自動実行しません）。必ず稼働中のリリースディレクトリ（対象の `compose.yml` / `compose.production.yml` がある場所）に移動し、接続先・対象imageと、専用DBの既存の自動バックアップの状態・復元方法を確認してください。追加の有料スナップショット作成はこの手順では不要です。既存の本番Compose project `hibilio-production` とDocker認証設定を明示し、クラス指定を省略しないでください。`--no-deps` は依存サービスを起動せず、`--pull never` はimageを取得せず配置済みimageだけを使用します。
+
+```
+sudo docker --config /etc/hibilio/docker compose --project-name hibilio-production --env-file /etc/hibilio/compose.env -f compose.yml -f compose.production.yml run --rm --no-deps --pull never -T app php artisan db:seed --class=TagSeeder --force --no-interaction
+```
+
+既存IDの行は、名前・有効状態・pickup・作成/更新日時を含め一切変更しません。デモ投入済みの場合も重複しません。追加予定のタグ名が別IDで存在する場合は停止し、その実行で追加したタグをtransaction全体でロールバックします。既存行を削除・改名・統合しません。タグ名にはDBの一意制約がないため、同時のタグ追加・更新やSeeder並列実行は避け、競合は管理者が別途確認してください。
+
 ## PostgreSQL回帰テスト（使い捨てDB専用）
 
 開発用Composer依存の導入後、リポジトリrootで以下を実行します。通常の `phpunit.xml` / `task check` はSQLiteのままです。
@@ -202,4 +214,5 @@ docker compose --env-file /dev/null -p hibilio-pg-test -f compose.postgres-test.
 
 `compose.postgres-test.yml` は外部公開portなしの専用network/volume、固定fixture credentialsを使用します。実DBの接続値に差し替えないでください。
 `phpunit.postgres.xml` は固定の `hibilio_postgres_test` とその識別コメント・明示reset許可を確認してからschemaを初期化し、skip/riskyも失敗にします。既存SQLiteファイルは初期化しません。
+`TagSeederTest` は通常のSQLite suiteと同じテストをPg18でも実行し、40件の内容、既存行・日時の保持、他テーブルへの書込なし、名前競合時の全体rollbackを確認します。
 Pg18で全migrationのrollback/再適用、主キーと不正親拒否・親削除SET NULL、推薦APIの絞込/重複排除/順位、未来・過去の時間境界、非UTC session、statement clockとtransaction clockの差を実行検証します。PHP時刻は固定し、DB時刻は実サーバーを基準にします。clock差の試験だけ専用DB内で2秒待機します。

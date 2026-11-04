@@ -9,6 +9,7 @@
     <testsuites>
         <testsuite name="PostgreSQL">
             <file>tests/Feature/Infrastructure/RoutineActionSchemaTest.php</file>
+            <file>tests/Feature/Database/Seeders/TagSeederTest.php</file>
             <file>tests/Feature/Account/Presentation/GetFavoriteTagPostsActionTest.php</file>
             <directory>tests/Postgres</directory>
         </testsuite>
