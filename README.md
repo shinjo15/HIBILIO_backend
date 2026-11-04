@@ -81,17 +81,89 @@ S3画像uploadは既存Storage/driverを維持し、呼出時の `before_upload`
 - `main` 宛のPRはビルドと公開契約テストのみ。registryへログインせず、`packages: write` も付与しません。既存CIの品質ゲートは複製しません。
 - publishは `shinjo15/HIBILIO_backend` の `main` push、または同repoのActions → **Production images** → **Run workflow** でbranch **main** を指定した場合のみです。fork・別repo・別ref・PRからはpublishしません。`pull_request_target` は使用しません。
 - 標準GitHub-hosted `ubuntu-24.04`、job timeoutは30分。同じPRは旧runをキャンセルし、mainのpublishは同時実行しません。mainでは検証jobとpublish jobによる二重ビルドを避けます。
-- 基底権限は `contents: read`、publish jobだけ `packages: write`。ログインはそのrunの `GITHUB_TOKEN` のみで、新規PAT・本番Secretsは不要です。checkoutは実在commit SHA固定・認証情報を残しません。buildへDB/AWS/APP_KEY等の秘密を渡しません。
+- 基底権限は `contents: read`、publish jobだけ `packages: write`。通常workflowのログインはそのrunの `GITHUB_TOKEN` のみで、PAT secret・本番Secretsは不要です。checkoutは実在commit SHA固定・認証情報を残しません。buildへDB/AWS/APP_KEY等の秘密を渡しません。
 
-公開repo由来でもGHCR packageのvisibilityは別管理で、初回はprivateが既定です。各imageに `org.opencontainers.image.source=https://github.com/shinjo15/HIBILIO_backend` を設定し、repo関連付けとworkflowのpackage accessを有効にします。
-guardはexact packageのREST metadataについて、name / container型 / owner / `visibility: private` / 関連repoを確認します。両packageの確認完了後にだけ本体をpushし、各push直前・直後も読戻します。public・別repo関連付け・権限不足・不明status・redirect・JSON不正は停止します。visibility変更や削除は一切行いません。
+**公開repoのActionsではpackageを自動作成しません。** 既存の両packageがexact private・正しいowner・本repoへの手動関連付けを確認できる場合だけ送信します。`org.opencontainers.image.source` labelによる自動関連付けは行わず、build labelはrevisionのみ維持します。
+guardはexact packageのREST metadataについて、name / container型 / owner / `visibility: private` / 関連repoを確認します。publish jobは**両packageの確認→build→login→各packageのpush直前確認→push→直後確認**の順です。未作成・404・public・別repo関連付け・403・不明status・redirect・JSON不正は例外なく停止し、最初の両package確認に失敗した場合はbuild/login/pushを行いません。不一致の診断はfield名だけで、応答の値やtokenを表示しません。visibility変更・削除・PATへの自動fallbackも行いません。
 
-初回だけの安全策: preの404（JSON objectのmessageが `Not Found` または `Package not found.`）は未作成と断定せず、**空bootstrapだけを許可する終了コード**として扱います。同packageへ `FROM scratch` と公開source labelだけのimageを `bootstrap-<run-id>-<attempt>` タグでpushし、その後のmetadataがexact private・本repo関連付けの200になることを必須にします。Dockerfileはstdinから渡しbuild contextは空で、アプリ・ソース・本番秘密を含みません。404でpublic既存packageが隠れていた場合も、本体を送る前に停止しますが、空markerがそのpackageに残る可能性があります。markerは自動削除せず、デプロイには使いません。postの404は許可しません。既存publicをprivateへ変更したり、同名の別packageを勝手に移行したりしないでください。
+#### 初回準備（Actions外で管理者が手動実施）
 
-初回実行前にrepoのActionsが有効で、package作成を禁止する設定がないことを確認してください。既存private packageを使う場合は、そのPackage settingsで関連repoと **Manage Actions access** の本repoへのwrite権限を確認します。403や読戻し失敗はPATへ自動fallbackせず停止するので、まず設定を確認してください。
+以下は準備手順であり、**手動作成法の実API検証は未実施です。修正済みであることは、実packageのprivate化完了を意味しません。** 各確認に失敗したら停止し、本体を送信しないでください。
+
+1. GitHubにowner `shinjo15` としてログインし、プロフィールの **Packages** で `hibilio-backend-app` / `hibilio-backend-nginx` を確認します。**既存Publicの同名packageがある場合はここで停止**してください。同名のprivate packageを新規作成することはできません。既存bootstrapの削除・package削除・改名は別途ユーザー承認が必要で、この手順では実施しません。404だけを未作成の証拠にしないでください。両方とも既存privateを使う場合は、手順2で確認用の一時PATを準備し、手順3の作成を省略して手順4へ進みます。
+2. 初回作成を承認した後、ローカルPC（Bash・Docker・GitHub CLI `gh` が必要。本番サーバーやActionsではない）で準備します。[一時PAT classic作成画面](https://github.com/settings/tokens/new?scopes=write:packages)を開き、短い有効期限と `write:packages` のみを選びます（read能力を含みます）。`repo` / `delete:packages` は不要で、チェックされていないことを確認します。PAT値はチャット・Git・本番env・workflow Secretsへ入れないでください。通常workflowは引き続き `GITHUB_TOKEN` のみです。
+3. 以下をローカルPCのBashでまとめて実行します。2つとも未作成ならコマンドの置換は不要で、PATは非表示の入力欄にだけ貼り付けます。片方だけ未作成の場合は `for package in ...` の名前一覧を未作成のpackage名だけに変更してください。管理者が未作成と確認できた対象に限ります。ソースlabelもファイルもない `FROM scratch` をstdinから作り、本体を一切含めずに送信します。一時Docker認証領域を使い、終了・エラー・中断時にlogoutと削除を行います（`set -x` や端末録画は使わないでください）。
+
+```
+(
+  set +x
+  set -euo pipefail
+  DOCKER_CONFIG=$(mktemp -d)
+  export DOCKER_CONFIG
+  cleanup() {
+    docker logout ghcr.io >/dev/null 2>&1 || true
+    unset GHCR_SETUP_PAT
+    rm -rf -- "$DOCKER_CONFIG"
+  }
+  trap cleanup EXIT
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
+  read -r -s -p '一時PAT classicを入力（非表示）: ' GHCR_SETUP_PAT
+  printf '\n'
+  printf '%s' "$GHCR_SETUP_PAT" | docker login ghcr.io --username shinjo15 --password-stdin
+  for package in hibilio-backend-app hibilio-backend-nginx; do
+    image="ghcr.io/shinjo15/$package:private-setup"
+    printf 'FROM scratch\n' | docker build --network none --tag "$image" -
+    docker push "$image"
+    confirmed=$(GH_TOKEN="$GHCR_SETUP_PAT" gh api --hostname github.com \
+      "/users/shinjo15/packages/container/$package" \
+      --jq '.name == "'"$package"'" and .package_type == "container" and .owner.login == "shinjo15" and .visibility == "private" and .repository == null')
+    if [ "$confirmed" != true ]; then
+      printf '%s\n' 'Private・owner・未接続を確認できないため停止します。' >&2
+      exit 1
+    fi
+  done
+)
+```
+
+4. GitHubの各packageページで **Private** 表示を確認します。その後、各packageの **Connect repository** で公開repo `shinjo15/HIBILIO_backend` を接続します。公式資料では「公開後に接続したpackageは明示選択しない限りaccessを継承しない」とされていますが、必ず **Package settings** で **Inherit access from repository** がOFFであることと **Private** 表示を確認してください。**Manage Actions access** で本repoを追加し **Write** を付与します。repo接続とActions用のWrite許可はそれぞれ確認します。
+5. ローカルPCのrepo rootで次を実行し、接続後も両方のexact private・owner・repoをAPIで確認します。PATの置換は不要、非表示入力のみです。通常workflowのguardそのものを使用します。
+
+```
+(
+  set +x
+  set -euo pipefail
+  trap 'unset GH_TOKEN' EXIT
+  read -r -s -p '同じ一時PAT classicを入力（非表示）: ' GH_TOKEN
+  printf '\n'
+  export GH_TOKEN
+  python3 -B .github/scripts/check_package_visibility.py --phase pre
+)
+```
+
+6. 同じローカルPCで認証情報のない一時領域から、両タグの匿名pullが拒否されることを確認します。置換不要です。**両方ともunauthorized / deniedなどの認証・認可拒否を確認**してください。単なるネットワーク障害やtag不在はprivate確認になりません。成功した場合は公開されている可能性があるので停止します。
+
+```
+(
+  set -eu
+  ANON_CONFIG=$(mktemp -d)
+  trap 'rm -rf -- "$ANON_CONFIG"' EXIT
+  for package in hibilio-backend-app hibilio-backend-nginx; do
+    if docker --config "$ANON_CONFIG" pull "ghcr.io/shinjo15/$package:private-setup"; then
+      printf '%s\n' '匿名pullが成功したため停止します。' >&2
+      exit 1
+    fi
+  done
+)
+```
+
+既存privateを再利用した場合は、上の `private-setup` をそのpackageに実在するtagへ置換します。手順3を実行していないpackageにこのtagがあるとは限りません。
+
+7. GitHubの **Settings → Developer settings → Personal access tokens → Tokens (classic)** で一時PATを **Revoke** します。途中で失敗した場合も、作成したPATは必ずrevokeしてください。その後にだけ **Actions → Production images → Run workflow → main** を実行します。GITHUB_TOKENでの読戻しが403等なら設定を見直し、PAT secretを追加して回避しないでください。
+
 失敗したrunでは片方のimage/tagだけが保存される場合があります。**run成功と両方のfull SHA tagを確認するまでは、サーバーのimage指定を更新しないでください。** 同じmain commitの再実行は同じSHAタグを再pushします。管理画面からのvisibility変更との競合をAPI確認だけで原子的に防ぐことはできないため、run中はpackage設定を変更しないでください。
 
-公式[Container registryの認証](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#authenticating-in-a-github-actions-workflow)はgranular repo packageへの `GITHUB_TOKEN` を推奨し、[package権限](https://docs.github.com/en/packages/learn-github-packages/configuring-a-packages-access-control-and-visibility)はmetadata readを説明しています。一方、[REST packages](https://docs.github.com/en/rest/packages/packages)の一般説明にはPAT classicが記載されています。**このrepoのGITHUB_TOKENによるexact metadata読戻し・初回bootstrap・実GHCR publishは未実行で、実packageの存在/visibilityも未確認です。** HTTP fixtureで契約を検証していますが、実権限での成功保証ではありません。読戻し非対応・権限不足なら本体を公開せず失敗します。
+公式[Container registryの認証](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry)は `GITHUB_TOKEN` を推奨し、一時PAT classicで不要なrepo scopeを避けるURLも案内しています。[package権限・visibility](https://docs.github.com/en/packages/learn-github-packages/configuring-a-packages-access-control-and-visibility)は後からrepoを接続した場合の非継承を説明しています。一方、[REST packages](https://docs.github.com/en/rest/packages/packages)の一般説明にはPAT classicが記載されるなど、公式資料の記載差もあります。Publicになる原因を継承と断定せず、実際のAPI/UIで確認してください。HTTP fixtureの検証は、新しい手動準備法や実GHCRでのprivate成功を保証しません。読戻し非対応・権限不足なら本体を送信せず停止します。
 
 ローカルの契約テスト（Python 3とBashが必要・追加Pythonパッケージ／資格情報不要）:
 
