@@ -35,7 +35,6 @@ jobs:
             package=hibilio-backend-app
             if [ "$target" = nginx ]; then package=hibilio-backend-nginx; fi
             docker build --platform linux/amd64 --target "$target" \
-              --label org.opencontainers.image.source=https://github.com/shinjo15/HIBILIO_backend \
               --label "org.opencontainers.image.revision=$IMAGE_TAG" \
               --tag "ghcr.io/shinjo15/$package:$IMAGE_TAG" .
           done
@@ -57,13 +56,19 @@ jobs:
           persist-credentials: false
       - name: Test publication contracts
         run: python3 -B -m unittest discover -s tests/Infrastructure -p 'test_production_images.py' -v
+      - name: Verify both exact private packages before build or login
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for package in hibilio-backend-app hibilio-backend-nginx; do
+            python3 .github/scripts/check_package_visibility.py --phase pre "$package"
+          done
       - name: Build production targets without registry credentials
         run: |
           for target in production nginx; do
             package=hibilio-backend-app
             if [ "$target" = nginx ]; then package=hibilio-backend-nginx; fi
             docker build --platform linux/amd64 --target "$target" \
-              --label org.opencontainers.image.source=https://github.com/shinjo15/HIBILIO_backend \
               --label "org.opencontainers.image.revision=$IMAGE_TAG" \
               --tag "ghcr.io/shinjo15/$package:$IMAGE_TAG" .
           done
@@ -71,33 +76,12 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: printf '%s' "$GH_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
-      - name: Confirm private packages or bootstrap with an empty image only
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          for package in hibilio-backend-app hibilio-backend-nginx; do
-            if python3 .github/scripts/check_package_visibility.py --phase pre "$package"; then
-              continue
-            else
-              status=$?
-              if [ "$status" -ne 3 ]; then exit "$status"; fi
-            fi
-            bootstrap_image="ghcr.io/shinjo15/$package:bootstrap-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-            printf 'FROM scratch\nLABEL org.opencontainers.image.source=https://github.com/shinjo15/HIBILIO_backend\n' | \
-              docker build --platform linux/amd64 --tag "$bootstrap_image" -
-            docker push "$bootstrap_image"
-            python3 .github/scripts/check_package_visibility.py --phase post "$package"
-          done
-      - name: Verify both exact packages before any source image push
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python3 .github/scripts/check_package_visibility.py --phase post
       - name: Publish and read back each exact package
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           for package in hibilio-backend-app hibilio-backend-nginx; do
-            python3 .github/scripts/check_package_visibility.py --phase post "$package"
+            python3 .github/scripts/check_package_visibility.py --phase pre "$package"
             docker push "ghcr.io/shinjo15/$package:$IMAGE_TAG"
             python3 .github/scripts/check_package_visibility.py --phase post "$package"
           done

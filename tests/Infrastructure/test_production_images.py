@@ -62,27 +62,25 @@ class VisibilityTest(unittest.TestCase):
         with contextlib.redirect_stdout(io.StringIO()):
             return self.guard.check_package(package, token, f'http://127.0.0.1:{self.server.server_port}', phase=phase)
 
-    def test_pre_404_requires_empty_bootstrap_but_never_confirms_private(self):
+    def test_404_always_fails_closed_without_bootstrap(self):
         self.status = 404
-        self.body = b'{"message":"Not Found"}'
-        self.assertFalse(self.check(phase='pre'))
-        self.body = b'{"message":"Package not found.","documentation_url":"https://docs.github.com/rest/packages/packages#get-a-package-for-a-user"}'
-        self.assertFalse(self.check(phase='pre'))
-        with self.assertRaises(RuntimeError):
-            self.check(phase='post')
-        for body in (b'invalid', b'{}', b'[]', b'{"message":"Unknown"}'):
-            self.body = body
-            with self.assertRaises(RuntimeError):
-                self.check(phase='pre')
+        for phase in ('pre', 'post'):
+            for body in (b'{"message":"Not Found"}', b'{"message":"Package not found."}', b'invalid', b'{}', b'[]'):
+                with self.subTest(phase=phase, body=body):
+                    self.body = body
+                    with self.assertRaises(RuntimeError):
+                        self.check(phase=phase)
 
     def test_private_exact_package_is_accepted(self):
-        self.check()
-        self.assertEqual(self.seen, [('/users/shinjo15/packages/container/hibilio-backend-app', 'Bearer fixture-token')])
+        for phase in ('pre', 'post'):
+            self.assertTrue(self.check(phase=phase))
+        self.assertEqual(self.seen, [('/users/shinjo15/packages/container/hibilio-backend-app', 'Bearer fixture-token')] * 2)
 
     def test_both_exact_packages_are_accepted(self):
         self.payload['name'] = 'hibilio-backend-nginx'
         self.body = json.dumps(self.payload).encode()
-        self.check('hibilio-backend-nginx')
+        for phase in ('pre', 'post'):
+            self.assertTrue(self.check('hibilio-backend-nginx', phase=phase))
 
     def test_missing_and_denied_and_unexpected_status_fail_closed(self):
         for status in (201, 204, 302, 401, 403, 404, 429, 500):
@@ -90,9 +88,10 @@ class VisibilityTest(unittest.TestCase):
                 self.status = status
                 self.seen.clear()
                 self.body = b'{"message":"Not Found"}'
-                with self.assertRaises(RuntimeError):
-                    self.check()
-                self.assertEqual(len(self.seen), 1, 'must not follow redirects')
+                for phase in ('pre', 'post'):
+                    with self.assertRaises(RuntimeError):
+                        self.check(phase=phase)
+                self.assertEqual(len(self.seen), 2, 'must not follow redirects')
 
     def test_public_unknown_invalid_or_colliding_metadata_fail_closed(self):
         changes = (
@@ -106,13 +105,15 @@ class VisibilityTest(unittest.TestCase):
                 data = copy.deepcopy(self.payload)
                 data.update(changeset)
                 self.body = json.dumps(data).encode()
-                with self.assertRaises(RuntimeError):
-                    self.check()
+                for phase in ('pre', 'post'):
+                    with self.assertRaises(RuntimeError):
+                        self.check(phase=phase)
         for body in (b'invalid', b'[]', b'null', b'{}', b'\xff'):
             with self.subTest(body=body):
                 self.body = body
-                with self.assertRaises(RuntimeError):
-                    self.check()
+                for phase in ('pre', 'post'):
+                    with self.assertRaises(RuntimeError):
+                        self.check(phase=phase)
 
     def test_missing_token_or_unexpected_name_never_requests_api(self):
         for package, token in (('other', 'fixture-token'), ('hibilio-backend-app', '')):
@@ -120,16 +121,41 @@ class VisibilityTest(unittest.TestCase):
                 self.check(package, token)
         self.assertEqual(self.seen, [])
 
-    def test_cli_returns_bootstrap_code_only_for_pre_404(self):
+    def test_diagnostics_list_mismatching_fields_without_values(self):
+        for field, value, diagnostic in (
+            ('name', 'sensitive-name', 'name'),
+            ('package_type', 'sensitive-type', 'package_type'),
+            ('visibility', 'sensitive-visibility', 'visibility'),
+            ('owner', {'login': 'sensitive-owner'}, 'owner.login'),
+            ('repository', {'full_name': 'sensitive-repo'}, 'repository.full_name'),
+            ('owner', None, 'owner.login'), ('repository', None, 'repository.full_name'),
+        ):
+            with self.subTest(field=field, value=value):
+                data = copy.deepcopy(self.payload)
+                data[field] = value
+                self.body = json.dumps(data).encode()
+                with self.assertRaises(RuntimeError) as error:
+                    self.check()
+                self.assertEqual(str(error.exception), 'metadata mismatch: ' + diagnostic)
+        self.body = b'{}'
+        with self.assertRaises(RuntimeError) as error:
+            self.check()
+        self.assertEqual(str(error.exception), 'metadata mismatch: name, package_type, visibility, owner.login, repository.full_name')
+
+    def test_cli_has_only_strict_success_or_failure_for_both_phases(self):
         for phase, results, expected in (
-            ('pre', [False, True], 3), ('post', [True, True], 0),
+            ('pre', [True, True], 0), ('post', [True, True], 0),
+            ('pre', [RuntimeError('fixture failure')], 1),
             ('post', [RuntimeError('fixture failure')], 1),
         ):
             with self.subTest(phase=phase, expected=expected):
                 with patch.object(sys, 'argv', ['guard', '--phase', phase]), \
-                     patch.object(self.guard, 'check_package', side_effect=results), \
+                     patch.object(self.guard, 'check_package', side_effect=results) as check, \
                      contextlib.redirect_stderr(io.StringIO()):
                     self.assertEqual(self.guard.main(), expected)
+                    self.assertEqual([call.args[0] for call in check.call_args_list],
+                                     list(self.guard.PACKAGES) if expected == 0 else [self.guard.PACKAGES[0]])
+                    self.assertTrue(all(call.kwargs == {'phase': phase} for call in check.call_args_list))
 
 
 class WorkflowTest(unittest.TestCase):
@@ -178,52 +204,51 @@ class WorkflowTest(unittest.TestCase):
 
     def test_build_contract_and_visibility_order(self):
         self.assertEqual(self.workflow.count('for target in production nginx; do'), 2)
-        self.assertEqual(self.workflow.count('--platform linux/amd64'), 3)
-        self.assertEqual(self.workflow.count('org.opencontainers.image.source=https://github.com/shinjo15/HIBILIO_backend'), 3)
+        self.assertEqual(self.workflow.count('--platform linux/amd64'), 2)
+        self.assertNotIn('org.opencontainers.image.source', self.workflow)
+        self.assertEqual(self.workflow.count('org.opencontainers.image.revision=$IMAGE_TAG'), 2)
+        self.assertNotIn('bootstrap', self.workflow.lower())
+        self.assertNotIn('FROM scratch', self.workflow)
+        self.assertNotIn('bootstrap', SCRIPT.read_text().lower())
         self.assertIn('IMAGE_TAG: ${{ github.sha }}', self.workflow)
         publish = self.workflow.split('\n  publish:\n', 1)[1]
         pre = publish.index('python3 .github/scripts/check_package_visibility.py --phase pre "$package"')
+        build = publish.index('docker build')
         login = publish.index('docker login ghcr.io')
-        bootstrap = publish.index('docker push "$bootstrap_image"')
-        verified_both = publish.index('run: python3 .github/scripts/check_package_visibility.py --phase post\n')
         push = publish.index('docker push "ghcr.io/shinjo15/$package:$IMAGE_TAG"')
+        before_push = publish.index('python3 .github/scripts/check_package_visibility.py --phase pre "$package"', pre + 1)
         post = publish.index('python3 .github/scripts/check_package_visibility.py --phase post "$package"', push)
-        self.assertLess(login, pre)
-        self.assertLess(pre, bootstrap)
-        self.assertLess(bootstrap, verified_both)
-        self.assertLess(verified_both, push)
+        self.assertLess(pre, build)
+        self.assertLess(build, login)
+        self.assertLess(login, before_push)
+        self.assertLess(before_push, push)
         self.assertLess(push, post)
-        self.assertIn('bootstrap-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}', publish)
-        self.assertIn("printf 'FROM scratch\\nLABEL org.opencontainers.image.source=https://github.com/shinjo15/HIBILIO_backend\\n'", publish)
-        self.assertIn('--tag "$bootstrap_image" -', publish)
 
     def test_publication_shell_never_pushes_source_before_both_private_checks(self):
-        names = (
-            'Confirm private packages or bootstrap with an empty image only',
-            'Verify both exact packages before any source image push',
-            'Publish and read back each exact package',
-        )
+        publish = self.workflow.split('\n  publish:\n', 1)[1]
         commands = []
-        for name in names:
-            step = self.workflow.split(f'      - name: {name}\n', 1)[1].split('      - name:', 1)[0]
+        for step in publish.split('      - name: ')[1:]:
+            if '        run: ' not in step or step.startswith(('Test publication contracts\n', 'Log out of GHCR\n')):
+                continue
             run = step.split('        run: ', 1)[1]
             commands.append(textwrap.dedent(run[2:]) if run.startswith('|\n') else run.strip())
         for statuses, success, source_pushes in (
-            ([3, 0, 3, 0, 0, 0, 0, 0, 0], True, 2),
-            ([0, 0, 0, 0, 0, 0, 0], True, 2),
-            ([1], False, 0), ([3, 1], False, 0), ([0, 1], False, 0),
-            ([3, 0, 3, 0, 1], False, 0),
+            ([0, 0, 0, 0, 0, 0], True, 2),
+            ([1], False, 0), ([3], False, 0), ([0, 1], False, 0), ([0, 3], False, 0),
+            ([2], False, 0), ([0, 2], False, 0), ([42], False, 0), ([0, 42], False, 0),
+            ([0, 0, 1], False, 0), ([0, 0, 0, 1], False, 1),
+            ([0, 0, 0, 0, 1], False, 1), ([0, 0, 0, 0, 0, 1], False, 2),
         ):
             with self.subTest(statuses=statuses), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 state, log = root / 'state', root / 'log'
                 state.write_text(json.dumps(statuses))
                 python = root / 'python3'
-                python.write_text(f'#!{sys.executable}\nimport json, pathlib, sys\np=pathlib.Path({str(state)!r})\na=json.loads(p.read_text())\ncode=a.pop(0)\np.write_text(json.dumps(a))\nsys.exit(code)\n')
+                python.write_text(f'#!{sys.executable}\nimport json, pathlib, sys\np=pathlib.Path({str(state)!r})\na=json.loads(p.read_text())\ncode=a.pop(0)\np.write_text(json.dumps(a))\nwith pathlib.Path({str(log)!r}).open("a") as f: f.write(json.dumps(["guard"] + sys.argv[1:])+"\\n")\nsys.exit(code)\n')
                 docker = root / 'docker'
-                docker.write_text(f'#!{sys.executable}\nimport json, pathlib, sys\nwith pathlib.Path({str(log)!r}).open("a") as f: f.write(json.dumps(sys.argv[1:])+"\\n")\nif sys.argv[1] == "build":\n data=sys.stdin.read()\n assert data == "FROM scratch\\nLABEL org.opencontainers.image.source=https://github.com/shinjo15/HIBILIO_backend\\n"\n assert sys.argv[-1] == "-"\n')
+                docker.write_text(f'#!{sys.executable}\nimport json, pathlib, sys\nwith pathlib.Path({str(log)!r}).open("a") as f: f.write(json.dumps(sys.argv[1:])+"\\n")\nif sys.argv[1] == "login": sys.stdin.read()\n')
                 env = dict(PATH=os.defpath, IMAGE_TAG='a' * 40,
-                           GITHUB_RUN_ID='123', GITHUB_RUN_ATTEMPT='1',
+                           GH_TOKEN='fixture-token', GITHUB_ACTOR='fixture-actor',
                            FIXTURE_PYTHON=sys.executable, FIXTURE_GUARD=str(python),
                            FIXTURE_DOCKER=str(docker), PYTHONDONTWRITEBYTECODE='1')
                 functions = 'python3() { "$FIXTURE_PYTHON" "$FIXTURE_GUARD" "$@"; }\ndocker() { "$FIXTURE_PYTHON" "$FIXTURE_DOCKER" "$@"; }\n'
@@ -234,6 +259,16 @@ class WorkflowTest(unittest.TestCase):
                 pushed = [call[1] for call in calls if call[0] == 'push']
                 self.assertEqual(sum(tag.endswith(':' + 'a' * 40) for tag in pushed), source_pushes)
                 self.assertEqual(json.loads(state.read_text()), [], 'every scenario must reach its guard fixture')
+                if len(statuses) <= 2:
+                    self.assertTrue(all(call[0] == 'guard' for call in calls), calls)
+                if success:
+                    self.assertEqual([call[0] for call in calls], ['guard', 'guard', 'build', 'build', 'login', 'guard', 'push', 'guard', 'guard', 'push', 'guard'])
+                    guards = [call[-3:] for call in calls if call[0] == 'guard']
+                    self.assertEqual(guards, [['--phase', phase, package] for phase, package in (
+                        ('pre', 'hibilio-backend-app'), ('pre', 'hibilio-backend-nginx'),
+                        ('pre', 'hibilio-backend-app'), ('post', 'hibilio-backend-app'),
+                        ('pre', 'hibilio-backend-nginx'), ('post', 'hibilio-backend-nginx'),
+                    )])
 
 
 if __name__ == '__main__':

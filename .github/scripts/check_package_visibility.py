@@ -32,31 +32,25 @@ def check_package(package, token, api_url='https://api.github.com', phase='post'
                 raise RuntimeError(f'{package}: unexpected metadata status')
             metadata = json.load(response)
     except urllib.error.HTTPError as error:
-        try:
-            if error.code == 404 and phase == 'pre':
-                try:
-                    missing = json.load(error)
-                except (ValueError, OSError):
-                    raise RuntimeError(f'{package}: invalid metadata 404 response') from None
-                if isinstance(missing, dict) and missing.get('message') in ('Not Found', 'Package not found.'):
-                    print(f'{package}: ambiguous 404; only empty bootstrap is permitted')
-                    return False
-        finally:
-            error.close()
+        error.close()
         raise RuntimeError(f'{package}: metadata HTTP {error.code}; publication blocked') from None
     except (urllib.error.URLError, OSError, ValueError):
         raise RuntimeError(f'{package}: metadata unavailable or invalid; publication blocked') from None
 
-    if not isinstance(metadata, dict) or (
-        metadata.get('name') != package
-        or metadata.get('package_type') != 'container'
-        or metadata.get('visibility') != 'private'
-        or not isinstance(metadata.get('owner'), dict)
-        or metadata['owner'].get('login') != 'shinjo15'
-        or not isinstance(metadata.get('repository'), dict)
-        or metadata['repository'].get('full_name') != REPOSITORY
-    ):
-        raise RuntimeError(f'{package}: exact private package and source repository not confirmed')
+    if not isinstance(metadata, dict):
+        raise RuntimeError('metadata invalid; publication blocked')
+    owner = metadata.get('owner')
+    repository = metadata.get('repository')
+    checks = (
+        ('name', metadata.get('name') == package),
+        ('package_type', metadata.get('package_type') == 'container'),
+        ('visibility', metadata.get('visibility') == 'private'),
+        ('owner.login', isinstance(owner, dict) and owner.get('login') == 'shinjo15'),
+        ('repository.full_name', isinstance(repository, dict) and repository.get('full_name') == REPOSITORY),
+    )
+    mismatches = [field for field, matches in checks if not matches]
+    if mismatches:
+        raise RuntimeError('metadata mismatch: ' + ', '.join(mismatches))
     print(f'{package}: private, linked to {REPOSITORY}')
     return True
 
@@ -67,14 +61,12 @@ def main():
     parser.add_argument('packages', nargs='*', choices=PACKAGES)
     args = parser.parse_args()
     try:
-        needs_bootstrap = False
         for package in args.packages or PACKAGES:
-            if not check_package(package, os.environ.get('GH_TOKEN', ''), phase=args.phase):
-                needs_bootstrap = True
+            check_package(package, os.environ.get('GH_TOKEN', ''), phase=args.phase)
     except RuntimeError as error:
         print(str(error), file=sys.stderr)
         return 1
-    return 3 if needs_bootstrap else 0
+    return 0
 
 
 if __name__ == '__main__':
