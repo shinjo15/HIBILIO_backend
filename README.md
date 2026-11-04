@@ -73,15 +73,35 @@ S3画像uploadは既存Storage/driverを維持し、呼出時の `before_upload`
 - `/etc/hibilio/tls/origin.crt` / `origin.key`: NginxのTLS証明書/秘密鍵。秘密鍵はroot所有・0600、親directoryはroot専用。Compose secretsでread-only mountします。
 - `/etc/hibilio/compose.env`: `docker/compose.production.env.example` を参考にimage名/外部ファイルのパスだけを設定。秘密値は置きません。
 
-CIまたはローカルで、同じcheckoutから同一commit tagの2 imageを明示ビルドしてregistryへpushする契約です（下記image名/tagは置換）。
-実CD workflowの追加は今回の対象外です。
+### GitHub Actionsで非公開GHCRへ保存
+
+`.github/workflows/production-images.yml`（Actionsの **Production images**）が、同じcheckoutから `production` / `nginx` targetを `linux/amd64` でビルドします。
+保存先は `ghcr.io/shinjo15/hibilio-backend-app:<full-github.sha>` と `ghcr.io/shinjo15/hibilio-backend-nginx:<full-github.sha>` です。両方を同一commitで指定し、`latest` は作成しません。
+
+- `main` 宛のPRはビルドと公開契約テストのみ。registryへログインせず、`packages: write` も付与しません。既存CIの品質ゲートは複製しません。
+- publishは `shinjo15/HIBILIO_backend` の `main` push、または同repoのActions → **Production images** → **Run workflow** でbranch **main** を指定した場合のみです。fork・別repo・別ref・PRからはpublishしません。`pull_request_target` は使用しません。
+- 標準GitHub-hosted `ubuntu-24.04`、job timeoutは30分。同じPRは旧runをキャンセルし、mainのpublishは同時実行しません。mainでは検証jobとpublish jobによる二重ビルドを避けます。
+- 基底権限は `contents: read`、publish jobだけ `packages: write`。ログインはそのrunの `GITHUB_TOKEN` のみで、新規PAT・本番Secretsは不要です。checkoutは実在commit SHA固定・認証情報を残しません。buildへDB/AWS/APP_KEY等の秘密を渡しません。
+
+公開repo由来でもGHCR packageのvisibilityは別管理で、初回はprivateが既定です。各imageに `org.opencontainers.image.source=https://github.com/shinjo15/HIBILIO_backend` を設定し、repo関連付けとworkflowのpackage accessを有効にします。
+guardはexact packageのREST metadataについて、name / container型 / owner / `visibility: private` / 関連repoを確認します。両packageの確認完了後にだけ本体をpushし、各push直前・直後も読戻します。public・別repo関連付け・権限不足・不明status・redirect・JSON不正は停止します。visibility変更や削除は一切行いません。
+
+初回だけの安全策: preの404（JSON objectのmessageが `Not Found` または `Package not found.`）は未作成と断定せず、**空bootstrapだけを許可する終了コード**として扱います。同packageへ `FROM scratch` と公開source labelだけのimageを `bootstrap-<run-id>-<attempt>` タグでpushし、その後のmetadataがexact private・本repo関連付けの200になることを必須にします。Dockerfileはstdinから渡しbuild contextは空で、アプリ・ソース・本番秘密を含みません。404でpublic既存packageが隠れていた場合も、本体を送る前に停止しますが、空markerがそのpackageに残る可能性があります。markerは自動削除せず、デプロイには使いません。postの404は許可しません。既存publicをprivateへ変更したり、同名の別packageを勝手に移行したりしないでください。
+
+初回実行前にrepoのActionsが有効で、package作成を禁止する設定がないことを確認してください。既存private packageを使う場合は、そのPackage settingsで関連repoと **Manage Actions access** の本repoへのwrite権限を確認します。403や読戻し失敗はPATへ自動fallbackせず停止するので、まず設定を確認してください。
+失敗したrunでは片方のimage/tagだけが保存される場合があります。**run成功と両方のfull SHA tagを確認するまでは、サーバーのimage指定を更新しないでください。** 同じmain commitの再実行は同じSHAタグを再pushします。管理画面からのvisibility変更との競合をAPI確認だけで原子的に防ぐことはできないため、run中はpackage設定を変更しないでください。
+
+公式[Container registryの認証](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#authenticating-in-a-github-actions-workflow)はgranular repo packageへの `GITHUB_TOKEN` を推奨し、[package権限](https://docs.github.com/en/packages/learn-github-packages/configuring-a-packages-access-control-and-visibility)はmetadata readを説明しています。一方、[REST packages](https://docs.github.com/en/rest/packages/packages)の一般説明にはPAT classicが記載されています。**このrepoのGITHUB_TOKENによるexact metadata読戻し・初回bootstrap・実GHCR publishは未実行で、実packageの存在/visibilityも未確認です。** HTTP fixtureで契約を検証していますが、実権限での成功保証ではありません。読戻し非対応・権限不足なら本体を公開せず失敗します。
+
+ローカルの契約テスト（Python 3とBashが必要・追加Pythonパッケージ／資格情報不要）:
 
 ```bash
-docker build --target production -t <registry>/<app-repository>:<commit-sha> .
-docker build --target nginx -t <registry>/<nginx-repository>:<commit-sha> .
-docker push <registry>/<app-repository>:<commit-sha>
-docker push <registry>/<nginx-repository>:<commit-sha>
+python3 -B -m unittest discover -s tests/Infrastructure -p 'test_production_images.py' -v
 ```
+
+### サーバーへの反映（別途手動実施）
+
+このworkflowはimage保存までで、Lightsail更新・SSH・DB操作・DNS・自動デプロイは行いません。以下は既存の手動デプロイ契約です。
 
 サーバーでは `/etc/hibilio/compose.env` のAPP_IMAGE / NGINX_IMAGEを同一commit tagへ更新し、root権限で実行します。
 `config --quiet` は秘密値を表示せず、外部envファイルやmergeを確認できます。
