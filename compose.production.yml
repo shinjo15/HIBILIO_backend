@@ -1,0 +1,99 @@
+x-runtime: &runtime
+  restart: unless-stopped
+  init: true
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+services:
+  app:
+    <<: *runtime
+    image: ${APP_IMAGE:?Set APP_IMAGE to the registry image with a commit tag}
+    env_file:
+      - path: ${APP_ENV_FILE:?Set APP_ENV_FILE to the external production.env path}
+        format: raw
+      - path: ${AWS_ENV_FILE:-/etc/hibilio/aws.env}
+        format: raw
+      - path: ${REDIS_ENV_FILE:-/etc/hibilio/redis.env}
+        format: raw
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      LOG_CHANNEL: stderr
+      DB_CONNECTION: pgsql
+      DB_SSLMODE: verify-full
+      DB_SSLROOTCERT: /run/secrets/postgres-ca.crt
+      FILESYSTEM_DISK: s3
+      ACCOUNT_IMAGE_STORAGE: s3
+      MAIL_MAILER: ses
+      SESSION_SECURE_COOKIE: "true"
+      QUEUE_CONNECTION: sync
+    secrets:
+      - source: postgres-ca
+        target: postgres-ca.crt
+    read_only: true
+    tmpfs:
+      - /tmp:uid=33,gid=33,mode=1770
+      - /var/www/html/storage:uid=33,gid=33,mode=0770
+      - /var/www/html/bootstrap/cache:uid=33,gid=33,mode=0770
+    cpus: "1.0"
+    mem_limit: 512m
+    healthcheck:
+      test: ["CMD", "php", "/usr/local/bin/app-healthcheck.php"]
+      interval: 15s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+  nginx:
+    <<: *runtime
+    image: ${NGINX_IMAGE:?Set NGINX_IMAGE to the registry image with the same commit tag}
+    ports:
+      - "${HTTPS_BIND_ADDRESS:-0.0.0.0}:${HTTPS_PORT:-443}:443"
+    depends_on:
+      app:
+        condition: service_healthy
+    secrets:
+      - source: origin-cert
+        target: origin.crt
+      - source: origin-key
+        target: origin.key
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+      - /tmp
+    cpus: "0.5"
+    mem_limit: 128m
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-check-certificate -q -O /dev/null https://127.0.0.1/up"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+  redis:
+    <<: *runtime
+    env_file:
+      - path: ${REDIS_ENV_FILE:-/etc/hibilio/redis.env}
+        format: raw
+    command:
+      - /bin/sh
+      - -ec
+      - ': "$${REDIS_PASSWORD:?REDIS_PASSWORD must not be empty}"; exec /usr/local/bin/docker-entrypoint.sh redis-server --requirepass "$$REDIS_PASSWORD" --appendonly yes --maxmemory 64mb --maxmemory-policy noeviction'
+    healthcheck:
+      test: ["CMD-SHELL", 'REDISCLI_AUTH="$$REDIS_PASSWORD" redis-cli ping | grep -qx PONG']
+    volumes:
+      - redis-data:/data
+    cpus: "0.5"
+    mem_limit: 128m
+
+volumes:
+  redis-data:
+
+secrets:
+  origin-cert:
+    file: ${ORIGIN_CERT_FILE:-/etc/hibilio/tls/origin.crt}
+  origin-key:
+    file: ${ORIGIN_KEY_FILE:-/etc/hibilio/tls/origin.key}
+  postgres-ca:
+    file: ${POSTGRES_CA_FILE:?Set POSTGRES_CA_FILE to the external PostgreSQL CA path}
