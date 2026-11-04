@@ -436,10 +436,10 @@ final class CustomizationOriginsEndpointsTest extends TestCase
         self::assertSame($url, $byId['77777777-7777-4777-8777-777777777777']['customization_origin']['icon_image_url']);
         self::assertNull($byId['88888888-8888-4888-8888-888888888888']['customization_origin']['icon_image_url']);
         self::assertNull($byId['99999999-9999-4999-8999-999999999999']['customization_origin']);
-        $spy->shouldHaveReceived('exists')->with($visiblePath)->once();
-        $spy->shouldHaveReceived('exists')->with($missingPath)->once();
-        $spy->shouldNotHaveReceived('exists', [$hiddenPath]);
-        $spy->shouldHaveReceived('exists')->with('accounts/'.self::AUTHOR.'/icon/icon.webp')->times(4);
+        $spy->shouldHaveReceived('fileExists')->with($visiblePath)->once();
+        $spy->shouldHaveReceived('fileExists')->with($missingPath)->once();
+        $spy->shouldNotHaveReceived('fileExists', [$hiddenPath]);
+        $spy->shouldHaveReceived('fileExists')->with('accounts/'.self::AUTHOR.'/icon/icon.webp')->times(4);
         $spy->shouldHaveReceived('temporaryUrl')->withArgs(fn ($path): bool => $path === $visiblePath)->once();
         $spy->shouldHaveReceived('temporaryUrl')->once();
     }

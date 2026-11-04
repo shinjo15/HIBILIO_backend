@@ -25,7 +25,7 @@ final class AccountImageUrlService implements AccountImageUrlServiceInterface
         $disk = Storage::disk(config('account.images.storage') === 's3' ? 's3' : 'account_images');
         $path = "accounts/{$accountIdentifier->value()}/{$filename}";
 
-        if (! $disk->exists($path)) {
+        if (! $disk->fileExists($path)) {
             return null;
         }
 

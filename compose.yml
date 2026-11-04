@@ -1,25 +1,16 @@
 services:
   app:
-    build:
-      context: .
-    ports:
-      - "8001:8000"
-    user: "${DOCKER_UID:-1000}:${DOCKER_GID:-1000}"
-    volumes:
-      - .:/var/www/html
     environment:
-      - MAIL_MAILER=smtp
-      - MAIL_HOST=mailpit
-      - MAIL_PORT=1025
-      - MAIL_FROM_ADDRESS=no-reply@hibilio.local
-      - MAIL_FROM_NAME=${APP_NAME}
-      - REDIS_CLIENT=phpredis
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-    command: php artisan serve --host=0.0.0.0 --port=8000
-  mailpit:
-    image: axllent/mailpit
-    ports:
-      - "8026:8025"
+      REDIS_CLIENT: phpredis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      redis:
+        condition: service_healthy
   redis:
     image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="tests/Support/postgres-bootstrap.php"
+         colors="true"
+         failOnSkipped="true"
+         failOnRisky="true"
+>
+    <testsuites>
+        <testsuite name="PostgreSQL">
+            <file>tests/Feature/Infrastructure/RoutineActionSchemaTest.php</file>
+            <file>tests/Feature/Account/Presentation/GetFavoriteTagPostsActionTest.php</file>
+            <directory>tests/Postgres</directory>
+        </testsuite>
+    </testsuites>
+    <php>
+        <env name="APP_ENV" value="testing" force="true"/>
+        <env name="APP_CONFIG_CACHE" value="/tmp/hibilio-postgres-test-no-config-cache.php" force="true"/>
+        <env name="APP_MAINTENANCE_DRIVER" value="file"/>
+        <env name="BCRYPT_ROUNDS" value="4"/>
+        <env name="CACHE_STORE" value="array" force="true"/>
+        <env name="DB_CONNECTION" value="pgsql" force="true"/>
+        <env name="DB_HOST" value="postgres" force="true"/>
+        <env name="DB_PORT" value="5432" force="true"/>
+        <env name="DB_DATABASE" value="hibilio_postgres_test" force="true"/>
+        <env name="DB_USERNAME" value="hibilio_fixture" force="true"/>
+        <env name="DB_PASSWORD" value="fixture-only-not-a-production-secret" force="true"/>
+        <env name="DB_URL" value="" force="true"/>
+        <env name="DB_SSLMODE" value="disable" force="true"/>
+        <env name="DB_SSLROOTCERT" value="" force="true"/>
+        <env name="MAIL_MAILER" value="array" force="true"/>
+        <env name="QUEUE_CONNECTION" value="sync" force="true"/>
+        <env name="SESSION_DRIVER" value="array" force="true"/>
+    </php>
+</phpunit>

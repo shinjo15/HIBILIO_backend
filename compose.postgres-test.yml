@@ -1,0 +1,46 @@
+# Disposable PostgreSQL regression fixture. Never use production credentials here.
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: hibilio_postgres_test
+      POSTGRES_USER: hibilio_fixture
+      POSTGRES_PASSWORD: fixture-only-not-a-production-secret
+    volumes:
+      - postgres-test-data:/var/lib/postgresql
+      - ./docker/postgres-test/init.sql:/docker-entrypoint-initdb.d/fixture.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hibilio_fixture -d hibilio_postgres_test"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+  tests:
+    build:
+      context: .
+      target: development
+    user: "${DOCKER_UID:-1000}:${DOCKER_GID:-1000}"
+    working_dir: /var/www/html
+    volumes:
+      - .:/var/www/html
+    environment:
+      APP_ENV: testing
+      APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: hibilio_postgres_test
+      DB_USERNAME: hibilio_fixture
+      DB_PASSWORD: fixture-only-not-a-production-secret
+      DB_URL: ""
+      DB_SSLMODE: disable
+      DB_SSLROOTCERT: ""
+      POSTGRES_TEST_ALLOW_RESET: hibilio_postgres_test
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: php vendor/bin/phpunit -c phpunit.postgres.xml
+volumes:
+  postgres-test-data:
+networks:
+  default:
+    internal: true

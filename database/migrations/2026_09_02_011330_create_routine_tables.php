@@ -21,7 +21,7 @@ return new class extends Migration
         });
 
         Schema::create('routine_actions', function (Blueprint $table): void {
-            $table->uuid('routine_action_identifier')->primary();
+            $table->uuid('routine_action_identifier');
             $table->uuid('parent_routine_action_identifier')->nullable()->index();
             $table->uuid('routine_identifier')->index();
             $table->string('action_name', 50);
@@ -30,6 +30,7 @@ return new class extends Migration
             $table->boolean('available')->default(true);
             $table->timestamps();
 
+            $table->primary(['routine_action_identifier']);
             $table
                 ->foreign('parent_routine_action_identifier')
                 ->references('routine_action_identifier')

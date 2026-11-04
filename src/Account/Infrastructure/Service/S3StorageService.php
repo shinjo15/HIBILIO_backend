@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Src\Account\Infrastructure\Service;
 
+use Aws\CommandInterface;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 use Src\Account\Application\Service\StorageServiceInterface;
@@ -38,7 +39,12 @@ final class S3StorageService implements StorageServiceInterface
         $written = Storage::disk('s3')->put(
             "accounts/{$accountIdentifier->value()}/{$filename}",
             $contents,
-            ['visibility' => 'private'],
+            [
+                'visibility' => 'private',
+                'before_upload' => static function (CommandInterface $command): void {
+                    unset($command['ACL']);
+                },
+            ],
         );
 
         if (! $written) {
