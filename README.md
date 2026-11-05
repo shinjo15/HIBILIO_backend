@@ -171,20 +171,12 @@ guardはexact packageのREST metadataについて、name / container型 / owner 
 python3 -B -m unittest discover -s tests/Infrastructure -p 'test_production_images.py' -v
 ```
 
-### サーバーへの反映（別途手動実施）
+### サービスの手動リリース
 
-このworkflowはimage保存までで、Lightsail更新・SSH・DB操作・DNS・自動デプロイは行いません。以下は既存の手動デプロイ契約です。
+**main のマージだけでは本番更新しません。** Production images は image 保存までです。
+選んだ時刻に backend の **Manual coordinated release** を `main`・未使用 version（例 `v1.0.1`）で実行し、Lightsail backend と既存 Cloudflare Pages `hibilio-web` の frontend を同じサービス版として反映します。
+初回の OIDC / production environment / SSH forced command / Pages 自動 production 停止、実行契約、manifest、部分失敗・手動復旧、検証範囲は [docs/release.md](docs/release.md) にまとめています。原子的な切替や migration の自動 rollback は行いません。
 
-サーバーでは `/etc/hibilio/compose.env` のAPP_IMAGE / NGINX_IMAGEを同一commit tagへ更新し、root権限で実行します。
-`config --quiet` は秘密値を表示せず、外部envファイルやmergeを確認できます。
-
-```bash
-docker compose --env-file /etc/hibilio/compose.env -f compose.yml -f compose.production.yml config --quiet
-docker compose --env-file /etc/hibilio/compose.env -f compose.yml -f compose.production.yml pull
-docker compose --env-file /etc/hibilio/compose.env -f compose.yml -f compose.production.yml up --detach --no-build --wait
-```
-
-DBマイグレーションは起動時に実行しません。バックアップ・互換性を確認したうえで、同じCompose引数を使い `run --rm app php artisan migrate --force` を明示実行します。
 再起動・CPU/メモリ上限・ログローテーション・FPM/TLS healthcheckを設定していますが、外部DB/S3/SESの疎通確認は別途必要です。
 Nginxは自らTLS終端して `HTTPS=on` をFPMへ渡します。任意のX-Forwarded-Forは信頼しません。
 `docker/nginx/cloudflare-realip.conf` に公式 https://www.cloudflare.com/ips-v4 / https://www.cloudflare.com/ips-v6 のCIDRを静的保持し、その送信元だけ `CF-Connecting-IP` を実IPとして復元します。非Cloudflare送信元の偽ヘッダーは無視します。FPMには復元したREMOTE_ADDRを渡すため、Laravelで全proxyをtrustする必要はありません。
