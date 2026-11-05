@@ -1,0 +1,97 @@
+name: Manual coordinated release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Service release version (strict vMAJOR.MINOR.PATCH, never reuse)'
+        required: true
+        default: v1.0.1
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hibilio-production-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.repository == 'shinjo15/HIBILIO_backend' && github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
+    environment: production
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      actions: read
+      packages: read
+      id-token: write
+    env:
+      RELEASE_VERSION: ${{ inputs.version }}
+    steps:
+      - name: Check out coordinator (main only)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Run local release simulations (not real cloud validation)
+        run: python3 -B -m unittest discover -s tests/Infrastructure -p 'test_manual_release.py' -v
+      - name: Set up frontend Node 22
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '22'
+      - name: Freeze trusted main SHAs and preflight CI, private images and Pages
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AWS_ROLE_ARN: ${{ vars.AWS_ROLE_ARN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+          DEPLOY_USER: hibilio-deploy
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: python3 -B scripts/release/coordinate.py prepare
+      - name: Prebuild exact frontend and pinned Wrangler without deployment credentials
+        run: python3 -B scripts/release/coordinate.py build
+      - name: Obtain short-lived AWS credentials through OIDC
+        id: aws
+        uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708 # v5
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ap-northeast-1
+          role-session-name: hibilio-release-${{ github.run_id }}
+          role-duration-seconds: 3600
+          mask-aws-account-id: true
+          unset-current-credentials: true
+      - name: Recheck preflight and deploy both components, then publish Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AWS_ROLE_ARN: ${{ vars.AWS_ROLE_ARN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+          DEPLOY_USER: hibilio-deploy
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: python3 -B scripts/release/coordinate.py deploy
+      - name: Always remove only this run's owned SSH rule and verify baseline
+        if: always() && steps.aws.outcome == 'success'
+        run: python3 -B scripts/release/coordinate.py cleanup
+      - name: Always export sanitized firewall recovery even if cleanup failed or was skipped
+        if: always()
+        run: python3 -B scripts/release/coordinate.py export-recovery
+      - name: Retain non-secret manifest, sanitized firewall recovery and prebuilt static assets
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: coordinated-release-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            .release-work/selection.json
+            .release-work/build.json
+            .release-work/manifest.json
+            .release-work/firewall-recovery.json
+            .release-work/frontend/dist/
+            !.release-work/firewall.json
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 14

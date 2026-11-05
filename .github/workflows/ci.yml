@@ -12,6 +12,27 @@ permissions:
   contents: read
 
 jobs:
+  release-contracts:
+    name: Release contracts (local simulations)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Run stdlib infrastructure tests without cloud credentials
+        run: python3 -B -m unittest discover -s tests/Infrastructure -p 'test_*.py' -v
+      - name: Validate release workflow with checksum-pinned actionlint
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location \
+            https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz \
+            --output "$RUNNER_TEMP/actionlint.tar.gz"
+          printf '%s  %s\n' '8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8' "$RUNNER_TEMP/actionlint.tar.gz" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/actionlint.tar.gz" -C "$RUNNER_TEMP" actionlint
+          "$RUNNER_TEMP/actionlint" .github/workflows/manual-release.yml .github/workflows/ci.yml
+
   backend-checks:
     name: Backend checks
     runs-on: ubuntu-latest
