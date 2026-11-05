@@ -48,26 +48,30 @@ jobs:
 
       - name: Install Composer dependencies
         run: |
-          export DOCKER_UID="$(id -u)"
-          export DOCKER_GID="$(id -g)"
+          DOCKER_UID="$(id -u)"
+          DOCKER_GID="$(id -g)"
+          export DOCKER_UID DOCKER_GID
           docker compose run --rm --no-deps -e COMPOSER_CACHE_DIR=/tmp/composer-cache app composer install --no-interaction --prefer-dist --no-progress
 
       - name: Prepare Laravel environment
         run: |
-          export DOCKER_UID="$(id -u)"
-          export DOCKER_GID="$(id -g)"
+          DOCKER_UID="$(id -u)"
+          DOCKER_GID="$(id -g)"
+          export DOCKER_UID DOCKER_GID
           docker compose run --rm --no-deps app sh -c 'cp .env.example .env && php artisan key:generate --force'
 
       - name: Run backend checks
         run: |
-          export DOCKER_UID="$(id -u)"
-          export DOCKER_GID="$(id -g)"
+          DOCKER_UID="$(id -u)"
+          DOCKER_GID="$(id -g)"
+          export DOCKER_UID DOCKER_GID
           docker compose up --build --detach
           task check
 
       - name: Stop Docker Compose services
         if: always()
         run: |
-          export DOCKER_UID="$(id -u)"
-          export DOCKER_GID="$(id -g)"
+          DOCKER_UID="$(id -u)"
+          DOCKER_GID="$(id -g)"
+          export DOCKER_UID DOCKER_GID
           docker compose down --volumes --remove-orphans
