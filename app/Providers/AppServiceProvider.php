@@ -39,7 +39,6 @@ use Src\Account\Application\Usecase\Query\GetFavoriteTagPosts\GetFavoriteTagPost
 use Src\Account\Application\Usecase\Query\GetFollowingAccounts\GetFollowingAccountsInterface;
 use Src\Account\Application\Usecase\Query\GetFollowingPosts\GetFollowingPostsInterface;
 use Src\Account\Application\Usecase\Query\GetMyBlocks\GetMyBlocksInterface;
-use Src\Account\Application\Usecase\Query\GetMyRoutines\GetMyRoutinesInterface;
 use Src\Account\Application\Usecase\Query\GetPopularRoutinePosts\GetPopularRoutinePostsInterface;
 use Src\Account\Application\Usecase\Query\GetReceivedFollowRequests\GetReceivedFollowRequestsInterface;
 use Src\Account\Application\Usecase\Query\GetSentFollowRequests\GetSentFollowRequestsInterface;
@@ -62,7 +61,6 @@ use Src\Account\Infrastructure\Query\GetFavoriteTagPosts\GetFavoriteTagPosts;
 use Src\Account\Infrastructure\Query\GetFollowingAccounts\GetFollowingAccounts;
 use Src\Account\Infrastructure\Query\GetFollowingPosts\GetFollowingPosts;
 use Src\Account\Infrastructure\Query\GetMyBlocks\GetMyBlocks;
-use Src\Account\Infrastructure\Query\GetMyRoutines\GetMyRoutines;
 use Src\Account\Infrastructure\Query\GetPopularRoutinePosts\GetPopularRoutinePosts;
 use Src\Account\Infrastructure\Query\GetReceivedFollowRequests\GetReceivedFollowRequests;
 use Src\Account\Infrastructure\Query\GetSentFollowRequests\GetSentFollowRequests;
@@ -279,7 +277,6 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ChangeAccountUiModeInterface::class, ChangeAccountUiMode::class);
         $this->app->bind(GetAccountDetailsInterface::class, GetAccountDetails::class);
         $this->app->bind(GetAccountRoutinePostsInterface::class, GetAccountRoutinePosts::class);
-        $this->app->bind(GetMyRoutinesInterface::class, GetMyRoutines::class);
 
         $this->app->bind(GetMyBlocksInterface::class, GetMyBlocks::class);
         $this->app->bind(GetReceivedFollowRequestsInterface::class, GetReceivedFollowRequests::class);

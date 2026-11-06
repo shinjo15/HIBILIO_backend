@@ -14,6 +14,11 @@ final class GetMyRoutinesActionTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_old_my_posts_route_is_removed(): void
+    {
+        $this->getJson('/api/my/posts')->assertNotFound();
+    }
+
     public function test_returns_own_routine_without_a_post(): void
     {
         $account = '11111111-1111-4111-8111-111111111111';
@@ -28,7 +33,20 @@ final class GetMyRoutinesActionTest extends TestCase
             ->assertJsonPath('items.0.liked', null);
     }
 
-    public function test_posted_routine_matches_my_posts_response(): void
+    public function test_execution_count_counts_only_available_action_posts_even_without_routine_post(): void
+    {
+        $owner = '11111111-1111-4111-8111-111111111111';
+        $routine = '22222222-2222-4222-8222-222222222222';
+        DB::table('accounts')->insert(['account_identifier' => $owner, 'account_name' => 'Owner', 'email_address' => 'owner@example.com', 'available' => true, 'status' => 'active']);
+        DB::table('routines')->insert(['routine_identifier' => $routine, 'account_identifier' => $owner, 'routine_name' => 'Routine', 'available' => true]);
+        foreach ([['33333333-3333-4333-8333-333333333333', true], ['44444444-4444-4444-8444-444444444444', false]] as [$post, $available]) {
+            DB::table('posts')->insert(['post_identifier' => $post, 'routine_identifier' => $routine, 'post_category' => 'action', 'available' => $available]);
+        }
+        $this->withSession(['account_identifier' => $owner])->getJson('/api/my/routines')->assertOk()
+            ->assertJsonPath('items.0.post_identifier', null)->assertJsonPath('items.0.execution_count', 1);
+    }
+
+    public function test_posted_routine_matches_account_posts_response(): void
     {
         $account = '11111111-1111-4111-8111-111111111111';
         $routine = '22222222-2222-4222-8222-222222222222';
@@ -42,7 +60,7 @@ final class GetMyRoutinesActionTest extends TestCase
         DB::table('routine_actions')->insert(['routine_action_identifier' => '55555555-5555-4555-8555-555555555555', 'routine_identifier' => $routine, 'action_name' => 'Action', 'action_minutes' => 5, 'available' => true, 'created_at' => now(), 'updated_at' => now()]);
         DB::table('posts')->insert(['post_identifier' => '66666666-6666-4666-8666-666666666666', 'routine_identifier' => $routine, 'post_category' => 'action', 'available' => true, 'created_at' => now(), 'updated_at' => now()]);
 
-        $posts = $this->withSession(['account_identifier' => $account])->getJson('/api/my/posts')->assertOk()->json('items.0');
+        $posts = $this->withSession(['account_identifier' => $account])->getJson("/api/accounts/{$account}/posts")->assertOk()->json('items.0');
         $routines = $this->withSession(['account_identifier' => $account])->getJson('/api/my/routines')->assertOk()->json('items.0');
         self::assertSame($posts, $routines);
         self::assertSame(1, $routines['execution_count']);
@@ -85,9 +103,11 @@ final class GetMyRoutinesActionTest extends TestCase
             DB::table('routines')->insert(['routine_identifier' => $routine, 'account_identifier' => $owner, 'routine_name' => 'Routine', 'available' => true, 'created_at' => "2026-09-0{$n} 10:00:00", 'updated_at' => now()]);
             DB::table('posts')->insert(['post_identifier' => $post, 'routine_identifier' => $routine, 'post_category' => 'routine', 'available' => true, 'created_at' => '2026-09-0'.(3 - $n).' 10:00:00', 'updated_at' => now()]);
         }
-        $posts = $this->withSession(['account_identifier' => $owner])->getJson('/api/my/posts?number_of_items_per_page=1')->assertOk()->json();
+        $posts = $this->withSession(['account_identifier' => $owner])->getJson("/api/accounts/{$owner}/posts?number_of_items_per_page=1")->assertOk()->json();
         $routines = $this->withSession(['account_identifier' => $owner])->getJson('/api/my/routines?number_of_items_per_page=1')->assertOk()->json();
         self::assertSame($posts, $routines);
+        self::assertSame(2, $routines['total']);
+        self::assertSame('10000000-0000-4000-8000-000000000001', $routines['items'][0]['post_identifier']);
     }
 
     public function test_hides_private_or_blocked_customization_origin(): void
@@ -160,11 +180,6 @@ final class GetMyRoutinesActionTest extends TestCase
         self::assertNull($items[0]['posted_at']);
         self::assertNull($items[1]['post_identifier']);
         self::assertNull($items[3]['post_identifier']);
-        $postFetches = array_filter(DB::getQueryLog(), static fn (array $query): bool => str_contains(strtolower($query['query']), 'from "posts"') && str_contains(strtolower($query['query']), ' in ('));
-        $fetchedIdentifiers = array_merge(...array_column($postFetches, 'bindings'));
-        self::assertContains($first, $fetchedIdentifiers);
-        self::assertNotContains('10000000-0000-4000-8000-000000000002', $fetchedIdentifiers);
-        self::assertNotContains('10000000-0000-4000-8000-000000000003', $fetchedIdentifiers);
         DB::disableQueryLog();
     }
 

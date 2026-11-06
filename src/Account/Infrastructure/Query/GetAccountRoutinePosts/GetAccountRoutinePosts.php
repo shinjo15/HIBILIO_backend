@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Src\Account\Infrastructure\Query\GetAccountRoutinePosts;
 
 use DateTimeImmutable;
+use Illuminate\Database\Query\JoinClause;
 use Illuminate\Support\Facades\DB;
 use Src\Account\Application\Service\AccountImageUrlServiceInterface;
 use Src\Account\Application\Usecase\Query\GetAccountRoutinePosts\GetAccountRoutinePostsInputPort;
@@ -27,25 +28,40 @@ final class GetAccountRoutinePosts implements GetAccountRoutinePostsInterface
             throw new BlockedAccountVisibilityException;
         }
 
-        $query = DB::table('posts')
-            ->join('routines', 'posts.routine_identifier', '=', 'routines.routine_identifier')
-            ->join('accounts', 'routines.account_identifier', '=', 'accounts.account_identifier')
+        $query = DB::table('routines');
+        if ($input->routineBased()) {
+            $firstPost = DB::table('posts as routine_posts')->select('routine_posts.post_identifier')
+                ->whereColumn('routine_posts.routine_identifier', 'routines.routine_identifier')
+                ->where('routine_posts.post_category', 'routine')->where('routine_posts.available', true)
+                ->orderByRaw('CASE WHEN routine_posts.created_at IS NULL THEN 1 ELSE 0 END')
+                ->orderBy('routine_posts.created_at')->orderBy('routine_posts.post_identifier')->limit(1);
+            $query->leftJoin('posts', static function (JoinClause $join) use ($firstPost): void {
+                $join->on('posts.routine_identifier', '=', 'routines.routine_identifier')
+                    ->whereRaw('posts.post_identifier = ('.$firstPost->toSql().')', $firstPost->getBindings());
+            });
+            $query->orderByRaw('CASE WHEN COALESCE(posts.created_at, routines.created_at) IS NULL THEN 1 ELSE 0 END')
+                ->orderByRaw('COALESCE(posts.created_at, routines.created_at) DESC')
+                ->orderByRaw('CASE WHEN posts.post_identifier IS NULL THEN 1 ELSE 0 END')
+                ->orderBy('posts.post_identifier')->orderBy('routines.routine_identifier');
+        } else {
+            $query->join('posts', 'posts.routine_identifier', '=', 'routines.routine_identifier')
+                ->where('posts.post_category', 'routine')->where('posts.available', true)
+                ->orderByDesc('posts.created_at')->orderBy('posts.post_identifier');
+        }
+
+        $query->join('accounts', 'routines.account_identifier', '=', 'accounts.account_identifier')
             ->where('routines.account_identifier', $input->accountIdentifier())
-            ->where('posts.post_category', 'routine')
-            ->where('posts.available', true)
             ->where('routines.available', true)
             ->where('accounts.available', true)
             ->where('accounts.status', 'active')
             ->select([
-                'posts.post_identifier', 'posts.routine_identifier', 'posts.post_like_count',
+                'posts.post_identifier', 'routines.routine_identifier', 'posts.post_like_count',
                 'posts.post_support_count', 'posts.created_at as posted_at',
                 'routines.account_identifier', 'routines.routine_name', 'routines.routine_execution_minutes',
                 'accounts.account_name',
             ])
             ->selectSub($this->executionCount(), 'execution_count')
-            ->selectSub($this->customizationCount(), 'customization_count')
-            ->orderByDesc('posts.created_at')
-            ->orderBy('posts.post_identifier');
+            ->selectSub($this->customizationCount(), 'customization_count');
 
         if ($input->viewerAccountIdentifier() !== null) {
             BlockVisibility::exclude($query, $input->viewerAccountIdentifier(), 'accounts.account_identifier');
@@ -71,33 +87,37 @@ final class GetAccountRoutinePosts implements GetAccountRoutinePostsInterface
         $tags = $this->tags($routineIdentifiers);
         $actions = $this->actions($routineIdentifiers);
         $icons = [];
-        $origin = function (object $row) use (&$icons): ?array {
-            if ($row->origin_identifier === null) {
-                return null;
-            }
-            $author = (string) $row->origin_author_identifier;
+        $icon = function (string $author) use (&$icons): ?string {
             if (! array_key_exists($author, $icons)) {
                 $icons[$author] = $this->accountImageUrlService->iconImageUrl(new AccountIdentifier($author));
             }
 
-            return ['routineIdentifier' => (string) $row->origin_identifier, 'routineName' => (string) $row->origin_name, 'accountName' => (string) $row->origin_author_name, 'iconImageUrl' => $icons[$author]];
+            return $icons[$author];
+        };
+        $origin = function (object $row) use ($icon): ?array {
+            if ($row->origin_identifier === null) {
+                return null;
+            }
+            $author = (string) $row->origin_author_identifier;
+
+            return ['routineIdentifier' => (string) $row->origin_identifier, 'routineName' => (string) $row->origin_name, 'accountName' => (string) $row->origin_author_name, 'iconImageUrl' => $icon($author)];
         };
 
         $items = $paginator->getCollection()->map(fn (object $post): array => [
-            'postIdentifier' => (string) $post->post_identifier,
+            'postIdentifier' => $post->post_identifier === null ? null : (string) $post->post_identifier,
             'routineIdentifier' => (string) $post->routine_identifier,
             'customizationOrigin' => $origin($post),
             'accountIdentifier' => (string) $post->account_identifier,
             'accountName' => (string) $post->account_name,
-            'iconImageUrl' => $this->accountImageUrlService->iconImageUrl(new AccountIdentifier((string) $post->account_identifier)),
-            'postedAt' => (new DateTimeImmutable((string) $post->posted_at))->format(DATE_ATOM),
+            'iconImageUrl' => $icon((string) $post->account_identifier),
+            'postedAt' => $input->routineBased() && $post->posted_at === null ? null : (new DateTimeImmutable((string) $post->posted_at))->format(DATE_ATOM),
             'routineName' => (string) $post->routine_name,
             'routineExecutionMinutes' => $post->routine_execution_minutes === null ? null : (int) $post->routine_execution_minutes,
             'tags' => $tags[(string) $post->routine_identifier] ?? [],
             'routineActions' => $actions[(string) $post->routine_identifier] ?? [],
-            'postLikeCount' => (int) $post->post_like_count,
-            'postSupportCount' => (int) $post->post_support_count,
-            'liked' => (bool) $post->liked,
+            'postLikeCount' => $post->post_identifier === null ? null : (int) $post->post_like_count,
+            'postSupportCount' => $post->post_identifier === null ? null : (int) $post->post_support_count,
+            'liked' => $post->post_identifier === null ? null : (bool) $post->liked,
             'executionCount' => (int) $post->execution_count,
             'customizationCount' => (int) $post->customization_count,
         ])->values()->all();

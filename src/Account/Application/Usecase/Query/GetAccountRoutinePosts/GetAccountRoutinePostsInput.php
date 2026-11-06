@@ -6,7 +6,7 @@ namespace Src\Account\Application\Usecase\Query\GetAccountRoutinePosts;
 
 final readonly class GetAccountRoutinePostsInput implements GetAccountRoutinePostsInputPort
 {
-    public function __construct(private string $accountIdentifier, private int $page, private int $numberOfItemsPerPage, private ?string $viewerAccountIdentifier = null) {}
+    public function __construct(private string $accountIdentifier, private int $page, private int $numberOfItemsPerPage, private ?string $viewerAccountIdentifier = null, private bool $routineBased = false) {}
 
     public function accountIdentifier(): string
     {
@@ -16,6 +16,11 @@ final readonly class GetAccountRoutinePostsInput implements GetAccountRoutinePos
     public function viewerAccountIdentifier(): ?string
     {
         return $this->viewerAccountIdentifier;
+    }
+
+    public function routineBased(): bool
+    {
+        return $this->routineBased;
     }
 
     public function page(): int

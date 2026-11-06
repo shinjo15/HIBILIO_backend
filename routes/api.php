@@ -17,7 +17,6 @@ use App\Http\Actions\Account\GetMyAccountAction;
 use App\Http\Actions\Account\GetMyBlocksAction;
 use App\Http\Actions\Account\GetMyFollowingAccountsAction;
 use App\Http\Actions\Account\GetMyRoutinePostsAction;
-use App\Http\Actions\Account\GetMyRoutinesAction;
 use App\Http\Actions\Account\GetPopularRoutinePostsAction;
 use App\Http\Actions\Account\GetReceivedFollowRequestsAction;
 use App\Http\Actions\Account\GetSentFollowRequestsAction;
@@ -75,8 +74,7 @@ Route::middleware('web')->group(static function (): void {
     Route::patch('/my/account', UpdateAccountProfileAction::class);
     Route::patch('/my/account/visibility', ChangeAccountVisibilityAction::class);
     Route::patch('/my/account/ui-mode', ChangeAccountUiModeAction::class);
-    Route::get('/my/posts', GetMyRoutinePostsAction::class);
-    Route::get('/my/routines', GetMyRoutinesAction::class);
+    Route::get('/my/routines', GetMyRoutinePostsAction::class);
     Route::get('/my/routine-executions', GetMyRoutineExecutionsAction::class);
     Route::post('/login-passcodes', GenerateLoginPasscodeAction::class)->middleware('throttle:passcode-send');
     Route::post('/login-passcodes/verification', VerifyLoginPasscodeAction::class);
