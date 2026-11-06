@@ -39,6 +39,7 @@ use Src\Account\Application\Usecase\Query\GetFavoriteTagPosts\GetFavoriteTagPost
 use Src\Account\Application\Usecase\Query\GetFollowingAccounts\GetFollowingAccountsInterface;
 use Src\Account\Application\Usecase\Query\GetFollowingPosts\GetFollowingPostsInterface;
 use Src\Account\Application\Usecase\Query\GetMyBlocks\GetMyBlocksInterface;
+use Src\Account\Application\Usecase\Query\GetMyPosts\GetMyPostsInterface;
 use Src\Account\Application\Usecase\Query\GetPopularRoutinePosts\GetPopularRoutinePostsInterface;
 use Src\Account\Application\Usecase\Query\GetReceivedFollowRequests\GetReceivedFollowRequestsInterface;
 use Src\Account\Application\Usecase\Query\GetSentFollowRequests\GetSentFollowRequestsInterface;
@@ -61,6 +62,7 @@ use Src\Account\Infrastructure\Query\GetFavoriteTagPosts\GetFavoriteTagPosts;
 use Src\Account\Infrastructure\Query\GetFollowingAccounts\GetFollowingAccounts;
 use Src\Account\Infrastructure\Query\GetFollowingPosts\GetFollowingPosts;
 use Src\Account\Infrastructure\Query\GetMyBlocks\GetMyBlocks;
+use Src\Account\Infrastructure\Query\GetMyPosts\GetMyPosts;
 use Src\Account\Infrastructure\Query\GetPopularRoutinePosts\GetPopularRoutinePosts;
 use Src\Account\Infrastructure\Query\GetReceivedFollowRequests\GetReceivedFollowRequests;
 use Src\Account\Infrastructure\Query\GetSentFollowRequests\GetSentFollowRequests;
@@ -304,6 +306,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(RejectFollowRequestInterface::class, RejectFollowRequest::class);
         $this->app->bind(RemoveFollowRequestInterface::class, RemoveFollowRequest::class);
         $this->app->bind(GetFollowingPostsInterface::class, GetFollowingPosts::class);
+        $this->app->bind(GetMyPostsInterface::class, GetMyPosts::class);
         $this->app->bind(GetFollowingAccountsInterface::class, GetFollowingAccounts::class);
         $this->app->bind(GetPopularRoutinePostsInterface::class, GetPopularRoutinePosts::class);
         $this->app->bind(SearchAccountsInterface::class, SearchAccounts::class);

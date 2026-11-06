@@ -14,11 +14,6 @@ final class GetMyRoutinesActionTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_old_my_posts_route_is_removed(): void
-    {
-        $this->getJson('/api/my/posts')->assertNotFound();
-    }
-
     public function test_returns_own_routine_without_a_post(): void
     {
         $account = '11111111-1111-4111-8111-111111111111';

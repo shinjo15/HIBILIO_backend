@@ -111,6 +111,22 @@ final class GetFollowingPostsActionTest extends TestCase
         self::assertArrayNotHasKey('supported', $response->json('posts.1'));
     }
 
+    public function test_null_posted_at_retains_existing_following_output(): void
+    {
+        $viewer = '11111111-1111-4111-8111-111111111111';
+        $author = '22222222-2222-4222-8222-222222222222';
+        $routine = '33333333-3333-4333-8333-333333333333';
+        $this->insertAccount($viewer, 'Viewer');
+        $this->insertAccount($author, 'Author');
+        $this->insertFollow($viewer, $author);
+        $this->insertRoutine($routine, $author, null, 'Routine', 10);
+        $this->insertPost('44444444-4444-4444-8444-444444444444', $routine, null, 'routine', 0, '2026-09-01 00:00:00');
+        DB::table('posts')->where('routine_identifier', $routine)->update(['created_at' => null]);
+        $value = $this->withSession(['account_identifier' => $viewer])->getJson('/api/following/posts')->assertOk()->json('posts.0.posted_at');
+        self::assertIsString($value);
+        self::assertNotFalse(\DateTimeImmutable::createFromFormat(DATE_ATOM, $value));
+    }
+
     public function test_returns_unauthorized_without_an_authenticated_account(): void
     {
         $this->getJson('/api/following/posts')->assertUnauthorized();
