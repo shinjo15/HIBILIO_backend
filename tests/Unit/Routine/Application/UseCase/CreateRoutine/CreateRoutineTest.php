@@ -26,6 +26,7 @@ use Src\Routine\Domain\ValueObject\RoutineExecutionMinutes;
 use Src\Routine\Domain\ValueObject\RoutineMemo;
 use Src\Routine\Domain\ValueObject\RoutineName;
 use Src\Routine\Domain\ValueObject\RoutineTagIdentifiers;
+use Src\Routine\Domain\ValueObject\RoutineVideoUrl;
 use Src\Shared\Application\Service\UuidServiceInterface;
 use Src\Shared\Application\Transaction\TransactionManagerInterface;
 use Src\Shared\Domain\Factory\PostFactoryInterface;
@@ -45,10 +46,17 @@ final class CreateRoutineTest extends TestCase
         {
             public ?Routine $savedRoutine = null;
 
-            public function save(Routine $routine): void
+            public function find(RoutineIdentifier $identifier): ?Routine
+            {
+                return null;
+            }
+
+            public function add(Routine $routine): void
             {
                 $this->savedRoutine = $routine;
             }
+
+            public function saveVideoLink(Routine $routine): void {}
         };
         $routineActionRepository = new class implements RoutineActionRepositoryInterface
         {
@@ -64,6 +72,13 @@ final class CreateRoutineTest extends TestCase
             {
                 $this->savedRoutineActions[] = $routineAction;
             }
+
+            public function findForRoutine(RoutineIdentifier $routineIdentifier, RoutineActionIdentifier $actionIdentifier): ?RoutineAction
+            {
+                return null;
+            }
+
+            public function saveVideoLink(RoutineAction $routineAction): void {}
         };
         $postRepository = new class implements PostRepositoryInterface
         {
@@ -143,6 +158,7 @@ final class CreateRoutineTest extends TestCase
                     AccountIdentifier $accountIdentifier,
                     ?RoutineExecutionMinutes $routineExecutionMinutes,
                     ?RoutineTagIdentifiers $routineTagIdentifiers,
+                    ?RoutineVideoUrl $videoUrl = null,
                 ): Routine {
                     $this->creationOrder[] = 'routine';
 
@@ -155,6 +171,7 @@ final class CreateRoutineTest extends TestCase
                         $accountIdentifier,
                         $routineExecutionMinutes,
                         $routineTagIdentifiers,
+                        $videoUrl,
                     );
                 }
             },
@@ -171,6 +188,7 @@ final class CreateRoutineTest extends TestCase
                     RoutineActionName $routineActionName,
                     ?RoutineActionMemo $routineActionMemo,
                     ?RoutineActionMinutes $routineActionMinutes,
+                    ?RoutineVideoUrl $videoUrl = null,
                 ): RoutineAction {
                     $this->creationOrder[] = 'action';
 
@@ -181,6 +199,7 @@ final class CreateRoutineTest extends TestCase
                         $routineActionName,
                         $routineActionMemo,
                         $routineActionMinutes,
+                        $videoUrl,
                     );
                 }
             },

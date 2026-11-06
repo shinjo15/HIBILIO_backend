@@ -64,6 +64,21 @@ final class RoutineTest extends TestCase
         new RoutineActionIdentifiers([]);
     }
 
+    public function test_creation_rejects_reconstituted_empty_actions(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        Routine::create(
+            new RoutineIdentifier('34b8d590-07cb-49ca-bfd9-cb9f40e26bd3'),
+            null,
+            new RoutineName('routine'),
+            RoutineActionIdentifiers::reconstitute([]),
+            null,
+            new AccountIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87'),
+            null,
+            null,
+        );
+    }
+
     public function test_rejects_a_non_positive_execution_minutes(): void
     {
         $this->expectException(\InvalidArgumentException::class);

@@ -13,10 +13,17 @@ final readonly class RoutineActionIdentifiers
      */
     public function __construct(
         private array $values,
+        bool $rehydrating = false,
     ) {
-        if ($values === []) {
+        if ($values === [] && ! $rehydrating) {
             throw new \InvalidArgumentException('ルーティンには少なくとも1つの行動が必要です。');
         }
+    }
+
+    /** @param list<RoutineActionIdentifier> $values */
+    public static function reconstitute(array $values): self
+    {
+        return new self($values, true);
     }
 
     /**

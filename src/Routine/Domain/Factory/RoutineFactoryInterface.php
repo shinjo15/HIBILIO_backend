@@ -10,6 +10,7 @@ use Src\Routine\Domain\ValueObject\RoutineExecutionMinutes;
 use Src\Routine\Domain\ValueObject\RoutineMemo;
 use Src\Routine\Domain\ValueObject\RoutineName;
 use Src\Routine\Domain\ValueObject\RoutineTagIdentifiers;
+use Src\Routine\Domain\ValueObject\RoutineVideoUrl;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Src\Shared\Domain\ValueObject\Identifier\RoutineIdentifier;
 
@@ -24,5 +25,6 @@ interface RoutineFactoryInterface
         AccountIdentifier $accountIdentifier,
         ?RoutineExecutionMinutes $routineExecutionMinutes,
         ?RoutineTagIdentifiers $routineTagIdentifiers,
+        ?RoutineVideoUrl $videoUrl = null,
     ): Routine;
 }

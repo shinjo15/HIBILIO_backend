@@ -23,6 +23,7 @@ final class RoutineActionModel extends Model
         'action_name',
         'action_memo',
         'action_minutes',
+        'video_url',
         'available',
     ];
 

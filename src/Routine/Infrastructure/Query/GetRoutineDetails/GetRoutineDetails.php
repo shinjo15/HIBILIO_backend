@@ -31,6 +31,7 @@ final class GetRoutineDetails implements GetRoutineDetailsInterface
                 'accounts.account_name',
                 'routines.routine_name',
                 'routines.routine_memo',
+                'routines.video_url',
                 'routines.routine_execution_minutes',
             ])
             ->selectSub($this->executionCount(), 'execution_count')
@@ -75,12 +76,14 @@ final class GetRoutineDetails implements GetRoutineDetailsInterface
                 'action_name',
                 'action_memo',
                 'action_minutes',
+                'video_url',
             ])
             ->map(static fn (object $action): array => [
                 'routineActionIdentifier' => (string) $action->routine_action_identifier,
                 'actionName' => (string) $action->action_name,
                 'actionMemo' => $action->action_memo === null ? null : (string) $action->action_memo,
                 'actionMinutes' => $action->action_minutes === null ? null : (int) $action->action_minutes,
+                'videoUrl' => $action->video_url === null ? null : (string) $action->video_url,
             ])
             ->all();
 
@@ -96,6 +99,7 @@ final class GetRoutineDetails implements GetRoutineDetailsInterface
             'iconImageUrl' => $this->accountImageUrlService->iconImageUrl(new AccountIdentifier((string) $routine->account_identifier)),
             'routineName' => (string) $routine->routine_name,
             'routineMemo' => $routine->routine_memo === null ? null : (string) $routine->routine_memo,
+            'videoUrl' => $routine->video_url === null ? null : (string) $routine->video_url,
             'routineExecutionMinutes' => $routine->routine_execution_minutes === null ? null : (int) $routine->routine_execution_minutes,
             'executionCount' => (int) $routine->execution_count,
             'customizationCount' => (int) $routine->customization_count,

@@ -7,6 +7,7 @@ namespace Src\Routine\Application\UseCase\CreateRoutine;
 use Src\Routine\Domain\ValueObject\RoutineActionMemo;
 use Src\Routine\Domain\ValueObject\RoutineActionMinutes;
 use Src\Routine\Domain\ValueObject\RoutineActionName;
+use Src\Routine\Domain\ValueObject\RoutineVideoUrl;
 
 final readonly class CreateRoutineActionInput
 {
@@ -15,6 +16,7 @@ final readonly class CreateRoutineActionInput
         private ?RoutineActionMemo $routineActionMemo,
         private ?RoutineActionMinutes $routineActionMinutes,
         private ?int $parentRoutineActionIndex,
+        private ?RoutineVideoUrl $videoUrl = null,
     ) {
         if ($parentRoutineActionIndex !== null && $parentRoutineActionIndex < 0) {
             throw new \InvalidArgumentException('親行動のインデックスは0以上である必要があります。');
@@ -39,5 +41,10 @@ final readonly class CreateRoutineActionInput
     public function parentRoutineActionIndex(): ?int
     {
         return $this->parentRoutineActionIndex;
+    }
+
+    public function videoUrl(): ?RoutineVideoUrl
+    {
+        return $this->videoUrl;
     }
 }

@@ -160,6 +160,8 @@ use Src\Routine\Application\Usecase\Query\GetCustomizedRoutines\GetCustomizedRou
 use Src\Routine\Application\Usecase\Query\GetRoutineDetails\GetRoutineDetailsInterface;
 use Src\Routine\Application\Usecase\Query\GetRoutineExecutionPosts\GetRoutineExecutionPostsInterface;
 use Src\Routine\Application\Usecase\Query\SearchRoutines\SearchRoutinesInterface;
+use Src\Routine\Application\UseCase\UpdateRoutineVideoLink\UpdateRoutineVideoLink;
+use Src\Routine\Application\UseCase\UpdateRoutineVideoLink\UpdateRoutineVideoLinkInterface;
 use Src\Routine\Domain\Factory\RoutineActionFactoryInterface;
 use Src\Routine\Domain\Factory\RoutineFactoryInterface;
 use Src\Routine\Domain\Repository\RoutineActionRepositoryInterface;
@@ -324,6 +326,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(PostFactoryInterface::class, PostFactory::class);
         $this->app->bind(PostRepositoryInterface::class, PostRepository::class);
         $this->app->bind(CreateRoutineInterface::class, CreateRoutine::class);
+        $this->app->bind(UpdateRoutineVideoLinkInterface::class, UpdateRoutineVideoLink::class);
         $this->app->bind(GetCustomizedRoutinesInterface::class, GetCustomizedRoutines::class);
         $this->app->bind(GetRoutineDetailsInterface::class, GetRoutineDetails::class);
         $this->app->bind(GetRoutineExecutionPostsInterface::class, GetRoutineExecutionPosts::class);

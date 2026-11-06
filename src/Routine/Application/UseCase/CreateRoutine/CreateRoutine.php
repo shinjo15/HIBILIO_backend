@@ -46,11 +46,12 @@ final readonly class CreateRoutine implements CreateRoutineInterface
             $input->accountIdentifier(),
             $input->routineExecutionMinutes(),
             $input->routineTagIdentifiers(),
+            $input->videoUrl(),
         );
         $post = $this->postFactory->createRoutinePost($routineIdentifier);
 
         $this->transactionManager->transaction(function () use ($routine, $routineActions, $post): void {
-            $this->routineRepository->save($routine);
+            $this->routineRepository->add($routine);
 
             foreach ($routineActions as $routineAction) {
                 $this->routineActionRepository->save($routineAction);
@@ -80,6 +81,7 @@ final readonly class CreateRoutine implements CreateRoutineInterface
                 $routineActionInput->routineActionName(),
                 $routineActionInput->routineActionMemo(),
                 $routineActionInput->routineActionMinutes(),
+                $routineActionInput->videoUrl(),
             );
         }
 

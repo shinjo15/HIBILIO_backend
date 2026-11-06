@@ -60,6 +60,7 @@ final class GetRoutineDetailsActionTest extends TestCase
                 'icon_image_url' => "https://images.example/accounts/{$accountIdentifier}/icon",
                 'routine_name' => '朝の集中',
                 'routine_memo' => '仕事前のルーティン',
+                'video_url' => null,
                 'routine_execution_minutes' => 45,
                 'execution_count' => 3,
                 'customization_count' => 1,
@@ -71,12 +72,14 @@ final class GetRoutineDetailsActionTest extends TestCase
                         'action_name' => '最初のAction',
                         'action_memo' => '最初のメモ',
                         'action_minutes' => 10,
+                        'video_url' => null,
                     ],
                     [
                         'routine_action_identifier' => '33333333-3333-4333-8333-333333333333',
                         'action_name' => '同時刻で後のAction',
                         'action_memo' => null,
                         'action_minutes' => null,
+                        'video_url' => null,
                     ],
                 ],
             ]);

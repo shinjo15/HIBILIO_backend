@@ -10,6 +10,7 @@ use Src\Routine\Domain\Repository\RoutineActionRepositoryInterface;
 use Src\Routine\Domain\ValueObject\RoutineActionMemo;
 use Src\Routine\Domain\ValueObject\RoutineActionMinutes;
 use Src\Routine\Domain\ValueObject\RoutineActionName;
+use Src\Routine\Domain\ValueObject\RoutineVideoUrl;
 use Src\Shared\Domain\ValueObject\Identifier\RoutineActionIdentifier;
 use Src\Shared\Domain\ValueObject\Identifier\RoutineIdentifier;
 
@@ -40,6 +41,7 @@ final class RoutineActionRepository implements RoutineActionRepositoryInterface
                 $routineAction->action_minutes === null
                     ? null
                     : new RoutineActionMinutes($routineAction->action_minutes),
+                $routineAction->video_url === null ? null : new RoutineVideoUrl($routineAction->video_url),
             ))
             ->all();
     }
@@ -53,7 +55,35 @@ final class RoutineActionRepository implements RoutineActionRepositoryInterface
             'action_name' => $routineAction->routineActionName()->value(),
             'action_memo' => $routineAction->routineActionMemo()?->value(),
             'action_minutes' => $routineAction->routineActionMinutes()?->value(),
+            'video_url' => $routineAction->videoUrl()?->value(),
             'available' => true,
         ]);
+    }
+
+    public function findForRoutine(RoutineIdentifier $routineIdentifier, RoutineActionIdentifier $actionIdentifier): ?RoutineAction
+    {
+        $model = RoutineActionModel::query()->whereKey($actionIdentifier->value())
+            ->where('routine_identifier', $routineIdentifier->value())->where('available', true)->lockForUpdate()->first();
+        if ($model === null) {
+            return null;
+        }
+
+        return RoutineAction::create(
+            $actionIdentifier,
+            $model->parent_routine_action_identifier === null ? null : new RoutineActionIdentifier($model->parent_routine_action_identifier),
+            $routineIdentifier,
+            new RoutineActionName($model->action_name),
+            $model->action_memo === null ? null : new RoutineActionMemo($model->action_memo),
+            $model->action_minutes === null ? null : new RoutineActionMinutes($model->action_minutes),
+            $model->video_url === null ? null : new RoutineVideoUrl($model->video_url),
+        );
+    }
+
+    public function saveVideoLink(RoutineAction $routineAction): void
+    {
+        $model = RoutineActionModel::query()->whereKey($routineAction->routineActionIdentifier()->value())
+            ->where('routine_identifier', $routineAction->routineIdentifier()->value())->where('available', true)->firstOrFail();
+        $model->video_url = $routineAction->videoUrl()?->value();
+        $model->save();
     }
 }

@@ -38,6 +38,7 @@ final readonly class GetRoutineDetailsAction
             'icon_image_url' => $routineDetails['iconImageUrl'],
             'routine_name' => $routineDetails['routineName'],
             'routine_memo' => $routineDetails['routineMemo'],
+            'video_url' => $routineDetails['videoUrl'],
             'routine_execution_minutes' => $routineDetails['routineExecutionMinutes'],
             'execution_count' => $routineDetails['executionCount'],
             'customization_count' => $routineDetails['customizationCount'],
@@ -48,6 +49,7 @@ final readonly class GetRoutineDetailsAction
                 'action_name' => $action['actionName'],
                 'action_memo' => $action['actionMemo'],
                 'action_minutes' => $action['actionMinutes'],
+                'video_url' => $action['videoUrl'],
             ], $routineDetails['routineActions']),
         ]);
     }

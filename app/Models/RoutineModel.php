@@ -6,6 +6,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 final class RoutineModel extends Model
 {
@@ -22,6 +23,7 @@ final class RoutineModel extends Model
         'parent_routine_identifier',
         'routine_name',
         'routine_memo',
+        'video_url',
         'account_identifier',
         'routine_execution_minutes',
         'available',
@@ -44,5 +46,10 @@ final class RoutineModel extends Model
             'routine_identifier',
             'tag_identifier',
         )->withPivot('available')->withTimestamps();
+    }
+
+    public function actions(): HasMany
+    {
+        return $this->hasMany(RoutineActionModel::class, 'routine_identifier', 'routine_identifier');
     }
 }
