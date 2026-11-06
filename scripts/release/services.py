@@ -275,15 +275,27 @@ class Services:
             draft=True, prerelease=False, generate_release_notes=False))
         self.release_id = release['id']
         readback = self.gh('releases/' + str(self.release_id))
-        if readback.get('draft') is not True or readback['tag_name'] != manifest['version']:
+        if (readback.get('draft') is not True or readback.get('immutable') is not False
+                or readback.get('id') != self.release_id or readback.get('tag_name') != manifest['version']
+                or readback.get('target_commitish') != manifest['backend_sha']):
             raise ValueError('Draft release readback mismatch')
 
     def record(self, manifest):
         if self.release_id is None:
             return
+        readback = self.gh('releases/' + str(self.release_id))
+        if (readback.get('draft') is not True or readback.get('immutable') is not False
+                or readback.get('id') != self.release_id or readback.get('tag_name') != manifest['version']
+                or readback.get('target_commitish') != manifest['backend_sha']):
+            raise ValueError('Only the reserved draft identity can be recorded')
         body = release_body(manifest)
-        self.gh('releases/' + str(self.release_id), 'PATCH', {'body': body})
-        if self.gh('releases/' + str(self.release_id))['body'] != body:
+        self.gh('releases/' + str(self.release_id), 'PATCH',
+                {'tag_name': manifest['version'], 'target_commitish': manifest['backend_sha'],
+                 'draft': True, 'body': body})
+        readback = self.gh('releases/' + str(self.release_id))
+        if (readback.get('draft') is not True or readback.get('immutable') is not False
+                or readback.get('id') != self.release_id or readback.get('tag_name') != manifest['version']
+                or readback.get('target_commitish') != manifest['backend_sha'] or readback.get('body') != body):
             raise ValueError('Release manifest readback mismatch')
 
     def backend(self, manifest):
@@ -346,8 +358,11 @@ class Services:
         if (manifest.get('phase') != 'complete' or manifest.get('backend', {}).get('phase') != 'healthy'
                 or manifest.get('frontend_verified') is not True or manifest.get('firewall_cleaned') is not True):
             raise ValueError('Both components and firewall cleanup must be verified before publication')
-        if self.gh('releases/' + str(self.release_id)).get('draft') is not True:
-            raise ValueError('Only a reserved draft can be published')
+        readback = self.gh('releases/' + str(self.release_id))
+        if (readback.get('draft') is not True or readback.get('immutable') is not False
+                or readback.get('id') != self.release_id or readback.get('tag_name') != manifest['version']
+                or readback.get('target_commitish') != manifest['backend_sha']):
+            raise ValueError('Only the reserved draft identity can be published')
         tag = self.gh('git/ref/tags/' + manifest['version'])
         if tag['object']['type'] != 'commit' or tag['object']['sha'] != manifest['backend_sha']:
             raise ValueError('Release tag changed since reservation')
@@ -357,12 +372,20 @@ class Services:
         expected = 'sha256:' + hashlib.sha256(json.dumps(manifest).encode()).hexdigest()
         if readback.get('name') != 'release.json' or readback.get('digest') != expected:
             raise ValueError('Final manifest asset digest readback mismatch')
+        readback = self.gh('releases/' + str(self.release_id))
+        if (readback.get('draft') is not True or readback.get('immutable') is not False
+                or readback.get('id') != self.release_id or readback.get('tag_name') != manifest['version']
+                or readback.get('target_commitish') != manifest['backend_sha']):
+            raise ValueError('Reserved draft identity changed before publication')
         body = release_body(manifest)
         self.gh('releases/' + str(self.release_id), 'PATCH',
-                {'draft': False, 'prerelease': False, 'make_latest': 'true', 'body': body})
+                {'tag_name': manifest['version'], 'target_commitish': manifest['backend_sha'],
+                 'draft': False, 'prerelease': False, 'make_latest': 'true', 'body': body})
         result = self.gh('releases/' + str(self.release_id))
         if (result.get('draft') is not False or result.get('immutable') is not True
-                or result['body'] != body or result['tag_name'] != manifest['version']):
+                or result.get('id') != self.release_id or result.get('body') != body
+                or result.get('tag_name') != manifest['version']
+                or result.get('target_commitish') != manifest['backend_sha']):
             raise ValueError('Published release readback mismatch')
 
 

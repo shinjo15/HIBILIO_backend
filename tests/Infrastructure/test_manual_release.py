@@ -507,7 +507,8 @@ class AdapterTests(unittest.TestCase):
             if method == 'PATCH':
                 published = True
                 return {}
-            return dict(draft=not published, immutable=published, tag_name='v1.0.1',
+            return dict(id=123, target_commitish=manifest['backend_sha'],
+                        draft=not published, immutable=published, tag_name='v1.0.1',
                         body=self.module.release_body(manifest))
         self.services.gh = gh
         with patch.object(self.module, 'request_json', return_value=asset) as upload:
@@ -521,10 +522,62 @@ class AdapterTests(unittest.TestCase):
                         frontend_verified=True, firewall_cleaned=True)
         self.services.release_id = 123
         self.services.env = {'GH_TOKEN': 'simulation-token'}
-        self.services.gh = lambda path, *args: {'object': {'sha': 'b' * 40, 'type': 'commit'}, 'draft': True}
+        self.services.gh = lambda path, *args: {'object': {'sha': 'b' * 40, 'type': 'commit'},
+            'id': 123, 'draft': True, 'immutable': False, 'tag_name': manifest['version'],
+            'target_commitish': manifest['backend_sha']}
         with patch.object(self.module, 'request_json') as upload:
             with self.assertRaises(ValueError): self.services.publish(manifest)
             upload.assert_not_called()
+
+    def test_release_identity_mismatches_fail_closed_at_every_boundary(self):
+        manifest = dict(version='v1.0.0', backend_sha='a' * 40, phase='complete',
+                        backend={'phase': 'healthy'}, frontend_verified=True, firewall_cleaned=True)
+        self.services.env = {'GH_TOKEN': 'simulation-token'}
+        for boundary in ('reserve', 'record-before', 'record-after', 'publish-before', 'publish-after'):
+            fields = {'tag_name': 'untagged-observed', 'target_commitish': 'b' * 40,
+                      'draft': False if boundary != 'publish-after' else True, 'id': 999}
+            if boundary != 'publish-after':
+                fields['immutable'] = True
+            else:
+                fields.update(immutable=False, body='wrong body')
+            if boundary == 'record-after':
+                fields['body'] = 'wrong body'
+            for field, wrong in fields.items():
+                for missing in (False, True):
+                    with self.subTest(boundary=boundary, field=field, missing=missing):
+                        self.services.release_id = 123
+                        valid = dict(id=123, tag_name=manifest['version'], target_commitish=manifest['backend_sha'],
+                                     draft=True, immutable=False, body=self.module.release_body(manifest))
+                        invalid = dict(valid)
+                        if boundary == 'publish-after':
+                            invalid.update(draft=False, immutable=True)
+                        if missing:
+                            invalid.pop(field)
+                        else:
+                            invalid[field] = wrong
+                        calls = []
+                        updated = False
+                        asset = dict(id=42, name='release.json',
+                                     digest='sha256:' + hashlib.sha256(json.dumps(manifest).encode()).hexdigest())
+                        def gh(path, method='GET', payload=None):
+                            nonlocal updated
+                            calls.append((path, method))
+                            if path == 'git/ref/tags/v1.0.0':
+                                return {'object': {'sha': manifest['backend_sha'], 'type': 'commit'}}
+                            if path == 'releases/assets/42': return asset
+                            if method in ('POST', 'PATCH'):
+                                if path == 'releases': return valid
+                                updated = True
+                                return valid  # Only the subsequent GET reveals corruption.
+                            return invalid if boundary in ('reserve', 'record-before', 'publish-before') or updated else valid
+                        self.services.gh = gh
+                        self.services.absent_version = lambda version: None
+                        with patch.object(self.module, 'request_json', return_value=asset) as upload:
+                            with self.assertRaises(ValueError):
+                                getattr(self.services, boundary.split('-')[0])(manifest)
+                            if boundary.endswith('before'):
+                                self.assertFalse(any(method == 'PATCH' for _, method in calls))
+                                upload.assert_not_called()
 
     def test_actual_preflight_ci_or_digest_mismatch_happens_before_firewall(self):
         coordinate = load('coordinate')
@@ -586,6 +639,131 @@ class HttpFixtureTests(unittest.TestCase):
             server.shutdown()
             server.server_close()
             thread.join()
+
+
+class ReleaseIdentityTests(unittest.TestCase):
+    """Wire-level local server simulation, not proof of GitHub's internal cause."""
+    def setUp(self):
+        load('coordinate')
+        self.module = load('services')
+        self.services = self.module.Services()
+        self.services.env = {'GH_TOKEN': 'simulation-token'}
+        self.manifest = dict(version='v1.0.0', backend_sha='e7c5900db3979c9b94d610f2c1f5e0b23221359a',
+                             phase='complete', backend={'phase': 'healthy'},
+                             frontend_verified=True, firewall_cleaned=True)
+        self.release = dict(id=436085437, name='v1.0.0', tag_name='v1.0.0',
+                            target_commitish=self.manifest['backend_sha'], draft=True, immutable=False)
+        self.services.release_id = self.release['id']
+        self.calls = []
+        self.asset = {}
+        self.corrupt_publication = False
+        self.change_after_upload = False
+        outer = self
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def log_message(self, format, *args): pass
+            def respond(self):
+                raw = self.rfile.read(int(self.headers.get('Content-Length', 0)))
+                payload = json.loads(raw) if raw else None
+                outer.calls.append((self.command, self.path, payload, dict(self.headers)))
+                prefix = '/repos/' + outer.module.BACKEND + '/'
+                path = self.path.removeprefix(prefix)
+                status = 200
+                if path.startswith('git/ref/'):
+                    result = {'object': {'type': 'commit', 'sha': outer.manifest['backend_sha']}}
+                elif path.endswith('/assets?name=release.json'):
+                    outer.asset = dict(id=42, name='release.json',
+                                       digest='sha256:' + hashlib.sha256(raw).hexdigest())
+                    result = outer.asset
+                    status = 201
+                elif path == 'releases/assets/42':
+                    result = outer.asset
+                    if outer.change_after_upload:
+                        outer.release['target_commitish'] = 'f' * 40
+                elif path == 'releases/' + str(outer.services.release_id):
+                    if self.command == 'PATCH':
+                        assert isinstance(payload, dict)
+                        outer.release.update(payload)
+                        # Reproduce the observed symptom when tag_name is omitted.
+                        # This is a hypothesis fixture, not a documented GitHub default.
+                        if 'tag_name' not in payload:
+                            outer.release['tag_name'] = 'untagged-9a036a4df6546494b92c'
+                        outer.release['immutable'] = outer.release['draft'] is False
+                        if outer.corrupt_publication and outer.release['draft'] is False:
+                            outer.release['tag_name'] = 'untagged-9a036a4df6546494b92c'
+                    result = outer.release
+                else:
+                    status, result = 404, {}
+                self.send_response(status)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps(result).encode())
+            do_GET = do_POST = do_PATCH = respond
+        server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), Handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        def cleanup():
+            server.shutdown()
+            server.server_close()
+            thread.join()
+        self.addCleanup(cleanup)
+        # Preserve the actual request serialization/headers; route all API traffic
+        # to loopback and never allow a connection to GitHub or another cloud.
+        opener = self.module.urllib.request.build_opener(self.module.remote.NoRedirect)
+        class LocalOpener:
+            def open(self, request, timeout):
+                parsed = outer.module.urllib.parse.urlsplit(request.full_url)
+                if parsed.hostname not in ('api.github.com', 'uploads.github.com'):
+                    raise AssertionError('Unexpected external request')
+                local = outer.module.urllib.request.Request(
+                    'http://127.0.0.1:' + str(server.server_port) + parsed.path
+                    + ('?' + parsed.query if parsed.query else ''),
+                    data=request.data, headers=dict(request.header_items()), method=request.get_method())
+                return opener.open(local, timeout=timeout)
+        routing = patch.object(self.module.urllib.request, 'build_opener', return_value=LocalOpener())
+        routing.start()
+        self.addCleanup(routing.stop)
+
+    def test_record_preserves_explicit_release_identity_on_the_wire(self):
+        self.services.record(self.manifest)
+        self.assertEqual(self.release['tag_name'], self.manifest['version'])
+        self.assertEqual(self.release['target_commitish'], self.manifest['backend_sha'])
+        self.assertIs(self.release['draft'], True)
+        method, path, payload, headers = next(call for call in self.calls if call[0] == 'PATCH')
+        self.assertEqual((method, path), ('PATCH', '/repos/' + self.module.BACKEND + '/releases/436085437'))
+        self.assertEqual(payload, dict(tag_name=self.manifest['version'],
+            target_commitish=self.manifest['backend_sha'], draft=True, body=self.module.release_body(self.manifest)))
+        self.assertEqual(headers['X-Github-Api-Version'], '2022-11-28')
+
+    def test_publish_preserves_explicit_release_identity_on_the_wire(self):
+        self.services.publish(self.manifest)
+        self.assertEqual(self.release['tag_name'], self.manifest['version'])
+        self.assertEqual(self.release['target_commitish'], self.manifest['backend_sha'])
+        self.assertIs(self.release['draft'], False)
+        updates = [call for call in self.calls if call[0] == 'PATCH']
+        self.assertEqual(len(updates), 1)
+        self.assertEqual(updates[0][2], dict(tag_name=self.manifest['version'],
+            target_commitish=self.manifest['backend_sha'], draft=False, prerelease=False,
+            make_latest='true', body=self.module.release_body(self.manifest)))
+        self.assertEqual(self.calls[-1][:2], ('GET', updates[0][1]))
+
+    def test_publication_readback_failure_never_patches_published_body_in_exception_record(self):
+        self.corrupt_publication = True
+        with self.assertRaisesRegex(ValueError, 'Published release readback mismatch'):
+            self.services.publish(self.manifest)
+        published_body = self.release['body']
+        calls_before_record = len(self.calls)
+        with self.assertRaises(ValueError):
+            self.services.record(dict(self.manifest, phase='failed', failed_step='publish-release'))
+        self.assertEqual(self.release['body'], published_body)
+        self.assertEqual([call[0] for call in self.calls[calls_before_record:]], ['GET'])
+        self.assertEqual(sum(call[0] == 'PATCH' for call in self.calls), 1)
+
+    def test_identity_changed_during_asset_upload_prevents_publication_patch(self):
+        self.change_after_upload = True
+        with self.assertRaises(ValueError):
+            self.services.publish(self.manifest)
+        self.assertFalse(any(call[0] == 'PATCH' for call in self.calls))
+        self.assertIs(self.release['draft'], True)
 
 
 class WorkflowTests(unittest.TestCase):

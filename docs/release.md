@@ -15,7 +15,7 @@ version は `vMAJOR.MINOR.PATCH` のみ（各数値は 0 または先頭ゼロ�
 
 ## 初回設定：管理者がユーザーと別途実施
 
-以下は初回設定・確認の手順です。既存の environment / Release / クラウド設定を確認し、不足する設定だけを管理者が実施してください。実 CD は未検証で、root helper の配置・sudo / sshd の設定検証、Pages の自動 production 停止への切替は未完了です。値や秘密をチャットや Git に貼らないでください。設定中も既存 SSH / browser SSH / Cloudflare 443 を維持します。
+以下は初回設定・確認の手順です。既存の environment / Release / クラウド設定を確認し、不足する設定だけを管理者が実施してください。既に設定済みの環境を作り直さないでください。実 CD の確認済み範囲と公開時の障害は後述の「v1.0.0 の公開メタデータ障害」を参照してください。値や秘密をチャットや Git に貼らないでください。設定中も既存 SSH / browser SSH / Cloudflare 443 を維持します。
 
 ### 1. GitHub production environment / immutability
 
@@ -109,7 +109,7 @@ Cloudflare の **Workers & Pages → hibilio-web → Settings → Builds & deplo
 - 専用 user `hibilio-deploy` を作成し、password login を無効化します。docker group、通常 sudo、他の SSH key、user-writable authorized_keys を与えません。shell は forced command 起動のため `/bin/sh` 等が必要ですが、自由な shell は許可しません。
 - 管理者がレビュー済みの `scripts/release/remote_deploy.py` の内容/ハッシュを確認し、管理者用経路で `/usr/local/sbin/hibilio-deploy` へ root:root / 0755 として配置します。shebang は `/usr/bin/python3 -I` です。親 directory も root 所有・group/other write 不可にします。deploy request から script 自体を置換する仕組みはありません。script 更新は今後も管理者が別途レビューして行います。
 - `/opt/hibilio` とその release/state 領域、`/etc/hibilio`、compose.env、Docker config は root 管理にします。現在の構成が異なる場合は停止して確認し、アプリ全体への再帰 chown や移動で無理に通さないでください。
-- `/etc/ssh/authorized_keys/hibilio-deploy` を root:root / 0600 とし、専用 public key 一つだけを置きます。`PUBLIC_KEY` は生成した公開鍵の type と base64 に置換します。
+- `/etc/ssh/authorized_keys/hibilio-deploy` を **root:root / 0644** とし、専用 public key 一つだけを置きます。root 所有 0600 では認証対象 user が読めず、実際に SSH public-key 認証が失敗しました。公開鍵なので読取りを許可しますが、編集は root だけです。親 directory も root 所有・group/other write 不可とし、認証対象 user が走査できる権限にします。private key や秘密 env を 0644 にする指示ではありません。`PUBLIC_KEY` は生成した公開鍵の type と base64 に置換します。
 
 ```text
 restrict,command="/usr/bin/sudo -n /usr/local/sbin/hibilio-deploy" PUBLIC_KEY
@@ -208,6 +208,16 @@ sudo docker --config /etc/hibilio/docker compose --project-name hibilio-producti
 5. 両サービスの採用状態・DB互換性・health・公開 marker・firewall を管理者が実確認してから、root current.json をその実状態へ合わせ、失敗した VERSION.json に `phase=recovered` と判断理由・実際の採用状態を追記します。record と backup は削除せず、version は予約済みのままです。この管理者操作をしないと次の deploy は拒否されます。draft Release も部分失敗と最終採用状態を明記し、成功版を装って公開しません。次回は新 version を使います。
 
 最終公開 API の応答喪失、immutability未設定、artifact/upload障害などの場合、Release 自体が既に公開されている可能性もあります。tag / asset digest / body / immutable flag を読戻してから対応します。自動再試行で同じ version を使い直さないでください。
+
+### Release メタデータ不一致時の扱い
+
+Release の公開後確認が失敗しても、本番配備まで失敗したとは限りません。配備版の判断では **対象 Git tag の SHA、実稼働 backend の状態、frontend deployment / 公開 release.json marker** を照合し、Release の名前・tag metadata・本文だけを根拠にしません。添付 manifest の digest と完了状態も確認します。
+
+修正版は全 Release PATCH で期待する `tag_name` / `target_commitish` を明示します。作成後・record 前後・publish の asset upload 前と公開 PATCH 前に ID / tag / target / draft / immutable を検証し、公開後も ID / tag / target / body / immutable を読戻します。公開済み・immutable・identity 不一致の Release は `record()` で更新せず、公開後 readback 失敗でも本文を失敗 manifest で上書きしません。実サーバーの同時変更を原子的に防ぐ仕組みではないため、既存の他操作禁止運用も必要です。
+
+[公式 update-release 契約](https://docs.github.com/en/rest/releases/releases?apiVersion=2022-11-28#update-a-release)では `tag_name` は任意で、既存 Git tag がある場合 `target_commitish` は tag 作成に使われません。省略で `untagged-*` になるとは記載されていません。省略時に観測済み症状を返すローカル HTTP 模擬サーバーで回帰を検証しており、省略を実障害の唯一の原因と確定したものではありません。修正版の実 GitHub publication は未検証です。
+
+[immutable release の公式制約](https://docs.github.com/en/code-security/concepts/supply-chain-security/immutable-releases)により、公開済み Release の tag を付け替えて修復しません。既存 Release / tag / asset を削除せず、CD の再実行や新 version の消費も行いません。正しい既存 tag に別の Release を作成するメタデータのみの復旧は、通常 CD の予約済み版再利用とは別の管理者操作です。対象 tag に既存 Release がないこと、SHA・元 asset の digest・本番 marker の一致、公開イベントの副作用を確認し、承認後に実施します。root の配備記録は書き換えません。
 
 ## ローカル検証と実機未検証の区別
 
