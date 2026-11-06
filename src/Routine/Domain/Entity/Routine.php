@@ -9,6 +9,7 @@ use Src\Routine\Domain\ValueObject\RoutineExecutionMinutes;
 use Src\Routine\Domain\ValueObject\RoutineMemo;
 use Src\Routine\Domain\ValueObject\RoutineName;
 use Src\Routine\Domain\ValueObject\RoutineTagIdentifiers;
+use Src\Routine\Domain\ValueObject\RoutineVideoUrl;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Src\Shared\Domain\ValueObject\Identifier\RoutineIdentifier;
 
@@ -23,6 +24,7 @@ final class Routine
         private readonly AccountIdentifier $accountIdentifier,
         private readonly ?RoutineExecutionMinutes $routineExecutionMinutes,
         private readonly ?RoutineTagIdentifiers $routineTagIdentifiers,
+        private readonly ?RoutineVideoUrl $videoUrl,
     ) {}
 
     public static function create(
@@ -34,6 +36,7 @@ final class Routine
         AccountIdentifier $accountIdentifier,
         ?RoutineExecutionMinutes $routineExecutionMinutes,
         ?RoutineTagIdentifiers $routineTagIdentifiers,
+        ?RoutineVideoUrl $videoUrl = null,
     ): self {
         return new self(
             routineIdentifier: $routineIdentifier,
@@ -44,6 +47,7 @@ final class Routine
             accountIdentifier: $accountIdentifier,
             routineExecutionMinutes: $routineExecutionMinutes,
             routineTagIdentifiers: $routineTagIdentifiers,
+            videoUrl: $videoUrl,
         );
     }
 
@@ -85,5 +89,10 @@ final class Routine
     public function routineTagIdentifiers(): ?RoutineTagIdentifiers
     {
         return $this->routineTagIdentifiers;
+    }
+
+    public function videoUrl(): ?RoutineVideoUrl
+    {
+        return $this->videoUrl;
     }
 }

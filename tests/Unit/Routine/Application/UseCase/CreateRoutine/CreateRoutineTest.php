@@ -26,6 +26,7 @@ use Src\Routine\Domain\ValueObject\RoutineExecutionMinutes;
 use Src\Routine\Domain\ValueObject\RoutineMemo;
 use Src\Routine\Domain\ValueObject\RoutineName;
 use Src\Routine\Domain\ValueObject\RoutineTagIdentifiers;
+use Src\Routine\Domain\ValueObject\RoutineVideoUrl;
 use Src\Shared\Application\Service\UuidServiceInterface;
 use Src\Shared\Application\Transaction\TransactionManagerInterface;
 use Src\Shared\Domain\Factory\PostFactoryInterface;
@@ -143,6 +144,7 @@ final class CreateRoutineTest extends TestCase
                     AccountIdentifier $accountIdentifier,
                     ?RoutineExecutionMinutes $routineExecutionMinutes,
                     ?RoutineTagIdentifiers $routineTagIdentifiers,
+                    ?RoutineVideoUrl $videoUrl = null,
                 ): Routine {
                     $this->creationOrder[] = 'routine';
 
@@ -155,6 +157,7 @@ final class CreateRoutineTest extends TestCase
                         $accountIdentifier,
                         $routineExecutionMinutes,
                         $routineTagIdentifiers,
+                        $videoUrl,
                     );
                 }
             },
@@ -171,6 +174,7 @@ final class CreateRoutineTest extends TestCase
                     RoutineActionName $routineActionName,
                     ?RoutineActionMemo $routineActionMemo,
                     ?RoutineActionMinutes $routineActionMinutes,
+                    ?RoutineVideoUrl $videoUrl = null,
                 ): RoutineAction {
                     $this->creationOrder[] = 'action';
 
@@ -181,6 +185,7 @@ final class CreateRoutineTest extends TestCase
                         $routineActionName,
                         $routineActionMemo,
                         $routineActionMinutes,
+                        $videoUrl,
                     );
                 }
             },

@@ -6,7 +6,9 @@ namespace Tests\Feature\Routine\Presentation;
 
 use App\Models\TagModel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
 final class CreateRoutineActionTest extends TestCase
@@ -26,6 +28,7 @@ final class CreateRoutineActionTest extends TestCase
         ])->postJson('/api/routines', [
             'account_identifier' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
             'routine_name' => '朝の集中ルーティン',
+            'video_url' => 'https://example.com/video',
             'routine_memo' => '仕事前に集中力を高める',
             'routine_execution_minutes' => 40,
             'tag_identifiers' => [
@@ -47,6 +50,7 @@ final class CreateRoutineActionTest extends TestCase
         $response->assertCreated();
         $this->assertDatabaseHas('routines', [
             'routine_name' => '朝の集中ルーティン',
+            'video_url' => 'https://example.com/video',
             'account_identifier' => '3b5581e9-16df-4879-b7d2-5d88dca6ab87',
         ]);
         $this->assertDatabaseMissing('routines', [
@@ -73,6 +77,7 @@ final class CreateRoutineActionTest extends TestCase
             'routine_identifier' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
             'account_identifier' => '3b5581e9-16df-4879-b7d2-5d88dca6ab87',
             'routine_name' => '元ルーティン',
+            'video_url' => 'https://example.com/parent',
             'available' => true,
             'created_at' => now(),
             'updated_at' => now(),
@@ -91,7 +96,60 @@ final class CreateRoutineActionTest extends TestCase
         $this->assertDatabaseHas('routines', [
             'parent_routine_identifier' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
             'routine_name' => 'カスタマイズ版',
+            'video_url' => null,
         ]);
+    }
+
+    public function test_invalid_video_urls_are_rejected_before_creating_any_records(): void
+    {
+        $this->insertActiveAccount();
+        foreach (['', '0', 0, 'javascript:alert(1)', 'https://127.0.0.999/', 'https://999.999.999.999/', 'https://1.2.3.08/', 'https://999999999999/', 'https://1.16777216/', 'https://example.com/'.str_repeat('a', 2030)] as $invalid) {
+            $this->withSession(['account_identifier' => '3b5581e9-16df-4879-b7d2-5d88dca6ab87'])->postJson('/api/routines', [
+                'routine_name' => 'routine',
+                'routine_actions' => [['routine_action_name' => 'action']],
+                'video_url' => $invalid,
+            ])->assertUnprocessable();
+        }
+        $this->assertDatabaseCount('routines', 0);
+        $this->assertDatabaseCount('routine_actions', 0);
+        $this->assertDatabaseCount('posts', 0);
+    }
+
+    public function test_creation_preserves_browser_valid_numeric_hosts(): void
+    {
+        $this->insertActiveAccount();
+        foreach (['http://127.1/video', 'https://0x7f.1/video', 'https://0177.0.0.1/video', 'http://[::1]/video', 'https://例え.テスト/動画'] as $url) {
+            $this->withSession(['account_identifier' => '3b5581e9-16df-4879-b7d2-5d88dca6ab87'])->postJson('/api/routines', [
+                'routine_name' => 'routine',
+                'routine_actions' => [['routine_action_name' => 'action']],
+                'video_url' => $url,
+            ])->assertCreated();
+            $this->assertDatabaseHas('routines', ['video_url' => $url]);
+        }
+    }
+
+    public function test_video_validation_does_not_change_other_field_normalization(): void
+    {
+        $this->insertActiveAccount();
+        $this->withSession(['account_identifier' => '3b5581e9-16df-4879-b7d2-5d88dca6ab87'])->postJson('/api/routines', [
+            'routine_name' => ' routine ',
+            'routine_memo' => '',
+            'routine_actions' => [['routine_action_name' => ' action ']],
+            'video_url' => '',
+        ])->assertUnprocessable()->assertJsonValidationErrors(['video_url'])->assertJsonMissingValidationErrors(['routine_name', 'routine_memo', 'routine_actions.0.routine_action_name']);
+        $this->withSession(['account_identifier' => '3b5581e9-16df-4879-b7d2-5d88dca6ab87'])->postJson('/api/routines', [
+            'routine_name' => ' routine ',
+            'routine_memo' => '',
+            'routine_actions' => [['routine_action_name' => ' action ']],
+            'video_url' => 'https://例え.テスト/動画',
+        ])->assertCreated();
+        $this->assertDatabaseHas('routines', ['routine_name' => 'routine', 'routine_memo' => null, 'video_url' => 'https://例え.テスト/動画']);
+    }
+
+    public function test_unrelated_routes_keep_default_video_field_normalization(): void
+    {
+        Route::post('/unrelated-normalization', static fn (Request $request) => response()->json($request->all()));
+        $this->postJson('/unrelated-normalization', ['video_url' => '  value  '])->assertOk()->assertJsonPath('video_url', 'value');
     }
 
     private function insertActiveAccount(): void

@@ -46,6 +46,7 @@ final readonly class CreateRoutine implements CreateRoutineInterface
             $input->accountIdentifier(),
             $input->routineExecutionMinutes(),
             $input->routineTagIdentifiers(),
+            $input->videoUrl(),
         );
         $post = $this->postFactory->createRoutinePost($routineIdentifier);
 
@@ -80,6 +81,7 @@ final readonly class CreateRoutine implements CreateRoutineInterface
                 $routineActionInput->routineActionName(),
                 $routineActionInput->routineActionMemo(),
                 $routineActionInput->routineActionMinutes(),
+                $routineActionInput->videoUrl(),
             );
         }
 

@@ -8,6 +8,7 @@ use Src\Routine\Domain\ValueObject\RoutineExecutionMinutes;
 use Src\Routine\Domain\ValueObject\RoutineMemo;
 use Src\Routine\Domain\ValueObject\RoutineName;
 use Src\Routine\Domain\ValueObject\RoutineTagIdentifiers;
+use Src\Routine\Domain\ValueObject\RoutineVideoUrl;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Src\Shared\Domain\ValueObject\Identifier\RoutineIdentifier;
 
@@ -22,6 +23,7 @@ final readonly class CreateRoutineInput implements CreateRoutineInputPort
         private ?RoutineMemo $routineMemo,
         private ?RoutineExecutionMinutes $routineExecutionMinutes,
         private ?RoutineTagIdentifiers $routineTagIdentifiers,
+        private ?RoutineVideoUrl $videoUrl = null,
     ) {}
 
     public function accountIdentifier(): AccountIdentifier
@@ -57,5 +59,10 @@ final readonly class CreateRoutineInput implements CreateRoutineInputPort
     public function routineTagIdentifiers(): ?RoutineTagIdentifiers
     {
         return $this->routineTagIdentifiers;
+    }
+
+    public function videoUrl(): ?RoutineVideoUrl
+    {
+        return $this->videoUrl;
     }
 }

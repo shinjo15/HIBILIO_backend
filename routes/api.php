@@ -83,6 +83,7 @@ Route::middleware('web')->group(static function (): void {
     Route::post('/registration-passcodes', GenerateRegistrationPasscodeAction::class)->middleware('throttle:passcode-send');
     Route::post('/registration-passcodes/verification', VerifyRegistrationPasscodeAction::class);
     Route::post('/routines', CreateRoutineAction::class);
+
     Route::get('/routines/search', SearchRoutinesAction::class);
     Route::get('/routines/{routine_identifier}/customized', GetCustomizedRoutinesAction::class);
     Route::get('/routines/{routine_identifier}/execution-posts', GetRoutineExecutionPostsAction::class);

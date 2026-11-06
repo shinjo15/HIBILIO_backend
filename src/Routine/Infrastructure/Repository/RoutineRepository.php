@@ -18,6 +18,7 @@ final class RoutineRepository implements RoutineRepositoryInterface
             'parent_routine_identifier' => $routine->parentRoutineIdentifier()?->value(),
             'routine_name' => $routine->routineName()->value(),
             'routine_memo' => $routine->routineMemo()?->value(),
+            'video_url' => $routine->videoUrl()?->value(),
             'account_identifier' => $routine->accountIdentifier()->value(),
             'routine_execution_minutes' => $routine->routineExecutionMinutes()?->value(),
             'available' => true,

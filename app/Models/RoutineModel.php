@@ -22,6 +22,7 @@ final class RoutineModel extends Model
         'parent_routine_identifier',
         'routine_name',
         'routine_memo',
+        'video_url',
         'account_identifier',
         'routine_execution_minutes',
         'available',

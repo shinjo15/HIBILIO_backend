@@ -324,6 +324,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(PostFactoryInterface::class, PostFactory::class);
         $this->app->bind(PostRepositoryInterface::class, PostRepository::class);
         $this->app->bind(CreateRoutineInterface::class, CreateRoutine::class);
+
         $this->app->bind(GetCustomizedRoutinesInterface::class, GetCustomizedRoutines::class);
         $this->app->bind(GetRoutineDetailsInterface::class, GetRoutineDetails::class);
         $this->app->bind(GetRoutineExecutionPostsInterface::class, GetRoutineExecutionPosts::class);
