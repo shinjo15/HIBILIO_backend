@@ -22,15 +22,24 @@ final class GetRoutineExecutionDetails implements GetRoutineExecutionDetailsInte
 
     public function execute(GetRoutineExecutionDetailsInputPort $input): GetRoutineExecutionDetailsOutputPort
     {
+        $representativePost = DB::table('posts as candidates')
+            ->select('candidates.post_identifier')
+            ->whereColumn('candidates.routine_execution_identifier', 'routine_executions.routine_execution_identifier')
+            ->whereColumn('candidates.routine_identifier', 'routine_executions.routine_identifier')
+            ->where('candidates.post_category', 'action')
+            ->where('candidates.available', true)
+            ->orderByRaw('case when candidates.created_at is null then 1 else 0 end')
+            ->orderBy('candidates.created_at')
+            ->orderBy('candidates.post_identifier')
+            ->limit(1);
+
         $query = DB::table('routine_executions')
-            ->join('posts', 'routine_executions.routine_execution_identifier', '=', 'posts.routine_execution_identifier')
+            ->leftJoin('posts', fn ($join) => $join->where('posts.post_identifier', '=', $representativePost))
             ->join('routines', 'routine_executions.routine_identifier', '=', 'routines.routine_identifier')
             ->join('accounts', 'routine_executions.executor_account_identifier', '=', 'accounts.account_identifier')
             ->join('accounts as routine_authors', 'routines.account_identifier', '=', 'routine_authors.account_identifier')
             ->where('routine_executions.routine_execution_identifier', $input->routineExecutionIdentifier())
-            ->whereColumn('posts.routine_identifier', 'routine_executions.routine_identifier')
-            ->where('posts.post_category', 'action')
-            ->where('posts.available', true)
+
             ->where('routines.available', true)
             ->where('accounts.available', true)
             ->where('accounts.status', 'active')
@@ -45,9 +54,24 @@ final class GetRoutineExecutionDetails implements GetRoutineExecutionDetailsInte
                 'routines.routine_memo',
                 'accounts.account_identifier',
                 'accounts.account_name',
+                'posts.post_identifier',
                 'posts.created_at as posted_at',
                 'posts.post_support_count',
             ]);
+
+        $query->where(function ($visibility) use ($input): void {
+            if ($input->accountIdentifier() !== null) {
+                $visibility->where('routine_executions.executor_account_identifier', $input->accountIdentifier());
+            }
+
+            $visibility->orWhereNotNull('posts.post_identifier')
+                ->orWhereNotExists(function ($posts): void {
+                    $posts->selectRaw('1')->from('posts as matching_posts')
+                        ->whereColumn('matching_posts.routine_execution_identifier', 'routine_executions.routine_execution_identifier')
+                        ->whereColumn('matching_posts.routine_identifier', 'routine_executions.routine_identifier')
+                        ->where('matching_posts.post_category', 'action');
+                });
+        });
 
         if ($input->accountIdentifier() !== null) {
             BlockVisibility::exclude($query, $input->accountIdentifier(), 'accounts.account_identifier');
@@ -74,9 +98,9 @@ final class GetRoutineExecutionDetails implements GetRoutineExecutionDetailsInte
             'iconImageUrl' => $this->accountImageUrlService->iconImageUrl(new AccountIdentifier((string) $details->account_identifier)),
             'routineExecutionMemo' => $details->routine_execution_memo === null ? null : (string) $details->routine_execution_memo,
             'executedAt' => (new DateTimeImmutable((string) $details->executed_at))->format(DATE_ATOM),
-            'postedAt' => (new DateTimeImmutable((string) $details->posted_at))->format(DATE_ATOM),
-            'supportCount' => (int) $details->post_support_count,
-            'supported' => (bool) $details->supported,
+            'postedAt' => $details->posted_at === null ? null : (new DateTimeImmutable((string) $details->posted_at))->format(DATE_ATOM),
+            'supportCount' => $details->post_identifier === null ? null : (int) $details->post_support_count,
+            'supported' => $details->post_identifier === null ? null : (bool) $details->supported,
             'tags' => $this->tags((string) $details->routine_identifier),
             'routineExecutionActions' => $this->actions((string) $details->routine_execution_identifier),
         ]);
