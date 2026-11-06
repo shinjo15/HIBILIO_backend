@@ -1,0 +1,205 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Feature\Account\Presentation;
+
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Src\Account\Application\Service\AccountImageUrlServiceInterface;
+use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
+use Tests\TestCase;
+
+final class GetMyRoutinesActionTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_returns_own_routine_without_a_post(): void
+    {
+        $account = '11111111-1111-4111-8111-111111111111';
+        $routine = '22222222-2222-4222-8222-222222222222';
+        DB::table('accounts')->insert(['account_identifier' => $account, 'account_name' => 'Owner', 'email_address' => 'owner@example.com', 'available' => true, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('routines')->insert(['routine_identifier' => $routine, 'account_identifier' => $account, 'routine_name' => 'Routine', 'available' => true, 'created_at' => now(), 'updated_at' => now()]);
+
+        $this->withSession(['account_identifier' => $account])->getJson('/api/my/routines')
+            ->assertOk()->assertJsonPath('total', 1)->assertJsonPath('items.0.routine_identifier', $routine)
+            ->assertJsonPath('items.0.post_identifier', null)->assertJsonPath('items.0.posted_at', null)
+            ->assertJsonPath('items.0.post_like_count', null)->assertJsonPath('items.0.post_support_count', null)
+            ->assertJsonPath('items.0.liked', null);
+    }
+
+    public function test_posted_routine_matches_my_posts_response(): void
+    {
+        $account = '11111111-1111-4111-8111-111111111111';
+        $routine = '22222222-2222-4222-8222-222222222222';
+        $post = '33333333-3333-4333-8333-333333333333';
+        DB::table('accounts')->insert(['account_identifier' => $account, 'account_name' => 'Owner', 'email_address' => 'owner@example.com', 'visibility' => 'private', 'available' => true, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('routines')->insert(['routine_identifier' => $routine, 'account_identifier' => $account, 'routine_name' => 'Routine', 'routine_execution_minutes' => 15, 'available' => true, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('posts')->insert(['post_identifier' => $post, 'routine_identifier' => $routine, 'post_category' => 'routine', 'post_like_count' => 3, 'post_support_count' => 4, 'available' => true, 'created_at' => '2026-09-09 10:00:00', 'updated_at' => now()]);
+        DB::table('likes')->insert(['account_identifier' => $account, 'post_identifier' => $post, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('tags')->insert(['tag_identifier' => '44444444-4444-4444-8444-444444444444', 'tag_name' => 'Tag', 'available' => true, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('routine_tags')->insert(['routine_identifier' => $routine, 'tag_identifier' => '44444444-4444-4444-8444-444444444444', 'available' => true, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('routine_actions')->insert(['routine_action_identifier' => '55555555-5555-4555-8555-555555555555', 'routine_identifier' => $routine, 'action_name' => 'Action', 'action_minutes' => 5, 'available' => true, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('posts')->insert(['post_identifier' => '66666666-6666-4666-8666-666666666666', 'routine_identifier' => $routine, 'post_category' => 'action', 'available' => true, 'created_at' => now(), 'updated_at' => now()]);
+
+        $posts = $this->withSession(['account_identifier' => $account])->getJson('/api/my/posts')->assertOk()->json('items.0');
+        $routines = $this->withSession(['account_identifier' => $account])->getJson('/api/my/routines')->assertOk()->json('items.0');
+        self::assertSame($posts, $routines);
+        self::assertSame(1, $routines['execution_count']);
+        self::assertSame('Tag', $routines['tags'][0]['tag_name']);
+        self::assertSame('Action', $routines['routine_actions'][0]['action_name']);
+    }
+
+    public function test_paginates_own_available_routines_and_ignores_disabled_posts_and_other_owners(): void
+    {
+        $owner = '11111111-1111-4111-8111-111111111111';
+        $other = '22222222-2222-4222-8222-222222222222';
+        DB::table('accounts')->insert([
+            ['account_identifier' => $owner, 'account_name' => 'Owner', 'email_address' => 'owner@example.com', 'available' => true, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()],
+            ['account_identifier' => $other, 'account_name' => 'Other', 'email_address' => 'other@example.com', 'available' => true, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()],
+        ]);
+        $ids = ['33333333-3333-4333-8333-333333333333', '44444444-4444-4444-8444-444444444444', '55555555-5555-4555-8555-555555555555', '66666666-6666-4666-8666-666666666666'];
+        foreach ($ids as $index => $id) {
+            DB::table('routines')->insert(['routine_identifier' => $id, 'account_identifier' => $index === 2 ? $other : $owner, 'routine_name' => 'Routine', 'available' => $index !== 3, 'created_at' => '2026-09-0'.($index + 1).' 10:00:00', 'updated_at' => now()]);
+        }
+        DB::table('posts')->insert(['post_identifier' => '77777777-7777-4777-8777-777777777777', 'routine_identifier' => $ids[1], 'post_category' => 'routine', 'post_like_count' => 42, 'available' => false, 'created_at' => now(), 'updated_at' => now()]);
+        $this->withSession(['account_identifier' => $owner])->getJson('/api/my/routines?page=1&number_of_items_per_page=1')
+            ->assertOk()->assertJsonPath('total', 2)->assertJsonPath('items.0.routine_identifier', $ids[1])
+            ->assertJsonPath('items.0.post_identifier', null)->assertJsonPath('items.0.post_like_count', null)->assertJsonPath('items.0.liked', null);
+        $this->withSession(['account_identifier' => $owner])->getJson('/api/my/routines?page=2&number_of_items_per_page=1')
+            ->assertOk()->assertJsonPath('total', 2)->assertJsonPath('items.0.routine_identifier', $ids[0]);
+    }
+
+    public function test_requires_authentication(): void
+    {
+        $this->getJson('/api/my/routines')->assertUnauthorized();
+    }
+
+    public function test_posted_routines_follow_existing_post_pagination_order(): void
+    {
+        $owner = '11111111-1111-4111-8111-111111111111';
+        DB::table('accounts')->insert(['account_identifier' => $owner, 'account_name' => 'Owner', 'email_address' => 'owner@example.com', 'available' => true, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()]);
+        foreach ([1, 2] as $n) {
+            $routine = "00000000-0000-4000-8000-00000000000{$n}";
+            $post = "10000000-0000-4000-8000-00000000000{$n}";
+            DB::table('routines')->insert(['routine_identifier' => $routine, 'account_identifier' => $owner, 'routine_name' => 'Routine', 'available' => true, 'created_at' => "2026-09-0{$n} 10:00:00", 'updated_at' => now()]);
+            DB::table('posts')->insert(['post_identifier' => $post, 'routine_identifier' => $routine, 'post_category' => 'routine', 'available' => true, 'created_at' => '2026-09-0'.(3 - $n).' 10:00:00', 'updated_at' => now()]);
+        }
+        $posts = $this->withSession(['account_identifier' => $owner])->getJson('/api/my/posts?number_of_items_per_page=1')->assertOk()->json();
+        $routines = $this->withSession(['account_identifier' => $owner])->getJson('/api/my/routines?number_of_items_per_page=1')->assertOk()->json();
+        self::assertSame($posts, $routines);
+    }
+
+    public function test_hides_private_or_blocked_customization_origin(): void
+    {
+        $owner = '11111111-1111-4111-8111-111111111111';
+        $author = '22222222-2222-4222-8222-222222222222';
+        $parent = '33333333-3333-4333-8333-333333333333';
+        $child = '44444444-4444-4444-8444-444444444444';
+        DB::table('accounts')->insert([
+            ['account_identifier' => $owner, 'account_name' => 'Owner', 'email_address' => 'owner@example.com', 'visibility' => 'public', 'available' => true, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()],
+            ['account_identifier' => $author, 'account_name' => 'Author', 'email_address' => 'author@example.com', 'visibility' => 'private', 'available' => true, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()],
+        ]);
+        DB::table('routines')->insert(['routine_identifier' => $parent, 'account_identifier' => $author, 'routine_name' => 'Private', 'available' => true, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('routines')->insert(['routine_identifier' => $child, 'parent_routine_identifier' => $parent, 'account_identifier' => $owner, 'routine_name' => 'Child', 'available' => true, 'created_at' => now(), 'updated_at' => now()]);
+        $this->withSession(['account_identifier' => $owner])->getJson('/api/my/routines')->assertOk()->assertJsonPath('items.0.customization_origin', null);
+        DB::table('accounts')->where('account_identifier', $author)->update(['visibility' => 'public']);
+        $this->withSession(['account_identifier' => $owner])->getJson('/api/my/routines')->assertOk()->assertJsonPath('items.0.customization_origin.routine_identifier', $parent);
+        DB::table('blocks')->insert(['blocking_account_identifier' => $author, 'blocked_account_identifier' => $owner, 'created_at' => now(), 'updated_at' => now()]);
+        $this->withSession(['account_identifier' => $owner])->getJson('/api/my/routines')->assertOk()->assertJsonPath('items.0.customization_origin', null);
+    }
+
+    public function test_query_count_does_not_grow_with_routine_count(): void
+    {
+        $owner = '11111111-1111-4111-8111-111111111111';
+        DB::table('accounts')->insert(['account_identifier' => $owner, 'account_name' => 'Owner', 'email_address' => 'owner@example.com', 'available' => true, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()]);
+        foreach (range(1, 10) as $number) {
+            $routine = sprintf('00000000-0000-4000-8000-%012d', $number);
+            $post = sprintf('10000000-0000-4000-8000-%012d', $number);
+            DB::table('routines')->insert(['routine_identifier' => $routine, 'account_identifier' => $owner, 'routine_name' => 'Routine', 'available' => true, 'created_at' => now(), 'updated_at' => now()]);
+            DB::table('posts')->insert(['post_identifier' => $post, 'routine_identifier' => $routine, 'post_category' => 'routine', 'available' => true, 'created_at' => now(), 'updated_at' => now()]);
+        }
+        DB::enableQueryLog();
+        DB::flushQueryLog();
+        $this->withSession(['account_identifier' => $owner])->getJson('/api/my/routines?number_of_items_per_page=1')->assertOk();
+        $one = count(DB::getQueryLog());
+        DB::flushQueryLog();
+        $this->withSession(['account_identifier' => $owner])->getJson('/api/my/routines?number_of_items_per_page=10')->assertOk();
+        self::assertSame($one, count(DB::getQueryLog()));
+        DB::disableQueryLog();
+    }
+
+    public function test_selects_first_available_post_and_stably_paginates_null_timestamps(): void
+    {
+        $owner = '11111111-1111-4111-8111-111111111111';
+        DB::table('accounts')->insert(['account_identifier' => $owner, 'account_name' => 'Owner', 'email_address' => 'owner@example.com', 'available' => true, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()]);
+        foreach (range(1, 4) as $number) {
+            DB::table('routines')->insert(['routine_identifier' => sprintf('00000000-0000-4000-8000-%012d', $number), 'account_identifier' => $owner, 'routine_name' => 'Routine', 'available' => true, 'created_at' => $number === 4 ? null : '2026-09-05 10:00:00', 'updated_at' => now()]);
+        }
+        $first = '10000000-0000-4000-8000-000000000001';
+        foreach ([
+            [$first, 1, '2026-09-01 10:00:00', true, 7],
+            ['10000000-0000-4000-8000-000000000002', 1, '2026-09-01 10:00:00', true, 8],
+            ['10000000-0000-4000-8000-000000000003', 1, '2026-09-02 10:00:00', true, 9],
+            ['10000000-0000-4000-8000-000000000004', 1, null, true, 10],
+            ['10000000-0000-4000-8000-000000000005', 1, '2026-08-01 10:00:00', false, 11],
+            ['10000000-0000-4000-8000-000000000006', 2, null, true, 12],
+        ] as [$post, $number, $createdAt, $available, $likes]) {
+            DB::table('posts')->insert(['post_identifier' => $post, 'routine_identifier' => sprintf('00000000-0000-4000-8000-%012d', $number), 'post_category' => 'routine', 'post_like_count' => $likes, 'available' => $available, 'created_at' => $createdAt, 'updated_at' => now()]);
+        }
+        $items = [];
+        DB::enableQueryLog();
+        DB::flushQueryLog();
+        foreach (range(1, 4) as $page) {
+            $response = $this->withSession(['account_identifier' => $owner])->getJson("/api/my/routines?page={$page}&number_of_items_per_page=1")->assertOk()->assertJsonPath('total', 4);
+            $items[] = $response->json('items.0');
+        }
+        self::assertSame(['00000000-0000-4000-8000-000000000002', '00000000-0000-4000-8000-000000000003', '00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000004'], array_column($items, 'routine_identifier'));
+        self::assertSame($first, $items[2]['post_identifier']);
+        self::assertSame(7, $items[2]['post_like_count']);
+        self::assertNull($items[0]['posted_at']);
+        self::assertNull($items[1]['post_identifier']);
+        self::assertNull($items[3]['post_identifier']);
+        $postFetches = array_filter(DB::getQueryLog(), static fn (array $query): bool => str_contains(strtolower($query['query']), 'from "posts"') && str_contains(strtolower($query['query']), ' in ('));
+        $fetchedIdentifiers = array_merge(...array_column($postFetches, 'bindings'));
+        self::assertContains($first, $fetchedIdentifiers);
+        self::assertNotContains('10000000-0000-4000-8000-000000000002', $fetchedIdentifiers);
+        self::assertNotContains('10000000-0000-4000-8000-000000000003', $fetchedIdentifiers);
+        DB::disableQueryLog();
+    }
+
+    public function test_resolves_each_visible_parent_author_image_only_once_per_request(): void
+    {
+        $owner = '11111111-1111-4111-8111-111111111111';
+        $author = '22222222-2222-4222-8222-222222222222';
+        DB::table('accounts')->insert([
+            ['account_identifier' => $owner, 'account_name' => 'Owner', 'email_address' => 'owner@example.com', 'available' => true, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()],
+            ['account_identifier' => $author, 'account_name' => 'Author', 'email_address' => 'author@example.com', 'available' => true, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()],
+        ]);
+        foreach (range(1, 3) as $number) {
+            $parent = sprintf('30000000-0000-4000-8000-%012d', $number);
+            DB::table('routines')->insert(['routine_identifier' => $parent, 'account_identifier' => $author, 'routine_name' => 'Parent', 'available' => true, 'created_at' => now(), 'updated_at' => now()]);
+            DB::table('routines')->insert(['routine_identifier' => sprintf('40000000-0000-4000-8000-%012d', $number), 'parent_routine_identifier' => $parent, 'account_identifier' => $owner, 'routine_name' => 'Child', 'available' => true, 'created_at' => now(), 'updated_at' => now()]);
+        }
+        $images = new class implements AccountImageUrlServiceInterface
+        {
+            public array $calls = [];
+
+            public function iconImageUrl(AccountIdentifier $accountIdentifier): ?string
+            {
+                $this->calls[] = $accountIdentifier->value();
+
+                return null;
+            }
+
+            public function headerImageUrl(AccountIdentifier $accountIdentifier): ?string
+            {
+                return null;
+            }
+        };
+        $this->app->instance(AccountImageUrlServiceInterface::class, $images);
+        $this->withSession(['account_identifier' => $owner])->getJson('/api/my/routines')->assertOk()->assertJsonPath('total', 3);
+        self::assertCount(2, $images->calls);
+        self::assertEqualsCanonicalizing([$owner, $author], $images->calls);
+    }
+}

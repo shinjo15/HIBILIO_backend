@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 final class RoutineModel extends Model
 {
@@ -45,5 +47,30 @@ final class RoutineModel extends Model
             'routine_identifier',
             'tag_identifier',
         )->withPivot('available')->withTimestamps();
+    }
+
+    public function account(): BelongsTo
+    {
+        return $this->belongsTo(AccountModel::class, 'account_identifier', 'account_identifier');
+    }
+
+    public function parentRoutine(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'parent_routine_identifier', 'routine_identifier');
+    }
+
+    public function actions(): HasMany
+    {
+        return $this->hasMany(RoutineActionModel::class, 'routine_identifier', 'routine_identifier');
+    }
+
+    public function posts(): HasMany
+    {
+        return $this->hasMany(PostModel::class, 'routine_identifier', 'routine_identifier');
+    }
+
+    public function customizations(): HasMany
+    {
+        return $this->hasMany(self::class, 'parent_routine_identifier', 'routine_identifier');
     }
 }
