@@ -72,7 +72,7 @@ final class GetRoutineExecutionDetailsActionTest extends TestCase
             ]);
     }
 
-    public function test_returns_not_found_for_unknown_or_non_public_routine_execution_posts(): void
+    public function test_returns_not_found_for_unknown_or_unavailable_routine_or_executor(): void
     {
         $activeAccountIdentifier = '11111111-1111-4111-8111-111111111111';
         $inactiveAccountIdentifier = '22222222-2222-4222-8222-222222222222';
@@ -93,7 +93,13 @@ final class GetRoutineExecutionDetailsActionTest extends TestCase
         $this->executionPost('66666666-6666-4666-8666-666666666663', 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', $inactiveExecutorExecutionIdentifier, '2026-09-02 10:00:00', 0);
 
         $this->getJson('/api/routine-executions/99999999-9999-4999-8999-999999999999')->assertNotFound();
-        $this->getJson("/api/routine-executions/{$unavailablePostExecutionIdentifier}")->assertNotFound();
+        $this->withSession(['account_identifier' => $activeAccountIdentifier])
+            ->getJson('/api/my/routine-executions')->assertOk()->assertJsonPath('total', 1)
+            ->assertJsonPath('items.0.routine_execution_identifier', $unavailablePostExecutionIdentifier)
+            ->assertJsonPath('items.0.support_count', null);
+        $this->flushSession()->getJson("/api/routine-executions/{$unavailablePostExecutionIdentifier}")->assertNotFound();
+        $this->withSession(['account_identifier' => $activeAccountIdentifier])->getJson("/api/routine-executions/{$unavailablePostExecutionIdentifier}")->assertOk()
+            ->assertJsonPath('posted_at', null)->assertJsonPath('support_count', null)->assertJsonPath('supported', null);
         $this->getJson("/api/routine-executions/{$unavailableRoutineExecutionIdentifier}")->assertNotFound();
         $this->getJson("/api/routine-executions/{$inactiveExecutorExecutionIdentifier}")->assertNotFound();
     }
@@ -155,6 +161,142 @@ final class GetRoutineExecutionDetailsActionTest extends TestCase
         $this->withSession(['account_identifier' => $followerIdentifier])
             ->getJson("/api/routine-executions/{$executionIdentifier}")
             ->assertOk();
+    }
+
+    public function test_unposted_execution_in_both_lists_has_matching_details(): void
+    {
+        $executor = '11111111-1111-4111-8111-111111111111';
+        $routine = '22222222-2222-4222-8222-222222222222';
+        $execution = '33333333-3333-4333-8333-333333333333';
+        $this->account($executor, '実行者');
+        $this->routine($routine, $executor, '朝活', 'メモ');
+        $this->routineExecution($execution, $routine, $executor, '2026-09-02 09:00:00', '実行メモ');
+
+        foreach (["/api/accounts/{$executor}/routine-executions", '/api/my/routine-executions'] as $url) {
+            $item = $this->withSession(['account_identifier' => $executor])->getJson($url)
+                ->assertOk()->assertJsonPath('total', 1)->json('items.0');
+            $details = $this->withSession(['account_identifier' => $executor])
+                ->getJson('/api/routine-executions/'.$item['routine_execution_identifier'])
+                ->assertOk()->assertJsonPath('routine_identifier', $routine)
+                ->assertJsonPath('routine_memo', 'メモ')->assertJsonPath('executed_at', '2026-09-02T09:00:00+00:00')
+                ->assertJsonPath('tags', [])->assertJsonPath('routine_execution_actions', [])->json();
+            foreach (['posted_at', 'support_count', 'supported', 'routine_execution_memo'] as $key) {
+                self::assertSame($item[$key], $details[$key]);
+            }
+        }
+    }
+
+    public function test_unposted_execution_respects_executor_and_author_privacy_and_blocks(): void
+    {
+        $author = '11111111-1111-4111-8111-111111111111';
+        $executor = '22222222-2222-4222-8222-222222222222';
+        $viewer = '33333333-3333-4333-8333-333333333333';
+        $routine = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+        $execution = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+        $this->account($author, '作者', 'active', 'private');
+        $this->account($executor, '実行者', 'active', 'private');
+        $this->account($viewer, '閲覧者');
+        $this->routine($routine, $author, 'ルーティン', null);
+        $this->routineExecution($execution, $routine, $executor, '2026-09-02 09:00:00', null);
+        $url = "/api/routine-executions/{$execution}";
+        $this->getJson($url)->assertNotFound();
+        $this->withSession(['account_identifier' => $viewer])->getJson($url)->assertNotFound();
+        DB::table('follows')->insert(['following_account_identifier' => $viewer, 'followed_account_identifier' => $executor]);
+        $this->withSession(['account_identifier' => $viewer])->getJson($url)->assertNotFound();
+        DB::table('follows')->insert(['following_account_identifier' => $viewer, 'followed_account_identifier' => $author]);
+        $this->withSession(['account_identifier' => $viewer])->getJson($url)->assertOk()->assertJsonPath('supported', null);
+        DB::table('blocks')->insert(['blocking_account_identifier' => $author, 'blocked_account_identifier' => $viewer]);
+        $this->withSession(['account_identifier' => $viewer])->getJson($url)->assertNotFound();
+        DB::table('blocks')->delete();
+        DB::table('blocks')->insert(['blocking_account_identifier' => $viewer, 'blocked_account_identifier' => $executor]);
+        $this->withSession(['account_identifier' => $viewer])->getJson($url)->assertNotFound();
+    }
+
+    public function test_multiple_posts_choose_same_oldest_post_as_list(): void
+    {
+        $executor = '11111111-1111-4111-8111-111111111111';
+        $routine = '22222222-2222-4222-8222-222222222222';
+        $execution = '33333333-3333-4333-8333-333333333333';
+        $this->account($executor, '実行者');
+        $this->routine($routine, $executor, '朝活', null);
+        $this->routineExecution($execution, $routine, $executor, '2026-09-02 09:00:00', null);
+        $this->executionPost('44444444-4444-4444-8444-444444444442', $routine, $execution, '2026-09-03 10:00:00', 2);
+        $this->executionPost('44444444-4444-4444-8444-444444444441', $routine, $execution, '2026-09-03 10:00:00', 1);
+        $this->executionPost('44444444-4444-4444-8444-444444444443', $routine, $execution, '2026-09-01 10:00:00', 3, false);
+        $this->executionPost('44444444-4444-4444-8444-444444444440', $routine, $execution, '2026-09-01 10:00:00', 4);
+        DB::table('posts')->where('post_identifier', '44444444-4444-4444-8444-444444444440')->update(['created_at' => null]);
+        DB::table('supports')->insert(['account_identifier' => $executor, 'post_identifier' => '44444444-4444-4444-8444-444444444441']);
+        $item = $this->withSession(['account_identifier' => $executor])->getJson('/api/my/routine-executions')->assertOk()->json('items.0');
+        $details = $this->withSession(['account_identifier' => $executor])->getJson("/api/routine-executions/{$execution}")->assertOk()->json();
+        self::assertSame(1, $details['support_count']);
+        self::assertTrue($details['supported']);
+        foreach (['posted_at', 'support_count', 'supported'] as $key) {
+            self::assertSame($item[$key], $details[$key]);
+        }
+    }
+
+    public function test_unavailable_posts_are_private_to_executor_without_affecting_unposted_or_mixed_executions(): void
+    {
+        $executor = '11111111-1111-4111-8111-111111111111';
+        $viewer = '22222222-2222-4222-8222-222222222222';
+        $routine = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+        $hidden = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb1';
+        $unposted = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb2';
+        $mixed = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb3';
+        $this->account($executor, '実行者');
+        $this->account($viewer, '閲覧者');
+        $this->routine($routine, $executor, '朝活', null);
+        $this->routineExecution($hidden, $routine, $executor, '2026-09-04 09:00:00', '秘密のメモ');
+        $this->routineExecution($unposted, $routine, $executor, '2026-09-03 09:00:00', '未投稿メモ');
+        $this->routineExecution($mixed, $routine, $executor, '2026-09-02 09:00:00', '公開メモ');
+        $this->executionPost('cccccccc-cccc-4ccc-8ccc-ccccccccccc1', $routine, $hidden, '2026-09-04 10:00:00', 9, false);
+        $this->executionPost('cccccccc-cccc-4ccc-8ccc-ccccccccccc2', $routine, $mixed, '2026-09-01 10:00:00', 8, false);
+        $this->executionPost('cccccccc-cccc-4ccc-8ccc-ccccccccccc3', $routine, $mixed, '2026-09-02 10:00:00', 3);
+        $list = "/api/accounts/{$executor}/routine-executions";
+
+        foreach ([null, $viewer] as $identity) {
+            $this->flushSession();
+            if ($identity !== null) {
+                $this->withSession(['account_identifier' => $identity]);
+            }
+            $this->getJson("/api/routine-executions/{$hidden}")->assertNotFound()->assertDontSee('秘密のメモ');
+            $this->getJson("/api/routine-executions/{$unposted}")->assertOk()
+                ->assertJsonPath('posted_at', null)->assertJsonPath('support_count', null)->assertJsonPath('supported', null);
+            $this->getJson("/api/routine-executions/{$mixed}")->assertOk()->assertJsonPath('support_count', 3);
+            $first = $this->getJson("{$list}?page=1&number_of_items_per_page=1")->assertOk()
+                ->assertJsonPath('total', 2)->assertDontSee('秘密のメモ')->json('items.0');
+            $second = $this->getJson("{$list}?page=2&number_of_items_per_page=1")->assertOk()
+                ->assertJsonPath('total', 2)->assertDontSee('秘密のメモ')->json('items.0');
+            self::assertSame([$unposted, $mixed], [$first['routine_execution_identifier'], $second['routine_execution_identifier']]);
+            self::assertNull($first['posted_at']);
+            self::assertNull($first['support_count']);
+            self::assertNull($first['supported']);
+            self::assertSame(3, $second['support_count']);
+            $this->getJson("{$list}?page=3&number_of_items_per_page=1")->assertOk()->assertJsonPath('total', 2)->assertJsonPath('items', []);
+        }
+
+        $this->withSession(['account_identifier' => $executor]);
+        $this->getJson("/api/routine-executions/{$hidden}")->assertOk()->assertJsonPath('routine_execution_memo', '秘密のメモ')
+            ->assertJsonPath('posted_at', null)->assertJsonPath('support_count', null)->assertJsonPath('supported', null);
+        foreach ([$list, '/api/my/routine-executions'] as $url) {
+            $this->getJson("{$url}?page=1&number_of_items_per_page=1")->assertOk()->assertJsonPath('total', 3)
+                ->assertJsonPath('items.0.routine_execution_identifier', $hidden)->assertJsonPath('items.0.posted_at', null)
+                ->assertJsonPath('items.0.support_count', null)->assertJsonPath('items.0.supported', null);
+        }
+    }
+
+    public function test_inactive_author_remains_hidden_in_details_even_if_list_contains_execution(): void
+    {
+        $author = '11111111-1111-4111-8111-111111111111';
+        $executor = '22222222-2222-4222-8222-222222222222';
+        $routine = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+        $execution = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+        $this->account($author, '作者', 'temporarily_banned');
+        $this->account($executor, '実行者');
+        $this->routine($routine, $author, 'ルーティン', null);
+        $this->routineExecution($execution, $routine, $executor, '2026-09-02 09:00:00', null);
+        $this->withSession(['account_identifier' => $executor])->getJson('/api/my/routine-executions')->assertOk()->assertJsonPath('total', 1);
+        $this->withSession(['account_identifier' => $executor])->getJson("/api/routine-executions/{$execution}")->assertNotFound();
     }
 
     private function account(string $identifier, string $name, string $status = 'active', string $visibility = 'public'): void
