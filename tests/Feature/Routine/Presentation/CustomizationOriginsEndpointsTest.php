@@ -58,7 +58,7 @@ final class CustomizationOriginsEndpointsTest extends TestCase
             'following' => ['/api/following/posts', 'posts', self::VIEWER],
             'favorite' => ['/api/posts/favorite_tags', 'posts', self::VIEWER],
             'popular' => ['/api/posts/popular', 'posts', null],
-            'my posts' => ['/api/my/posts', 'items', self::AUTHOR],
+            'my routines' => ['/api/my/routines', 'items', self::AUTHOR],
             'account posts' => ['/api/accounts/'.self::AUTHOR.'/posts', 'items', null],
             'my likes' => ['/api/my/likes', 'items', self::AUTHOR],
             'account likes' => ['/api/accounts/'.self::VIEWER.'/likes', 'items', null],
@@ -98,7 +98,7 @@ final class CustomizationOriginsEndpointsTest extends TestCase
             'following' => ['/api/following/posts', 'posts', self::VIEWER],
             'favorite' => ['/api/posts/favorite_tags', 'posts', self::VIEWER],
             'popular' => ['/api/posts/popular', 'posts', self::VIEWER],
-            'my posts' => ['/api/my/posts', 'items', self::AUTHOR],
+            'my routines' => ['/api/my/routines', 'items', self::AUTHOR],
             'account posts' => ['/api/accounts/'.self::AUTHOR.'/posts', 'items', self::VIEWER],
             'my likes' => ['/api/my/likes', 'items', self::VIEWER],
             'account likes' => ['/api/accounts/'.self::AUTHOR.'/likes', 'items', self::VIEWER],
@@ -203,7 +203,7 @@ final class CustomizationOriginsEndpointsTest extends TestCase
         DB::table('follows')->insert(['following_account_identifier' => self::PARENT_AUTHOR, 'followed_account_identifier' => self::AUTHOR, 'created_at' => now(), 'updated_at' => now()]);
         DB::table('favorite_tags')->insert(['account_identifier' => self::PARENT_AUTHOR, 'tag_identifier' => self::TAG, 'created_at' => now(), 'updated_at' => now()]);
         DB::table('likes')->insert(['account_identifier' => self::PARENT_AUTHOR, 'post_identifier' => self::POST, 'created_at' => now(), 'updated_at' => now()]);
-        if ($url === '/api/my/posts') {
+        if ($url === '/api/my/routines') {
             DB::table('routines')->where('routine_identifier', self::CHILD)->update(['account_identifier' => self::PARENT_AUTHOR]);
         }
         self::assertSame(self::PARENT, $get(self::PARENT_AUTHOR)['customization_origin']['routine_identifier']);
@@ -212,7 +212,7 @@ final class CustomizationOriginsEndpointsTest extends TestCase
     #[DataProvider('allActionEndpoints')]
     public function test_each_action_treats_inactive_and_unavailable_session_as_anonymous(string $url, ?string $collection, string $viewer): void
     {
-        $requiresAuth = in_array($url, ['/api/my/posts', '/api/my/likes', '/api/following/posts', '/api/posts/favorite_tags'], true);
+        $requiresAuth = in_array($url, ['/api/my/routines', '/api/my/likes', '/api/following/posts', '/api/posts/favorite_tags'], true);
         DB::table('accounts')->where('account_identifier', self::PARENT_AUTHOR)->update(['visibility' => 'private']);
         foreach ([['available' => false], ['available' => true, 'status' => 'temporarily_banned']] as $state) {
             DB::table('accounts')->where('account_identifier', $viewer)->update($state);
@@ -232,7 +232,7 @@ final class CustomizationOriginsEndpointsTest extends TestCase
 
     public function test_authentication_required_lists_reject_anonymous_viewers(): void
     {
-        foreach (['/api/my/posts', '/api/my/likes', '/api/following/posts', '/api/posts/favorite_tags'] as $url) {
+        foreach (['/api/my/routines', '/api/my/likes', '/api/following/posts', '/api/posts/favorite_tags'] as $url) {
             $this->getJson($url)->assertUnauthorized();
         }
     }
