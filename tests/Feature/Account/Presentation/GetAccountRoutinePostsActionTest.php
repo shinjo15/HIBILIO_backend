@@ -16,7 +16,7 @@ final class GetAccountRoutinePostsActionTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_public_account_lists_each_post_not_unposted_routines_across_pages(): void
+    public function test_public_account_lists_one_available_post_per_routine_and_visible_unposted_routines(): void
     {
         $owner = '11111111-1111-4111-8111-111111111111';
         $posted = '22222222-2222-4222-8222-222222222222';
@@ -28,26 +28,53 @@ final class GetAccountRoutinePostsActionTest extends TestCase
         foreach ([['44444444-4444-4444-8444-444444444444', '2026-09-01 10:00:00', true, 'routine'], ['55555555-5555-4555-8555-555555555555', '2026-09-02 10:00:00', true, 'routine'], ['66666666-6666-4666-8666-666666666666', '2026-09-03 10:00:00', false, 'routine'], ['77777777-7777-4777-8777-777777777777', '2026-09-04 10:00:00', true, 'action']] as [$post, $created, $available, $category]) {
             DB::table('posts')->insert(['post_identifier' => $post, 'routine_identifier' => $posted, 'post_category' => $category, 'available' => $available, 'created_at' => $created, 'updated_at' => now()]);
         }
-        $items = [];
-        foreach ([1, 2] as $page) {
-            $items[] = $this->getJson("/api/accounts/{$owner}/posts?page={$page}&number_of_items_per_page=1")
-                ->assertOk()->assertJsonPath('total', 2)->assertJsonCount(1, 'items')->json('items.0');
-        }
-        self::assertSame(['55555555-5555-4555-8555-555555555555', '44444444-4444-4444-8444-444444444444'], array_column($items, 'post_identifier'));
-        self::assertSame([$posted, $posted], array_column($items, 'routine_identifier'));
-        foreach ($items as $item) {
-            self::assertIsString($item['posted_at']);
-            self::assertIsInt($item['post_like_count']);
-            self::assertIsInt($item['post_support_count']);
-            self::assertIsBool($item['liked']);
-        }
-        $own = $this->withSession(['account_identifier' => $owner])->getJson('/api/my/routines')->assertOk()->assertJsonPath('total', 2)->json('items');
+        DB::table('posts')->where('post_identifier', '44444444-4444-4444-8444-444444444444')->update(['post_like_count' => 7, 'post_support_count' => 11]);
+        DB::table('likes')->insert(['account_identifier' => $owner, 'post_identifier' => '44444444-4444-4444-8444-444444444444', 'created_at' => now(), 'updated_at' => now()]);
+        $publicItems = $this->getJson("/api/accounts/{$owner}/posts?page=1&number_of_items_per_page=10")
+            ->assertOk()->assertJsonPath('total', 2)->assertJsonCount(2, 'items')->json('items');
+        $publicByRoutine = collect($publicItems)->keyBy('routine_identifier');
+        self::assertSame('44444444-4444-4444-8444-444444444444', $publicByRoutine[$posted]['post_identifier']);
+        self::assertSame('2026-09-01T10:00:00+00:00', $publicByRoutine[$posted]['posted_at']);
+        self::assertSame(7, $publicByRoutine[$posted]['post_like_count']);
+        self::assertSame(11, $publicByRoutine[$posted]['post_support_count']);
+        self::assertFalse($publicByRoutine[$posted]['liked']);
+        self::assertNull($publicByRoutine[$unposted]['post_identifier']);
+        self::assertNull($publicByRoutine[$unposted]['posted_at']);
+        self::assertNull($publicByRoutine[$unposted]['post_like_count']);
+        self::assertNull($publicByRoutine[$unposted]['post_support_count']);
+        self::assertNull($publicByRoutine[$unposted]['liked']);
+
+        $own = $this->withSession(['account_identifier' => $owner])->getJson("/api/accounts/{$owner}/posts?number_of_items_per_page=10")
+            ->assertOk()->assertJsonPath('total', 2)->json('items');
         $ownByRoutine = collect($own)->keyBy('routine_identifier');
         self::assertNull($ownByRoutine[$unposted]['post_identifier']);
+        self::assertNull($ownByRoutine[$unposted]['posted_at']);
+        self::assertNull($ownByRoutine[$unposted]['post_like_count']);
+        self::assertNull($ownByRoutine[$unposted]['post_support_count']);
+        self::assertNull($ownByRoutine[$unposted]['liked']);
         self::assertSame('44444444-4444-4444-8444-444444444444', $ownByRoutine[$posted]['post_identifier']);
+        self::assertSame('2026-09-01T10:00:00+00:00', $ownByRoutine[$posted]['posted_at']);
+        self::assertSame(7, $ownByRoutine[$posted]['post_like_count']);
+        self::assertSame(11, $ownByRoutine[$posted]['post_support_count']);
+        self::assertTrue($ownByRoutine[$posted]['liked']);
+
+        $myRoutines = $this->withSession(['account_identifier' => $owner])->getJson('/api/my/routines?number_of_items_per_page=10')
+            ->assertOk()->assertJsonPath('total', 2)->json('items');
+        self::assertSame($own, $myRoutines);
+
+        foreach (["/api/accounts/{$owner}/posts", '/api/my/routines'] as $url) {
+            $paged = [];
+            foreach ([1, 2] as $page) {
+                $paged[] = $this->withSession(['account_identifier' => $owner])->getJson("{$url}?page={$page}&number_of_items_per_page=1")
+                    ->assertOk()->assertJsonPath('total', 2)->assertJsonCount(1, 'items')->json('items.0');
+            }
+            self::assertSame($myRoutines, $paged);
+            $this->withSession(['account_identifier' => $owner])->getJson("{$url}?page=3&number_of_items_per_page=1")
+                ->assertOk()->assertJsonPath('total', 2)->assertJsonCount(0, 'items');
+        }
     }
 
-    public function test_public_post_with_missing_timestamp_preserves_non_null_response(): void
+    public function test_post_with_missing_timestamp_returns_null_for_both_routes(): void
     {
         $owner = '11111111-1111-4111-8111-111111111111';
         $routine = '22222222-2222-4222-8222-222222222222';
@@ -56,7 +83,7 @@ final class GetAccountRoutinePostsActionTest extends TestCase
         DB::table('routines')->insert(['routine_identifier' => $routine, 'account_identifier' => $owner, 'routine_name' => 'Routine', 'available' => true]);
         DB::table('posts')->insert(['post_identifier' => $post, 'routine_identifier' => $routine, 'post_category' => 'routine', 'available' => true, 'created_at' => null]);
         $response = $this->getJson("/api/accounts/{$owner}/posts")->assertOk()->assertJsonPath('items.0.post_identifier', $post);
-        self::assertIsString($response->json('items.0.posted_at'));
+        self::assertNull($response->json('items.0.posted_at'));
         $this->withSession(['account_identifier' => $owner])->getJson('/api/my/routines')->assertOk()->assertJsonPath('items.0.posted_at', null);
     }
 
@@ -126,23 +153,29 @@ final class GetAccountRoutinePostsActionTest extends TestCase
         }
     }
 
-    public function test_private_posts_respect_approved_follow_and_bilateral_blocks_without_exposing_unposted_routines(): void
+    public function test_private_routines_show_unposted_items_only_to_approved_followers_and_respect_bilateral_blocks(): void
     {
         $owner = '11111111-1111-4111-8111-111111111111';
         $viewer = '22222222-2222-4222-8222-222222222222';
-        $routine = '33333333-3333-4333-8333-333333333333';
+        $postedRoutine = '33333333-3333-4333-8333-333333333333';
+        $unpostedRoutine = '44444444-4444-4444-8444-444444444444';
         DB::table('accounts')->insert([
             ['account_identifier' => $owner, 'account_name' => 'Owner', 'email_address' => 'owner@example.com', 'visibility' => 'private', 'available' => true, 'status' => 'active'],
             ['account_identifier' => $viewer, 'account_name' => 'Viewer', 'email_address' => 'viewer@example.com', 'visibility' => 'public', 'available' => true, 'status' => 'active'],
         ]);
-        DB::table('routines')->insert(['routine_identifier' => $routine, 'account_identifier' => $owner, 'routine_name' => 'Routine', 'available' => true]);
+        DB::table('routines')->insert([
+            ['routine_identifier' => $postedRoutine, 'account_identifier' => $owner, 'routine_name' => 'Posted', 'available' => true],
+            ['routine_identifier' => $unpostedRoutine, 'account_identifier' => $owner, 'routine_name' => 'Unposted', 'available' => true],
+        ]);
+        DB::table('posts')->insert(['post_identifier' => '55555555-5555-4555-8555-555555555555', 'routine_identifier' => $postedRoutine, 'post_category' => 'routine', 'available' => true, 'created_at' => now()]);
         $url = "/api/accounts/{$owner}/posts";
         $this->getJson($url)->assertOk()->assertExactJson(['items' => [], 'total' => 0]);
         $this->withSession(['account_identifier' => $viewer])->getJson($url)->assertOk()->assertExactJson(['items' => [], 'total' => 0]);
         DB::table('follows')->insert(['following_account_identifier' => $viewer, 'followed_account_identifier' => $owner]);
-        $this->withSession(['account_identifier' => $viewer])->getJson($url)->assertOk()->assertExactJson(['items' => [], 'total' => 0]);
-        DB::table('posts')->insert(['post_identifier' => '44444444-4444-4444-8444-444444444444', 'routine_identifier' => $routine, 'post_category' => 'routine', 'available' => true, 'created_at' => now()]);
-        $this->withSession(['account_identifier' => $viewer])->getJson($url)->assertOk()->assertJsonPath('total', 1)->assertJsonPath('items.0.post_identifier', '44444444-4444-4444-8444-444444444444');
+        $items = collect($this->withSession(['account_identifier' => $viewer])->getJson($url)->assertOk()
+            ->assertJsonPath('total', 2)->assertJsonCount(2, 'items')->json('items'))->keyBy('routine_identifier');
+        self::assertSame('55555555-5555-4555-8555-555555555555', $items[$postedRoutine]['post_identifier']);
+        self::assertNull($items[$unpostedRoutine]['post_identifier']);
         foreach ([[$viewer, $owner], [$owner, $viewer]] as [$blocking, $blocked]) {
             DB::table('blocks')->insert(['blocking_account_identifier' => $blocking, 'blocked_account_identifier' => $blocked]);
             $this->withSession(['account_identifier' => $viewer])->getJson($url)->assertNotFound();

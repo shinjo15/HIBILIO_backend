@@ -10,8 +10,6 @@ interface GetAccountRoutinePostsInputPort
 
     public function viewerAccountIdentifier(): ?string;
 
-    public function routineBased(): bool;
-
     public function page(): int;
 
     public function numberOfItemsPerPage(): int;

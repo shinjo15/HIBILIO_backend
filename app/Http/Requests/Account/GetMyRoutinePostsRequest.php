@@ -21,6 +21,6 @@ final class GetMyRoutinePostsRequest extends PaginatedRequest
 
     public function toInput(string $accountIdentifier): GetAccountRoutinePostsInput
     {
-        return new GetAccountRoutinePostsInput($accountIdentifier, $this->page(), $this->numberOfItemsPerPage(), $accountIdentifier, routineBased: true);
+        return new GetAccountRoutinePostsInput($accountIdentifier, $this->page(), $this->numberOfItemsPerPage(), $accountIdentifier);
     }
 }

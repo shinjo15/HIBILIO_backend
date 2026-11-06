@@ -28,26 +28,19 @@ final class GetAccountRoutinePosts implements GetAccountRoutinePostsInterface
             throw new BlockedAccountVisibilityException;
         }
 
-        $query = DB::table('routines');
-        if ($input->routineBased()) {
-            $firstPost = DB::table('posts as routine_posts')->select('routine_posts.post_identifier')
-                ->whereColumn('routine_posts.routine_identifier', 'routines.routine_identifier')
-                ->where('routine_posts.post_category', 'routine')->where('routine_posts.available', true)
-                ->orderByRaw('CASE WHEN routine_posts.created_at IS NULL THEN 1 ELSE 0 END')
-                ->orderBy('routine_posts.created_at')->orderBy('routine_posts.post_identifier')->limit(1);
-            $query->leftJoin('posts', static function (JoinClause $join) use ($firstPost): void {
-                $join->on('posts.routine_identifier', '=', 'routines.routine_identifier')
-                    ->whereRaw('posts.post_identifier = ('.$firstPost->toSql().')', $firstPost->getBindings());
-            });
-            $query->orderByRaw('CASE WHEN COALESCE(posts.created_at, routines.created_at) IS NULL THEN 1 ELSE 0 END')
-                ->orderByRaw('COALESCE(posts.created_at, routines.created_at) DESC')
-                ->orderByRaw('CASE WHEN posts.post_identifier IS NULL THEN 1 ELSE 0 END')
-                ->orderBy('posts.post_identifier')->orderBy('routines.routine_identifier');
-        } else {
-            $query->join('posts', 'posts.routine_identifier', '=', 'routines.routine_identifier')
-                ->where('posts.post_category', 'routine')->where('posts.available', true)
-                ->orderByDesc('posts.created_at')->orderBy('posts.post_identifier');
-        }
+        $firstPost = DB::table('posts as routine_posts')->select('routine_posts.post_identifier')
+            ->whereColumn('routine_posts.routine_identifier', 'routines.routine_identifier')
+            ->where('routine_posts.post_category', 'routine')->where('routine_posts.available', true)
+            ->orderByRaw('CASE WHEN routine_posts.created_at IS NULL THEN 1 ELSE 0 END')
+            ->orderBy('routine_posts.created_at')->orderBy('routine_posts.post_identifier')->limit(1);
+        $query = DB::table('routines')->leftJoin('posts', static function (JoinClause $join) use ($firstPost): void {
+            $join->on('posts.routine_identifier', '=', 'routines.routine_identifier')
+                ->whereRaw('posts.post_identifier = ('.$firstPost->toSql().')', $firstPost->getBindings());
+        });
+        $query->orderByRaw('CASE WHEN COALESCE(posts.created_at, routines.created_at) IS NULL THEN 1 ELSE 0 END')
+            ->orderByRaw('COALESCE(posts.created_at, routines.created_at) DESC')
+            ->orderByRaw('CASE WHEN posts.post_identifier IS NULL THEN 1 ELSE 0 END')
+            ->orderBy('posts.post_identifier')->orderBy('routines.routine_identifier');
 
         $query->join('accounts', 'routines.account_identifier', '=', 'accounts.account_identifier')
             ->where('routines.account_identifier', $input->accountIdentifier())
@@ -110,7 +103,7 @@ final class GetAccountRoutinePosts implements GetAccountRoutinePostsInterface
             'accountIdentifier' => (string) $post->account_identifier,
             'accountName' => (string) $post->account_name,
             'iconImageUrl' => $icon((string) $post->account_identifier),
-            'postedAt' => $input->routineBased() && $post->posted_at === null ? null : (new DateTimeImmutable((string) $post->posted_at))->format(DATE_ATOM),
+            'postedAt' => $post->posted_at === null ? null : (new DateTimeImmutable((string) $post->posted_at))->format(DATE_ATOM),
             'routineName' => (string) $post->routine_name,
             'routineExecutionMinutes' => $post->routine_execution_minutes === null ? null : (int) $post->routine_execution_minutes,
             'tags' => $tags[(string) $post->routine_identifier] ?? [],
