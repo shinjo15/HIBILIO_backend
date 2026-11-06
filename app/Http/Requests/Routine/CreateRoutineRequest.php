@@ -43,10 +43,10 @@ final class CreateRoutineRequest extends FormRequest
         return true;
     }
 
-    /** @return array<string, list<string>> */
+    /** @return array<string, mixed> */
     public function rules(): array
     {
-        $rules = [
+        return [
             'routine_name' => ['required', 'string', 'not_regex:/^\s*$/', 'max:50'],
             'parent_routine_identifier' => ['nullable', 'uuid'],
             'routine_memo' => ['nullable', 'string', 'not_regex:/^\s*$/', 'max:300'],
@@ -59,17 +59,10 @@ final class CreateRoutineRequest extends FormRequest
             'routine_actions.*.routine_action_memo' => ['nullable', 'string', 'not_regex:/^\s*$/', 'max:300'],
             'routine_actions.*.routine_action_minutes' => ['nullable', 'integer', 'min:1'],
             'routine_actions.*.parent_routine_action_index' => ['nullable', 'integer', 'min:0'],
+            'routine_actions.*.video_url' => Rule::forEach(static fn (mixed $url): array => [
+                'bail', Rule::requiredIf(is_string($url) && trim($url) === ''), 'nullable', 'string', new ValidRoutineVideoUrl,
+            ]),
         ];
-        $actions = $this->input('routine_actions');
-        foreach (is_array($actions) ? $actions : [] as $index => $action) {
-            if (! is_array($action)) {
-                continue;
-            }
-            $url = $action['video_url'] ?? null;
-            $rules["routine_actions.$index.video_url"] = ['bail', Rule::requiredIf(is_string($url) && trim($url) === ''), 'nullable', 'string', new ValidRoutineVideoUrl];
-        }
-
-        return $rules;
     }
 
     public function toInput(string $accountIdentifier): CreateRoutineInput

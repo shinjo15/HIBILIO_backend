@@ -20,7 +20,7 @@ final class RoutineAction
         private readonly RoutineActionName $routineActionName,
         private readonly ?RoutineActionMemo $routineActionMemo,
         private readonly ?RoutineActionMinutes $routineActionMinutes,
-        private ?RoutineVideoUrl $videoUrl,
+        private readonly ?RoutineVideoUrl $videoUrl,
     ) {}
 
     public static function create(
@@ -76,10 +76,5 @@ final class RoutineAction
     public function videoUrl(): ?RoutineVideoUrl
     {
         return $this->videoUrl;
-    }
-
-    public function changeVideoUrl(?RoutineVideoUrl $videoUrl): void
-    {
-        $this->videoUrl = $videoUrl;
     }
 }

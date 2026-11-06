@@ -88,13 +88,6 @@ final class CreateRoutineExecutionTest extends TestCase
             }
 
             public function save(RoutineAction $routineAction): void {}
-
-            public function findForRoutine(RoutineIdentifier $routineIdentifier, RoutineActionIdentifier $actionIdentifier): ?RoutineAction
-            {
-                return null;
-            }
-
-            public function saveVideoLink(RoutineAction $routineAction): void {}
         };
         $postFactory = new class implements PostFactoryInterface
         {

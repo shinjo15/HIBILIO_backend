@@ -14,13 +14,12 @@ final class PreserveRoutineVideoUrl
 
     public function handle(Request $request, Closure $next): Response
     {
-        if (($request->isMethod('POST') && $request->is('api/routines'))
-            || ($request->isMethod('PATCH') && ($request->is('api/routines/*/video-link') || $request->is('api/routines/*/actions/*/video-link')))) {
+        if ($request->isMethod('POST') && $request->is('api/routines')) {
             $input = $request->all();
             if (array_key_exists('video_url', $input)) {
                 $request->attributes->set(self::ATTRIBUTE, ['video_url' => $input['video_url']]);
             }
-            if ($request->isMethod('POST') && isset($input['routine_actions']) && is_array($input['routine_actions'])) {
+            if (isset($input['routine_actions']) && is_array($input['routine_actions'])) {
                 $urls = [];
                 foreach ($input['routine_actions'] as $index => $action) {
                     if (is_array($action) && array_key_exists('video_url', $action)) {

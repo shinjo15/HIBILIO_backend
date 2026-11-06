@@ -51,7 +51,7 @@ final readonly class CreateRoutine implements CreateRoutineInterface
         $post = $this->postFactory->createRoutinePost($routineIdentifier);
 
         $this->transactionManager->transaction(function () use ($routine, $routineActions, $post): void {
-            $this->routineRepository->add($routine);
+            $this->routineRepository->save($routine);
 
             foreach ($routineActions as $routineAction) {
                 $this->routineActionRepository->save($routineAction);

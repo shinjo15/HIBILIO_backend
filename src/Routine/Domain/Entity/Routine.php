@@ -24,28 +24,10 @@ final class Routine
         private readonly AccountIdentifier $accountIdentifier,
         private readonly ?RoutineExecutionMinutes $routineExecutionMinutes,
         private readonly ?RoutineTagIdentifiers $routineTagIdentifiers,
-        private ?RoutineVideoUrl $videoUrl,
+        private readonly ?RoutineVideoUrl $videoUrl,
     ) {}
 
     public static function create(
-        RoutineIdentifier $routineIdentifier,
-        ?RoutineIdentifier $parentRoutineIdentifier,
-        RoutineName $routineName,
-        RoutineActionIdentifiers $routineActionIdentifiers,
-        ?RoutineMemo $routineMemo,
-        AccountIdentifier $accountIdentifier,
-        ?RoutineExecutionMinutes $routineExecutionMinutes,
-        ?RoutineTagIdentifiers $routineTagIdentifiers,
-        ?RoutineVideoUrl $videoUrl = null,
-    ): self {
-        if ($routineActionIdentifiers->values() === []) {
-            throw new \InvalidArgumentException('ルーティンには少なくとも1つの行動が必要です。');
-        }
-
-        return self::reconstitute($routineIdentifier, $parentRoutineIdentifier, $routineName, $routineActionIdentifiers, $routineMemo, $accountIdentifier, $routineExecutionMinutes, $routineTagIdentifiers, $videoUrl);
-    }
-
-    public static function reconstitute(
         RoutineIdentifier $routineIdentifier,
         ?RoutineIdentifier $parentRoutineIdentifier,
         RoutineName $routineName,
@@ -99,11 +81,6 @@ final class Routine
         return $this->accountIdentifier;
     }
 
-    public function isOwnedBy(AccountIdentifier $accountIdentifier): bool
-    {
-        return strcasecmp($this->accountIdentifier->value(), $accountIdentifier->value()) === 0;
-    }
-
     public function routineExecutionMinutes(): ?RoutineExecutionMinutes
     {
         return $this->routineExecutionMinutes;
@@ -117,10 +94,5 @@ final class Routine
     public function videoUrl(): ?RoutineVideoUrl
     {
         return $this->videoUrl;
-    }
-
-    public function changeVideoUrl(?RoutineVideoUrl $videoUrl): void
-    {
-        $this->videoUrl = $videoUrl;
     }
 }

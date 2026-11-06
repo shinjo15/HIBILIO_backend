@@ -46,17 +46,10 @@ final class CreateRoutineTest extends TestCase
         {
             public ?Routine $savedRoutine = null;
 
-            public function find(RoutineIdentifier $identifier): ?Routine
-            {
-                return null;
-            }
-
-            public function add(Routine $routine): void
+            public function save(Routine $routine): void
             {
                 $this->savedRoutine = $routine;
             }
-
-            public function saveVideoLink(Routine $routine): void {}
         };
         $routineActionRepository = new class implements RoutineActionRepositoryInterface
         {
@@ -72,13 +65,6 @@ final class CreateRoutineTest extends TestCase
             {
                 $this->savedRoutineActions[] = $routineAction;
             }
-
-            public function findForRoutine(RoutineIdentifier $routineIdentifier, RoutineActionIdentifier $actionIdentifier): ?RoutineAction
-            {
-                return null;
-            }
-
-            public function saveVideoLink(RoutineAction $routineAction): void {}
         };
         $postRepository = new class implements PostRepositoryInterface
         {
