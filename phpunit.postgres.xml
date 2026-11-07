@@ -12,6 +12,7 @@
             <file>tests/Feature/Database/Seeders/TagSeederTest.php</file>
             <file>tests/Feature/Account/Presentation/GetFavoriteTagPostsActionTest.php</file>
             <file>tests/Feature/Notification/Presentation/NotificationSchemaTest.php</file>
+            <file>tests/Feature/Notification/Presentation/GetMyNotificationsActionTest.php</file>
             <directory>tests/Postgres</directory>
         </testsuite>
     </testsuites>

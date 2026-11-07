@@ -146,6 +146,8 @@ use Src\Like\Domain\Repository\LikeRepositoryInterface;
 use Src\Like\Infrastructure\Factory\LikeFactory;
 use Src\Like\Infrastructure\Query\GetLikedRoutinePosts\GetLikedRoutinePosts;
 use Src\Like\Infrastructure\Repository\LikeRepository;
+use Src\Notification\Application\Usecase\Query\GetMyNotifications\GetMyNotificationsInterface;
+use Src\Notification\Infrastructure\Query\GetMyNotifications\GetMyNotifications;
 use Src\Post\Infrastructure\Factory\PostFactory;
 use Src\Post\Infrastructure\Repository\PostRepository;
 use Src\Report\Application\UseCase\CreateReport\CreateReport;
@@ -296,6 +298,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(RemoveLikeInterface::class, RemoveLike::class);
 
         $this->app->bind(GetLikedRoutinePostsInterface::class, GetLikedRoutinePosts::class);
+        $this->app->bind(GetMyNotificationsInterface::class, GetMyNotifications::class);
         $this->app->bind(FollowFactoryInterface::class, FollowFactory::class);
         $this->app->bind(FollowRepositoryInterface::class, FollowRepository::class);
         $this->app->bind(FollowRequestFactoryInterface::class, FollowRequestFactory::class);
