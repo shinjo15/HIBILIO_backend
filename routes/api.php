@@ -38,6 +38,7 @@ use App\Http\Actions\Like\GetAccountLikedRoutinePostsAction;
 use App\Http\Actions\Like\GetMyLikedRoutinePostsAction;
 use App\Http\Actions\Like\RemoveLikeAction;
 use App\Http\Actions\Notification\GetMyNotificationsAction;
+use App\Http\Actions\Notification\MarkPersonalNotificationAsReadAction;
 use App\Http\Actions\Report\CreateReportAction;
 use App\Http\Actions\Routine\CreateRoutineAction;
 use App\Http\Actions\Routine\GetCustomizedRoutinesAction;
@@ -80,6 +81,7 @@ Route::middleware('web')->group(static function (): void {
     Route::get('/my/posts', GetMyPostsAction::class);
     Route::get('/my/routine-executions', GetMyRoutineExecutionsAction::class);
     Route::get('/my/notifications', GetMyNotificationsAction::class);
+    Route::patch('/my/notifications/{notification_identifier}/read', MarkPersonalNotificationAsReadAction::class)->whereUuid('notification_identifier');
     Route::post('/login-passcodes', GenerateLoginPasscodeAction::class)->middleware('throttle:passcode-send');
     Route::post('/login-passcodes/verification', VerifyLoginPasscodeAction::class);
     Route::post('/persistent-login/restore', RestorePersistentLoginAction::class);
