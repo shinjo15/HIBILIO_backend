@@ -11,6 +11,7 @@
             <file>tests/Feature/Infrastructure/RoutineActionSchemaTest.php</file>
             <file>tests/Feature/Database/Seeders/TagSeederTest.php</file>
             <file>tests/Feature/Account/Presentation/GetFavoriteTagPostsActionTest.php</file>
+            <file>tests/Feature/Notification/Presentation/NotificationSchemaTest.php</file>
             <directory>tests/Postgres</directory>
         </testsuite>
     </testsuites>
