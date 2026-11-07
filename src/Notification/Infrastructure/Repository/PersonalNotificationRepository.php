@@ -8,6 +8,7 @@ use App\Models\PersonalNotificationModel;
 use Src\Notification\Domain\Entity\PersonalNotification;
 use Src\Notification\Domain\Repository\PersonalNotificationRepositoryInterface;
 use Src\Notification\Domain\ValueObject\NotificationIdentifier;
+use Src\Notification\Domain\ValueObject\PersonalNotificationContent;
 use Src\Notification\Domain\ValueObject\PersonalNotificationStatus;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
@@ -33,7 +34,7 @@ final class PersonalNotificationRepository implements PersonalNotificationReposi
             new NotificationIdentifier($model->notification_identifier),
             new AccountIdentifier($model->receiver_account_identifier),
 
-            $model->content,
+            new PersonalNotificationContent($model->content),
             PersonalNotificationStatus::from($model->status),
         );
     }

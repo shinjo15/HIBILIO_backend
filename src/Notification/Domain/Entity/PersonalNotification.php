@@ -6,6 +6,7 @@ namespace Src\Notification\Domain\Entity;
 
 use Src\Notification\Domain\Exception\PersonalNotificationAccessDeniedException;
 use Src\Notification\Domain\ValueObject\NotificationIdentifier;
+use Src\Notification\Domain\ValueObject\PersonalNotificationContent;
 use Src\Notification\Domain\ValueObject\PersonalNotificationStatus;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
@@ -15,7 +16,7 @@ final class PersonalNotification
         private readonly NotificationIdentifier $notificationIdentifier,
         private readonly AccountIdentifier $receiverAccountIdentifier,
 
-        private readonly string $content,
+        private readonly PersonalNotificationContent $content,
         private PersonalNotificationStatus $status,
     ) {}
 
@@ -38,7 +39,7 @@ final class PersonalNotification
         return $this->receiverAccountIdentifier;
     }
 
-    public function content(): string
+    public function content(): PersonalNotificationContent
     {
         return $this->content;
     }

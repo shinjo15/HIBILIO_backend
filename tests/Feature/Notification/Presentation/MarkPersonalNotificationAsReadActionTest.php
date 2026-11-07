@@ -10,6 +10,7 @@ use RuntimeException;
 use Src\Notification\Domain\Entity\PersonalNotification;
 use Src\Notification\Domain\Repository\PersonalNotificationRepositoryInterface;
 use Src\Notification\Domain\ValueObject\NotificationIdentifier;
+use Src\Notification\Domain\ValueObject\PersonalNotificationContent;
 use Src\Notification\Domain\ValueObject\PersonalNotificationStatus;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Tests\TestCase;
@@ -44,6 +45,34 @@ final class MarkPersonalNotificationAsReadActionTest extends TestCase
         $this->withSession(['account_identifier' => self::RECEIVER])->patchJson('/api/my/notifications/'.self::FIRST.'/read')->assertNoContent();
         $this->withSession(['account_identifier' => self::RECEIVER])->patchJson('/api/my/notifications/'.self::FIRST.'/read')->assertNoContent();
         $this->assertDatabaseHas('personal_notifications', ['notification_identifier' => self::FIRST, 'status' => 'read', 'content' => $content]);
+    }
+
+    public function test_restored_content_and_http_response_are_preserved_when_marked_as_read(): void
+    {
+        $this->insertAccount(self::RECEIVER);
+        $repository = $this->app->make(PersonalNotificationRepositoryInterface::class);
+
+        foreach (['', " \t\n", " 🌸 通知\n二行目 \r\n", str_repeat('長', 501)] as $content) {
+            $this->insertPersonalNotification(self::FIRST, self::RECEIVER, $content);
+            $notification = $repository->find(new NotificationIdentifier(self::FIRST));
+
+            self::assertNotNull($notification);
+            self::assertInstanceOf(PersonalNotificationContent::class, $notification->content());
+            self::assertSame($content, $notification->content()->value());
+            self::assertSame(PersonalNotificationStatus::Unread, $notification->status());
+
+            $response = $this->withSession(['account_identifier' => self::RECEIVER])->getJson('/api/my/notifications');
+            $response->assertOk()->assertJsonPath('total', 1)->assertJsonPath('notifications.0.content', $content)->assertJsonPath('notifications.0.status', 'unread');
+            self::assertEqualsCanonicalizing(['notification_identifier', 'category', 'status', 'title', 'content', 'created_at'], array_keys($response->json('notifications.0')));
+
+            $this->withSession(['account_identifier' => self::RECEIVER])->patchJson('/api/my/notifications/'.self::FIRST.'/read')->assertNoContent();
+            $restored = $repository->find(new NotificationIdentifier(self::FIRST));
+            self::assertNotNull($restored);
+            self::assertSame(PersonalNotificationStatus::Read, $restored->status());
+            self::assertSame($content, $restored->content()->value());
+            $this->withSession(['account_identifier' => self::RECEIVER])->getJson('/api/my/notifications')->assertOk()->assertJsonPath('notifications.0.content', $content)->assertJsonPath('notifications.0.status', 'read');
+            DB::table('personal_notifications')->where('notification_identifier', self::FIRST)->delete();
+        }
     }
 
     public function test_marking_a_missing_personal_notification_as_read_returns_not_found(): void
@@ -115,7 +144,7 @@ final class MarkPersonalNotificationAsReadActionTest extends TestCase
         {
             public function find(NotificationIdentifier $notificationIdentifier): ?PersonalNotification
             {
-                return new PersonalNotification($notificationIdentifier, new AccountIdentifier('11111111-1111-4111-8111-111111111111'), '通知', PersonalNotificationStatus::Unread);
+                return new PersonalNotification($notificationIdentifier, new AccountIdentifier('11111111-1111-4111-8111-111111111111'), new PersonalNotificationContent('通知'), PersonalNotificationStatus::Unread);
             }
 
             public function save(PersonalNotification $notification): void
