@@ -19,9 +19,9 @@ final class PersonalNotification
         private PersonalNotificationStatus $status,
     ) {}
 
-    public function markAsReadBy(AccountIdentifier $accountIdentifier): void
+    public function markAsReadBy(AccountIdentifier $readerAccountIdentifier): void
     {
-        if ($this->receiverAccountIdentifier->value() !== $accountIdentifier->value()) {
+        if ($this->receiverAccountIdentifier->value() !== $readerAccountIdentifier->value()) {
             throw new PersonalNotificationAccessDeniedException;
         }
 
