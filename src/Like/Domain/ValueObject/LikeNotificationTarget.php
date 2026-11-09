@@ -12,7 +12,6 @@ final readonly class LikeNotificationTarget
         private AccountIdentifier $recipient,
         private string $actorName,
         private string $routineName,
-        private bool $enabled,
         private bool $postAvailable,
         private bool $routineAvailable,
         private bool $authorAvailable,
@@ -40,7 +39,7 @@ final readonly class LikeNotificationTarget
 
     public function canNotify(): bool
     {
-        return $this->enabled && $this->postAvailable && $this->routineAvailable && $this->authorAvailable && $this->actorAvailable
+        return $this->postAvailable && $this->routineAvailable && $this->authorAvailable && $this->actorAvailable
             && ! $this->blocked && (! $this->authorPrivate || $this->ownPost || $this->followsAuthor);
     }
 }

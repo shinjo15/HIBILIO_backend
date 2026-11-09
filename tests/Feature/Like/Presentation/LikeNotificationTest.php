@@ -6,20 +6,12 @@ namespace Tests\Feature\Like\Presentation;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
-use Src\Authentication\Infrastructure\Service\LaravelPendingSocialRegistrationSessionService;
-use Src\Like\Application\UseCase\ChangeLikeNotificationSetting\ChangeLikeNotificationSetting;
-use Src\Like\Application\UseCase\ChangeLikeNotificationSetting\ChangeLikeNotificationSettingInput;
 use Src\Like\Application\UseCase\CreateLike\CreateLikeInput;
 use Src\Like\Application\UseCase\CreateLike\CreateLikeInterface;
 use Src\Like\Domain\Entity\LikeNotification;
-use Src\Like\Domain\Entity\LikeNotificationSetting;
 use Src\Like\Domain\Repository\LikeNotificationRepositoryInterface;
-use Src\Like\Domain\Repository\LikeNotificationSettingRepositoryInterface;
-use Src\Like\Domain\ValueObject\LikeNotificationEnabled;
 use Src\Post\Domain\Exception\UnsupportedPostLikeException;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Src\Shared\Domain\ValueObject\Identifier\PostIdentifier;
@@ -40,7 +32,6 @@ final class LikeNotificationTest extends TestCase
     public function test_like_notifies_author_and_existing_inbox_can_mark_it_read(): void
     {
         $this->fixtures();
-        $this->enableAuthorNotifications();
         $this->withSession(['account_identifier' => self::ACTOR])->postJson('/api/likes', ['post_identifier' => self::POST, 'account_identifier' => self::AUTHOR])->assertNoContent();
         $response = $this->withSession(['account_identifier' => self::AUTHOR])->getJson('/api/my/notifications');
         $response->assertOk()->assertJsonPath('total', 1)->assertJsonPath('notifications.0.status', 'unread')->assertJsonPath('notifications.0.content', '花子さんが「朝の運動」にいいねしました。');
@@ -52,36 +43,9 @@ final class LikeNotificationTest extends TestCase
         $this->assertDatabaseCount('personal_notifications', 1);
     }
 
-    public function test_settings_are_authenticated_default_off_and_can_be_toggled_without_changing_another_account(): void
-    {
-        $this->fixtures();
-        $this->getJson('/api/my/like-notification-setting')->assertUnauthorized();
-        $this->patchJson('/api/my/like-notification-setting', ['enabled' => false])->assertUnauthorized();
-        $this->withSession(['account_identifier' => self::AUTHOR])->getJson('/api/my/like-notification-setting?account_identifier='.self::ACTOR)->assertOk()->assertExactJson(['enabled' => false]);
-        $this->withSession(['account_identifier' => self::ACTOR])->getJson('/api/my/like-notification-setting')->assertExactJson(['enabled' => false]);
-        $this->withSession(['account_identifier' => self::ACTOR])->postJson('/api/likes', ['post_identifier' => self::POST])->assertNoContent();
-        $this->assertDatabaseCount('likes', 1);
-        $this->assertDatabaseCount('personal_notifications', 0);
-        $this->withSession(['account_identifier' => self::AUTHOR])->patchJson('/api/my/like-notification-setting', ['enabled' => true, 'account_identifier' => self::ACTOR])->assertNoContent();
-        $this->withSession(['account_identifier' => self::AUTHOR])->patchJson('/api/my/like-notification-setting', ['enabled' => true])->assertNoContent();
-        $this->withSession(['account_identifier' => self::AUTHOR])->getJson('/api/my/like-notification-setting')->assertExactJson(['enabled' => true]);
-        $this->withSession(['account_identifier' => self::ACTOR])->getJson('/api/my/like-notification-setting')->assertExactJson(['enabled' => false]);
-        $this->withSession(['account_identifier' => self::ACTOR])->deleteJson('/api/likes/'.self::POST)->assertNoContent();
-        $this->withSession(['account_identifier' => self::ACTOR])->postJson('/api/likes', ['post_identifier' => self::POST])->assertNoContent();
-        $this->assertDatabaseHas('personal_notifications', ['receiver_account_identifier' => self::AUTHOR, 'content' => '花子さんが「朝の運動」にいいねしました。', 'status' => 'unread']);
-        $this->withSession(['account_identifier' => self::AUTHOR])->patchJson('/api/my/like-notification-setting', ['enabled' => false])->assertNoContent();
-        $this->withSession(['account_identifier' => self::ACTOR])->deleteJson('/api/likes/'.self::POST)->assertNoContent();
-        $this->withSession(['account_identifier' => self::ACTOR])->postJson('/api/likes', ['post_identifier' => self::POST])->assertNoContent();
-        $this->assertDatabaseCount('likes', 1);
-        $this->assertDatabaseCount('personal_notifications', 1);
-        $this->withSession(['account_identifier' => self::AUTHOR])->patchJson('/api/my/like-notification-setting', [])->assertUnprocessable();
-        $this->withSession(['account_identifier' => self::AUTHOR])->patchJson('/api/my/like-notification-setting', ['enabled' => 'invalid'])->assertUnprocessable();
-    }
-
     public function test_self_like_creates_notification(): void
     {
         $this->fixtures();
-        $this->enableAuthorNotifications();
         $this->withSession(['account_identifier' => self::AUTHOR])->postJson('/api/likes', ['post_identifier' => self::POST])->assertNoContent();
         $this->assertDatabaseHas('personal_notifications', ['receiver_account_identifier' => self::AUTHOR, 'content' => '太郎さんが「朝の運動」にいいねしました。', 'status' => 'unread']);
     }
@@ -90,7 +54,6 @@ final class LikeNotificationTest extends TestCase
     public function test_inaccessible_target_keeps_like_but_does_not_notify(string $case): void
     {
         $this->fixtures();
-        $this->enableAuthorNotifications();
         match ($case) {
             'missing_author' => DB::table('accounts')->where('account_identifier', self::AUTHOR)->delete(),
             'deleted_author' => DB::table('accounts')->where('account_identifier', self::AUTHOR)->update(['available' => false]),
@@ -113,7 +76,6 @@ final class LikeNotificationTest extends TestCase
     public function test_notification_failure_rolls_back_like_and_count_and_inserted_notification(): void
     {
         $this->fixtures();
-        $this->enableAuthorNotifications();
         $real = $this->app->make(LikeNotificationRepositoryInterface::class);
         $this->app->instance(LikeNotificationRepositoryInterface::class, new class($real) implements LikeNotificationRepositoryInterface
         {
@@ -136,55 +98,24 @@ final class LikeNotificationTest extends TestCase
         $this->assertDatabaseHas('posts', ['post_identifier' => self::POST, 'post_like_count' => 0]);
     }
 
-    public function test_setting_save_failure_rolls_back_the_change(): void
-    {
-        $this->fixtures();
-        $real = $this->app->make(LikeNotificationSettingRepositoryInterface::class);
-        $this->app->instance(LikeNotificationSettingRepositoryInterface::class, new class($real) implements LikeNotificationSettingRepositoryInterface
-        {
-            public function __construct(private LikeNotificationSettingRepositoryInterface $real) {}
-
-            public function find(AccountIdentifier $account): ?LikeNotificationSetting
-            {
-                return $this->real->find($account);
-            }
-
-            public function save(LikeNotificationSetting $setting): void
-            {
-                $this->real->save($setting);
-                throw new RuntimeException('setting save failed');
-            }
-        });
-        try {
-            $this->app->make(ChangeLikeNotificationSetting::class)->execute(new ChangeLikeNotificationSettingInput(new AccountIdentifier(self::AUTHOR), new LikeNotificationEnabled(true)));
-            self::fail('Expected setting save failure');
-        } catch (RuntimeException $exception) {
-            self::assertSame('setting save failed', $exception->getMessage());
-        }
-        $this->assertDatabaseHas('accounts', ['account_identifier' => self::AUTHOR, 'like_notifications_enabled' => false]);
-    }
-
     public function test_private_actor_name_is_included_under_current_privacy_assumption(): void
     {
         $this->fixtures();
-        $this->enableAuthorNotifications();
         DB::table('accounts')->where('account_identifier', self::ACTOR)->update(['visibility' => 'private']);
         $this->withSession(['account_identifier' => self::ACTOR])->postJson('/api/likes', ['post_identifier' => self::POST])->assertNoContent();
         $this->assertDatabaseHas('personal_notifications', ['receiver_account_identifier' => self::AUTHOR, 'content' => '花子さんが「朝の運動」にいいねしました。']);
     }
 
-    public function test_missing_deleted_and_banned_session_accounts_cannot_use_settings_or_like(): void
+    public function test_missing_deleted_and_banned_session_accounts_cannot_like(): void
     {
         $this->fixtures();
         foreach ([['available' => false, 'status' => 'active'], ['available' => true, 'status' => 'temporarily_banned']] as $state) {
             DB::table('accounts')->where('account_identifier', self::ACTOR)->update($state);
-            $this->withSession(['account_identifier' => self::ACTOR])->getJson('/api/my/like-notification-setting')->assertUnauthorized();
-            $this->withSession(['account_identifier' => self::ACTOR])->patchJson('/api/my/like-notification-setting', ['enabled' => false])->assertUnauthorized();
+
             $this->withSession(['account_identifier' => self::ACTOR])->postJson('/api/likes', ['post_identifier' => self::POST])->assertUnauthorized();
         }
         DB::table('accounts')->where('account_identifier', self::ACTOR)->delete();
-        $this->withSession(['account_identifier' => self::ACTOR])->getJson('/api/my/like-notification-setting')->assertUnauthorized();
-        $this->withSession(['account_identifier' => self::ACTOR])->patchJson('/api/my/like-notification-setting', ['enabled' => false])->assertUnauthorized();
+
         $this->withSession(['account_identifier' => self::ACTOR])->postJson('/api/likes', ['post_identifier' => self::POST])->assertUnauthorized();
         $this->assertDatabaseCount('personal_notifications', 0);
     }
@@ -193,7 +124,6 @@ final class LikeNotificationTest extends TestCase
     public function test_unavailable_actor_cannot_generate_notification_even_if_usecase_is_called_directly(string $case): void
     {
         $this->fixtures();
-        $this->enableAuthorNotifications();
         match ($case) {
             'missing' => DB::table('accounts')->where('account_identifier', self::ACTOR)->delete(),
             'deleted' => DB::table('accounts')->where('account_identifier', self::ACTOR)->update(['available' => false]),
@@ -208,33 +138,9 @@ final class LikeNotificationTest extends TestCase
         return [['missing'], ['deleted'], ['banned']];
     }
 
-    public function test_registered_social_account_session_has_default_disabled_and_can_change_it(): void
-    {
-        Mail::fake();
-        $this->withSession([LaravelPendingSocialRegistrationSessionService::SESSION_KEY => [
-            'provider' => 'apple', 'provider_user_identifier' => 'test-apple-user', 'email_address' => 'new@example.com',
-        ]])->postJson('/api/accounts', ['account_name' => '新規', 'social_links' => [], 'favorite_tag_identifiers' => []])->assertCreated();
-        $this->getJson('/api/my/like-notification-setting')->assertOk()->assertExactJson(['enabled' => false]);
-        $this->patchJson('/api/my/like-notification-setting', ['enabled' => true])->assertNoContent();
-        $this->getJson('/api/my/like-notification-setting')->assertExactJson(['enabled' => true]);
-    }
-
-    public function test_migration_defaults_existing_accounts_to_disabled(): void
-    {
-        $this->fixtures();
-        $migration = require database_path('migrations/2026_11_09_000000_add_like_notifications_enabled_to_accounts.php');
-        $migration->down();
-        self::assertFalse(Schema::hasColumn('accounts', 'like_notifications_enabled'));
-        $migration->up();
-        self::assertTrue(Schema::hasColumn('accounts', 'like_notifications_enabled'));
-        $this->assertDatabaseHas('accounts', ['account_identifier' => self::AUTHOR, 'like_notifications_enabled' => false]);
-        $this->assertDatabaseHas('accounts', ['account_identifier' => self::ACTOR, 'like_notifications_enabled' => false]);
-    }
-
     public function test_private_author_followed_by_actor_is_notified(): void
     {
         $this->fixtures();
-        $this->enableAuthorNotifications();
         DB::table('accounts')->where('account_identifier', self::AUTHOR)->update(['visibility' => 'private']);
         DB::table('follows')->insert(['following_account_identifier' => self::ACTOR, 'followed_account_identifier' => self::AUTHOR, 'created_at' => now(), 'updated_at' => now()]);
         $this->withSession(['account_identifier' => self::ACTOR])->postJson('/api/likes', ['post_identifier' => self::POST])->assertNoContent();
@@ -244,7 +150,6 @@ final class LikeNotificationTest extends TestCase
     public function test_deleted_post_does_not_notify_based_on_pre_save_state(): void
     {
         $this->fixtures();
-        $this->enableAuthorNotifications();
         DB::table('posts')->where('post_identifier', self::POST)->update(['available' => false]);
         $this->withSession(['account_identifier' => self::ACTOR])->postJson('/api/likes', ['post_identifier' => self::POST])->assertNoContent();
         $this->assertDatabaseCount('personal_notifications', 0);
@@ -253,7 +158,6 @@ final class LikeNotificationTest extends TestCase
     public function test_missing_post_and_wrong_post_category_never_notify(): void
     {
         $this->fixtures();
-        $this->enableAuthorNotifications();
         $this->withSession(['account_identifier' => self::ACTOR])->postJson('/api/likes', ['post_identifier' => '55555555-5555-4555-8555-555555555555'])->assertNotFound();
         $execution = '66666666-6666-4666-8666-666666666666';
         DB::table('routine_executions')->insert(['routine_execution_identifier' => $execution, 'executor_account_identifier' => self::AUTHOR, 'routine_identifier' => self::ROUTINE, 'executed_at' => now(), 'created_at' => now(), 'updated_at' => now()]);
@@ -265,11 +169,6 @@ final class LikeNotificationTest extends TestCase
             $this->assertDatabaseCount('likes', 0);
             $this->assertDatabaseCount('personal_notifications', 0);
         }
-    }
-
-    private function enableAuthorNotifications(): void
-    {
-        DB::table('accounts')->where('account_identifier', self::AUTHOR)->update(['like_notifications_enabled' => true]);
     }
 
     private function fixtures(): void

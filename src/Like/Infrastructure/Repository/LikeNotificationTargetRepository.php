@@ -31,7 +31,7 @@ final class LikeNotificationTargetRepository implements LikeNotificationTargetRe
 
         return new LikeNotificationTarget(
             new AccountIdentifier($author->account_identifier), $actorModel->account_name, $routine->routine_name,
-            (bool) $author->like_notifications_enabled, (bool) $postModel->available, (bool) $routine->available,
+            (bool) $postModel->available, (bool) $routine->available,
             $author->available && $author->status === 'active', $actorModel->available && $actorModel->status === 'active',
             BlockVisibility::exists($actor->value(), $author->account_identifier), $author->visibility === 'private',
             $actor->value() === $author->account_identifier,

@@ -136,26 +136,20 @@ use Src\Contact\Infrastructure\Factory\ContactFactory;
 use Src\Contact\Infrastructure\Repository\AccountRepository as ContactAccountRepository;
 use Src\Contact\Infrastructure\Repository\ContactRepository;
 use Src\Contact\Infrastructure\Service\LaravelContactSupportMailService;
-use Src\Like\Application\UseCase\ChangeLikeNotificationSetting\ChangeLikeNotificationSetting;
-use Src\Like\Application\UseCase\ChangeLikeNotificationSetting\ChangeLikeNotificationSettingInterface;
 use Src\Like\Application\UseCase\CreateLike\CreateLike;
 use Src\Like\Application\UseCase\CreateLike\CreateLikeInterface;
 use Src\Like\Application\Usecase\Query\GetLikedRoutinePosts\GetLikedRoutinePostsInterface;
-use Src\Like\Application\Usecase\Query\GetLikeNotificationSetting\GetLikeNotificationSettingInterface;
 use Src\Like\Application\UseCase\RemoveLike\RemoveLike;
 use Src\Like\Application\UseCase\RemoveLike\RemoveLikeInterface;
 use Src\Like\Domain\Factory\LikeFactoryInterface;
 use Src\Like\Domain\Factory\LikeNotificationFactoryInterface;
 use Src\Like\Domain\Repository\LikeNotificationRepositoryInterface;
-use Src\Like\Domain\Repository\LikeNotificationSettingRepositoryInterface;
 use Src\Like\Domain\Repository\LikeNotificationTargetRepositoryInterface;
 use Src\Like\Domain\Repository\LikeRepositoryInterface;
 use Src\Like\Infrastructure\Factory\LikeFactory;
 use Src\Like\Infrastructure\Factory\LikeNotificationFactory;
 use Src\Like\Infrastructure\Query\GetLikedRoutinePosts\GetLikedRoutinePosts;
-use Src\Like\Infrastructure\Query\GetLikeNotificationSetting\GetLikeNotificationSetting;
 use Src\Like\Infrastructure\Repository\LikeNotificationRepository;
-use Src\Like\Infrastructure\Repository\LikeNotificationSettingRepository;
 use Src\Like\Infrastructure\Repository\LikeNotificationTargetRepository;
 use Src\Like\Infrastructure\Repository\LikeRepository;
 use Src\Notification\Application\Usecase\Command\MarkPersonalNotificationAsRead\MarkPersonalNotificationAsRead;
@@ -315,9 +309,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(LikeRepositoryInterface::class, LikeRepository::class);
         $this->app->bind(LikeNotificationRepositoryInterface::class, LikeNotificationRepository::class);
         $this->app->bind(LikeNotificationTargetRepositoryInterface::class, LikeNotificationTargetRepository::class);
-        $this->app->bind(LikeNotificationSettingRepositoryInterface::class, LikeNotificationSettingRepository::class);
-        $this->app->bind(ChangeLikeNotificationSettingInterface::class, ChangeLikeNotificationSetting::class);
-        $this->app->bind(GetLikeNotificationSettingInterface::class, GetLikeNotificationSetting::class);
+
         $this->app->bind(CreateLikeInterface::class, CreateLike::class);
         $this->app->bind(RemoveLikeInterface::class, RemoveLike::class);
 

@@ -33,10 +33,8 @@ use App\Http\Actions\Authentication\RestorePersistentLoginAction;
 use App\Http\Actions\Authentication\VerifyLoginPasscodeAction;
 use App\Http\Actions\Authentication\VerifyRegistrationPasscodeAction;
 use App\Http\Actions\Contact\SendContactSupportMailAction;
-use App\Http\Actions\Like\ChangeLikeNotificationSettingAction;
 use App\Http\Actions\Like\CreateLikeAction;
 use App\Http\Actions\Like\GetAccountLikedRoutinePostsAction;
-use App\Http\Actions\Like\GetLikeNotificationSettingAction;
 use App\Http\Actions\Like\GetMyLikedRoutinePostsAction;
 use App\Http\Actions\Like\RemoveLikeAction;
 use App\Http\Actions\Notification\GetAnnouncementsAction;
@@ -117,7 +115,6 @@ Route::middleware('web')->group(static function (): void {
     Route::post('/likes', CreateLikeAction::class);
     Route::delete('/likes/{post_identifier}', RemoveLikeAction::class)->whereUuid('post_identifier');
     Route::get('/my/likes', GetMyLikedRoutinePostsAction::class);
-    Route::get('/my/like-notification-setting', GetLikeNotificationSettingAction::class);
-    Route::patch('/my/like-notification-setting', ChangeLikeNotificationSettingAction::class);
+
     Route::get('/my/supports', GetMySupportsAction::class);
 });
