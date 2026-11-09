@@ -115,5 +115,6 @@ Route::middleware('web')->group(static function (): void {
     Route::post('/likes', CreateLikeAction::class);
     Route::delete('/likes/{post_identifier}', RemoveLikeAction::class)->whereUuid('post_identifier');
     Route::get('/my/likes', GetMyLikedRoutinePostsAction::class);
+
     Route::get('/my/supports', GetMySupportsAction::class);
 });
