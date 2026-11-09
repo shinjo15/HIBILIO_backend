@@ -6,6 +6,10 @@ namespace Tests\Feature\Account\Presentation;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use PHPUnit\Framework\Attributes\DataProvider;
+use RuntimeException;
+use Src\Account\Application\Usecase\Query\GetAccountDetails\GetAccountDetailsInterface;
+use Src\Account\Application\Usecase\Query\GetAccountDetails\GetAccountDetailsOutput;
 use Src\Shared\Application\Service\AuthServiceInterface;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Tests\TestCase;
@@ -41,6 +45,8 @@ final class GetMyAccountActionTest extends TestCase
                 'icon_image_url' => null,
                 'header_image_url' => null,
                 'ui_mode' => 'system',
+                'like_notifications_enabled' => false,
+                'support_notifications_enabled' => false,
                 'favorite_tags' => [[
                     'tag_identifier' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
                     'tag_name' => '朝活',
@@ -55,6 +61,47 @@ final class GetMyAccountActionTest extends TestCase
     public function test_returns_unauthorized_without_an_authenticated_account(): void
     {
         $this->getJson('/api/my/account')->assertUnauthorized();
+    }
+
+    #[DataProvider('missingNotificationSettingProvider')]
+    public function test_fails_explicitly_when_the_query_omits_owner_notification_settings(string $missingKey): void
+    {
+        $identifier = '11111111-1111-4111-8111-111111111111';
+        $this->insertAccount($identifier, true, 'active', 'アカウント', null);
+        $details = [
+            'accountIdentifier' => $identifier,
+            'name' => 'アカウント',
+            'isDetailed' => true,
+            'bio' => null,
+            'visibility' => 'public',
+            'hasPendingFollowRequest' => false,
+            'uiMode' => 'system',
+            'favoriteTags' => [],
+            'socialLinks' => [],
+            'iconImageUrl' => null,
+            'headerImageUrl' => null,
+            'isFollowing' => false,
+            'likeNotificationsEnabled' => false,
+            'supportNotificationsEnabled' => false,
+        ];
+        unset($details[$missingKey]);
+        $query = $this->createStub(GetAccountDetailsInterface::class);
+        $query->method('execute')->willReturn(new GetAccountDetailsOutput($details));
+        $this->app->instance(GetAccountDetailsInterface::class, $query);
+        $this->withoutExceptionHandling();
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Account owner notification settings are missing from query output.');
+
+        $this->withSession(['account_identifier' => $identifier])->getJson('/api/my/account');
+    }
+
+    public static function missingNotificationSettingProvider(): array
+    {
+        return [
+            'like' => ['likeNotificationsEnabled'],
+            'support' => ['supportNotificationsEnabled'],
+        ];
     }
 
     public function test_returns_full_details_for_the_authenticated_private_account(): void
@@ -74,9 +121,43 @@ final class GetMyAccountActionTest extends TestCase
                 'icon_image_url' => null,
                 'header_image_url' => null,
                 'ui_mode' => 'system',
+                'like_notifications_enabled' => false,
+                'support_notifications_enabled' => false,
                 'favorite_tags' => [],
                 'social_links' => [],
             ]);
+    }
+
+    public function test_returns_both_notification_settings_for_every_combination(): void
+    {
+        $identifier = '11111111-1111-4111-8111-111111111111';
+        $this->insertAccount($identifier, true, 'active', 'アカウント', null);
+
+        foreach ([false, true] as $likeEnabled) {
+            foreach ([false, true] as $supportEnabled) {
+                DB::table('accounts')->where('account_identifier', $identifier)->update([
+                    'like_notifications_enabled' => $likeEnabled,
+                    'support_notifications_enabled' => $supportEnabled,
+                ]);
+
+                $this->withSession(['account_identifier' => $identifier])
+                    ->getJson('/api/my/account')
+                    ->assertOk()
+                    ->assertExactJson([
+                        'account_identifier' => $identifier,
+                        'account_name' => 'アカウント',
+                        'account_bio' => null,
+                        'visibility' => 'public',
+                        'icon_image_url' => null,
+                        'header_image_url' => null,
+                        'ui_mode' => 'system',
+                        'like_notifications_enabled' => $likeEnabled,
+                        'support_notifications_enabled' => $supportEnabled,
+                        'favorite_tags' => [],
+                        'social_links' => [],
+                    ]);
+            }
+        }
     }
 
     private function insertAccount(string $identifier, bool $available, string $status, string $name, ?string $bio): void

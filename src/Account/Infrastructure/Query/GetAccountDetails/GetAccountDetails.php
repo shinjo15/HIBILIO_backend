@@ -29,7 +29,7 @@ final class GetAccountDetails implements GetAccountDetailsInterface
             BlockVisibility::exclude($query, $input->viewerAccountIdentifier(), 'accounts.account_identifier');
         }
 
-        $query->select(['account_identifier', 'account_name', 'account_bio', 'visibility', 'ui_mode']);
+        $query->select(['account_identifier', 'account_name', 'account_bio', 'visibility', 'ui_mode', 'like_notifications_enabled', 'support_notifications_enabled']);
 
         if ($input->viewerAccountIdentifier() === null) {
             $query
@@ -89,7 +89,7 @@ final class GetAccountDetails implements GetAccountDetailsInterface
             ])
             ->all();
 
-        return new GetAccountDetailsOutput([
+        $details = [
             'accountIdentifier' => (string) $account->account_identifier,
             'name' => (string) $account->account_name,
             'isDetailed' => true,
@@ -102,7 +102,14 @@ final class GetAccountDetails implements GetAccountDetailsInterface
             'iconImageUrl' => $this->accountImageUrlService->iconImageUrl(new AccountIdentifier((string) $account->account_identifier)),
             'headerImageUrl' => $this->accountImageUrlService->headerImageUrl(new AccountIdentifier((string) $account->account_identifier)),
             'isFollowing' => $input->viewerAccountIdentifier() === null ? null : $isFollowing,
-        ]);
+        ];
+
+        if ($isOwnAccount) {
+            $details['likeNotificationsEnabled'] = (bool) $account->like_notifications_enabled;
+            $details['supportNotificationsEnabled'] = (bool) $account->support_notifications_enabled;
+        }
+
+        return new GetAccountDetailsOutput($details);
     }
 
     private function hasPendingFollowRequest(string $viewerAccountIdentifier): Builder

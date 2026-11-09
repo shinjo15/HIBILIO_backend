@@ -158,10 +158,26 @@ final class GetAccountDetailsActionTest extends TestCase
         $this->insertAccount($viewerIdentifier, true, 'active', '閲覧者', null);
         $this->insertAccount($targetIdentifier, true, 'active', '対象', null);
 
+        DB::table('accounts')->where('account_identifier', $targetIdentifier)->update([
+            'like_notifications_enabled' => true,
+            'support_notifications_enabled' => true,
+        ]);
+
         $this->withSession(['account_identifier' => $viewerIdentifier])
             ->getJson("/api/accounts/{$targetIdentifier}")
             ->assertOk()
-            ->assertJsonPath('is_following', false);
+            ->assertExactJson([
+                'account_identifier' => $targetIdentifier,
+                'account_name' => '対象',
+                'account_bio' => null,
+                'visibility' => 'public',
+                'has_pending_follow_request' => false,
+                'icon_image_url' => null,
+                'header_image_url' => null,
+                'favorite_tags' => [],
+                'social_links' => [],
+                'is_following' => false,
+            ]);
 
         DB::table('follows')->insert([
             'following_account_identifier' => $viewerIdentifier,
@@ -182,6 +198,11 @@ final class GetAccountDetailsActionTest extends TestCase
         $targetIdentifier = '22222222-2222-4222-8222-222222222222';
         $this->insertAccount($viewerIdentifier, true, 'active', '閲覧者', null);
         $this->insertAccount($targetIdentifier, true, 'active', '鍵Account', '秘密の自己紹介', 'private');
+
+        DB::table('accounts')->where('account_identifier', $targetIdentifier)->update([
+            'like_notifications_enabled' => true,
+            'support_notifications_enabled' => true,
+        ]);
 
         $this->getJson("/api/accounts/{$targetIdentifier}")->assertNotFound();
         $this->withSession(['account_identifier' => $viewerIdentifier])
@@ -206,13 +227,33 @@ final class GetAccountDetailsActionTest extends TestCase
         $this->withSession(['account_identifier' => $viewerIdentifier])
             ->getJson("/api/accounts/{$targetIdentifier}")
             ->assertOk()
-            ->assertJsonPath('account_bio', '秘密の自己紹介')
-            ->assertJsonPath('is_following', true);
+            ->assertExactJson([
+                'account_identifier' => $targetIdentifier,
+                'account_name' => '鍵Account',
+                'account_bio' => '秘密の自己紹介',
+                'visibility' => 'private',
+                'has_pending_follow_request' => false,
+                'icon_image_url' => null,
+                'header_image_url' => null,
+                'favorite_tags' => [],
+                'social_links' => [],
+                'is_following' => true,
+            ]);
         $this->withSession(['account_identifier' => $targetIdentifier])
             ->getJson("/api/accounts/{$targetIdentifier}")
             ->assertOk()
-            ->assertJsonPath('account_bio', '秘密の自己紹介')
-            ->assertJsonPath('is_following', false);
+            ->assertExactJson([
+                'account_identifier' => $targetIdentifier,
+                'account_name' => '鍵Account',
+                'account_bio' => '秘密の自己紹介',
+                'visibility' => 'private',
+                'has_pending_follow_request' => false,
+                'icon_image_url' => null,
+                'header_image_url' => null,
+                'favorite_tags' => [],
+                'social_links' => [],
+                'is_following' => false,
+            ]);
     }
 
     private function insertAccount(string $identifier, bool $available, string $status, string $name, ?string $bio, string $visibility = 'public'): void

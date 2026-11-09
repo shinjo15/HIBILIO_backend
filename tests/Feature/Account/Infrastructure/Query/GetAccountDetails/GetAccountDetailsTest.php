@@ -109,6 +109,78 @@ final class GetAccountDetailsTest extends TestCase
         self::assertSame('秘密の自己紹介', $ownerDetails['bio']);
     }
 
+    public function test_owner_receives_both_saved_notification_settings(): void
+    {
+        $identifier = '11111111-1111-4111-8111-111111111111';
+        $this->insertAccount($identifier, true, 'active', 'アカウント', null);
+        $query = $this->app->make(GetAccountDetailsInterface::class);
+
+        foreach (['public', 'private'] as $visibility) {
+            foreach ([false, true] as $likeEnabled) {
+                foreach ([false, true] as $supportEnabled) {
+                    DB::table('accounts')->where('account_identifier', $identifier)->update([
+                        'visibility' => $visibility,
+                        'like_notifications_enabled' => $likeEnabled,
+                        'support_notifications_enabled' => $supportEnabled,
+                    ]);
+                    $details = $query->execute(new GetAccountDetailsInput($identifier, $identifier))->accountDetails();
+
+                    self::assertNotNull($details);
+                    self::assertArrayHasKey('likeNotificationsEnabled', $details);
+                    self::assertArrayHasKey('supportNotificationsEnabled', $details);
+                    self::assertSame($likeEnabled, $details['likeNotificationsEnabled']);
+                    self::assertSame($supportEnabled, $details['supportNotificationsEnabled']);
+                }
+            }
+        }
+    }
+
+    public function test_notification_settings_are_omitted_for_other_viewers(): void
+    {
+        $viewer = '11111111-1111-4111-8111-111111111111';
+        $target = '22222222-2222-4222-8222-222222222222';
+        $this->insertAccount($viewer, true, 'active', '閲覧者', null);
+        $this->insertAccount($target, true, 'active', '対象', null);
+        DB::table('accounts')->where('account_identifier', $target)->update([
+            'like_notifications_enabled' => true,
+            'support_notifications_enabled' => true,
+        ]);
+        $query = $this->app->make(GetAccountDetailsInterface::class);
+
+        foreach (['public', 'private'] as $visibility) {
+            DB::table('accounts')->where('account_identifier', $target)->update(['visibility' => $visibility]);
+            DB::table('follows')->where('following_account_identifier', $viewer)->where('followed_account_identifier', $target)->delete();
+
+            $anonymous = $query->execute(new GetAccountDetailsInput($target))->accountDetails();
+            if ($visibility === 'private') {
+                self::assertNull($anonymous);
+            } else {
+                self::assertNotNull($anonymous);
+                self::assertArrayNotHasKey('likeNotificationsEnabled', $anonymous);
+                self::assertArrayNotHasKey('supportNotificationsEnabled', $anonymous);
+            }
+
+            $nonFollower = $query->execute(new GetAccountDetailsInput($target, $viewer))->accountDetails();
+            self::assertNotNull($nonFollower);
+            self::assertSame($visibility === 'public', $nonFollower['isDetailed']);
+            self::assertArrayNotHasKey('likeNotificationsEnabled', $nonFollower);
+            self::assertArrayNotHasKey('supportNotificationsEnabled', $nonFollower);
+
+            DB::table('follows')->insert([
+                'following_account_identifier' => $viewer,
+                'followed_account_identifier' => $target,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            $follower = $query->execute(new GetAccountDetailsInput($target, $viewer))->accountDetails();
+            self::assertNotNull($follower);
+            self::assertTrue($follower['isDetailed']);
+            self::assertTrue($follower['isFollowing']);
+            self::assertArrayNotHasKey('likeNotificationsEnabled', $follower);
+            self::assertArrayNotHasKey('supportNotificationsEnabled', $follower);
+        }
+    }
+
     public function test_reverse_follow_returns_minimum_private_profile_and_generates_image_urls(): void
     {
         $viewer = '11111111-1111-4111-8111-111111111111';
