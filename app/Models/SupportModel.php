@@ -10,5 +10,7 @@ final class SupportModel extends Model
 {
     protected $table = 'supports';
 
+    public $incrementing = false;
+
     protected $fillable = ['account_identifier', 'post_identifier'];
 }
