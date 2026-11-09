@@ -6,6 +6,9 @@ namespace Tests\Feature\Like\Presentation;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use RuntimeException;
+use Src\Shared\Application\Service\AuthServiceInterface;
+use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Tests\TestCase;
 
 final class CreateLikeActionTest extends TestCase
@@ -15,6 +18,21 @@ final class CreateLikeActionTest extends TestCase
     public function test_requires_an_authenticated_account(): void
     {
         $this->postJson('/api/likes', ['post_identifier' => '11111111-1111-4111-8111-111111111111'])->assertUnauthorized();
+    }
+
+    public function test_authentication_runtime_failure_returns_server_error(): void
+    {
+        $this->app->instance(AuthServiceInterface::class, new class implements AuthServiceInterface
+        {
+            public function login(AccountIdentifier $accountIdentifier): void {}
+
+            public function accountIdentifier(): ?string
+            {
+                throw new RuntimeException('authentication storage failed');
+            }
+        });
+
+        $this->postJson('/api/likes', ['post_identifier' => '11111111-1111-4111-8111-111111111111'])->assertStatus(500);
     }
 
     public function test_validates_post_identifier(): void
