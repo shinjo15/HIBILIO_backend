@@ -16,7 +16,7 @@ final class GetMyNotifications implements GetMyNotificationsInterface
     public function execute(GetMyNotificationsInputPort $input): GetMyNotificationsOutputPort
     {
         $personalNotifications = DB::table('personal_notifications as notifications')
-            ->where('notifications.receiver_account_identifier', $input->accountIdentifier()->value())
+            ->where('notifications.receiver_account_identifier', $input->accountIdentifier())
             ->select([
                 'notifications.notification_identifier',
                 DB::raw("'personal' as category"),

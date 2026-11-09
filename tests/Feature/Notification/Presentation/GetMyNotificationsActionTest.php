@@ -24,6 +24,26 @@ final class GetMyNotificationsActionTest extends TestCase
 
     private const TIME = '2026-11-07 12:00:00';
 
+    public function test_only_authenticated_accounts_personal_notifications_are_returned(): void
+    {
+        $this->insertAccount(self::RECEIVER);
+        $this->insertAccount(self::OTHER);
+        $this->insertPersonalNotification(self::FIRST, self::RECEIVER, '自分への通知');
+        $this->insertPersonalNotification(self::SECOND, self::OTHER, '他人への通知');
+
+        $this->withSession(['account_identifier' => self::RECEIVER])
+            ->getJson('/api/my/notifications?account_identifier='.self::OTHER)
+            ->assertOk()
+            ->assertJsonPath('total', 1)
+            ->assertJsonCount(1, 'notifications')
+            ->assertJsonPath('notifications.0.notification_identifier', self::FIRST);
+    }
+
+    public function test_unauthenticated_request_is_rejected(): void
+    {
+        $this->getJson('/api/my/notifications')->assertUnauthorized();
+    }
+
     public function test_global_pages_are_stable_for_equal_timestamps_and_overlapping_identifiers(): void
     {
         $this->insertAccount(self::RECEIVER);
