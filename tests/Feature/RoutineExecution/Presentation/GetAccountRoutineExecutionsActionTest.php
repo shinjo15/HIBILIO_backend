@@ -44,6 +44,8 @@ final class GetAccountRoutineExecutionsActionTest extends TestCase
             ->getJson('/api/my/routine-executions')
             ->assertOk()
             ->assertExactJson($this->expectedResponse($accountIdentifier, $routineIdentifier, $routineExecutionIdentifier));
+        $this->getJson('/api/my/routine-executions?'.http_build_query(['start' => '2030-01-01T00:00:00Z', 'end' => '2031-01-01T00:00:00Z']))
+            ->assertOk()->assertExactJson($this->expectedResponse($accountIdentifier, $routineIdentifier, $routineExecutionIdentifier));
     }
 
     public function test_only_executor_can_see_execution_with_only_unavailable_posts(): void
@@ -89,6 +91,9 @@ final class GetAccountRoutineExecutionsActionTest extends TestCase
         $this->getJson("/api/accounts/{$accountIdentifier}/routine-executions")->assertOk()->assertExactJson($expected);
         $this->withSession(['account_identifier' => $accountIdentifier])->getJson('/api/my/routine-executions')
             ->assertOk()->assertExactJson($expected);
+        $interval = http_build_query(['start' => '2026-09-07T00:00:00Z', 'end' => '2026-09-08T00:00:00Z']);
+        $this->withSession(['account_identifier' => $accountIdentifier])->getJson('/api/my/routine-executions/history?'.$interval)
+            ->assertOk()->assertExactJson(array_replace_recursive($expected, ['items' => [['executed_at' => '2026-09-07T10:00:00.000000+00:00']]]));
     }
 
     public function test_other_viewer_visibility_applies_even_when_there_is_no_post(): void
@@ -151,6 +156,117 @@ final class GetAccountRoutineExecutionsActionTest extends TestCase
         sort($sorted);
         self::assertSame($sorted, $ids);
         self::assertCount(6, array_unique($ids));
+    }
+
+    public function test_interval_normalizes_offsets_includes_start_excludes_end_and_keeps_unposted_executions(): void
+    {
+        $account = '11111111-1111-4111-8111-111111111111';
+        $routine = '22222222-2222-4222-8222-222222222222';
+        $execution = '33333333-3333-4333-8333-333333333333';
+        $this->createExecutionHistory($account, $routine, $execution);
+        DB::table('posts')->delete();
+        DB::table('routine_executions')->where('routine_execution_identifier', $execution)->update(['executed_at' => '2025-12-31 15:00:00']);
+        // PostgreSQL's existing timestamp(0) rounds fractional seconds; SQLite can retain them.
+        foreach (['2025-12-31 14:59:59', '2025-12-31 15:00:01', '2026-12-31 15:00:00'] as $index => $date) {
+            DB::table('routine_executions')->insert(['routine_execution_identifier' => sprintf('33333333-3333-4333-8333-%012d', $index + 1), 'routine_identifier' => $routine, 'executor_account_identifier' => $account, 'executed_at' => $date]);
+        }
+        $query = http_build_query(['start' => '2026-01-01T00:00:00+09:00', 'end' => '2027-01-01T00:00:00+09:00']);
+        $response = $this->withSession(['account_identifier' => $account])->getJson('/api/my/routine-executions/history?'.$query)->assertOk()->assertJsonPath('total', 2);
+        $response->assertJsonPath('items.0.routine_execution_identifier', '33333333-3333-4333-8333-000000000002')->assertJsonPath('items.0.executed_at', '2025-12-31T15:00:01.000000+00:00')->assertJsonPath('items.1.routine_execution_identifier', $execution)->assertJsonPath('items.1.posted_at', null);
+        $fractional = http_build_query(['start' => '2025-12-31T10:00:00.123456-05:00', 'end' => '2025-12-31T15:00:01.000001Z']);
+        $this->getJson('/api/my/routine-executions/history?'.$fractional)->assertOk()->assertJsonPath('total', 1)->assertJsonPath('items.0.routine_execution_identifier', '33333333-3333-4333-8333-000000000002')->assertJsonPath('items.0.executed_at', '2025-12-31T15:00:01.000000+00:00');
+        $fractionalExclusion = http_build_query(['start' => '2025-12-31T15:00:00.000001Z', 'end' => '2025-12-31T15:00:01Z']);
+        $this->getJson('/api/my/routine-executions/history?'.$fractionalExclusion)->assertOk()->assertExactJson(['items' => [], 'total' => 0]);
+        $adjacent = http_build_query(['start' => '2027-01-01T00:00:00+09:00', 'end' => '2028-01-01T00:00:00+09:00']);
+        $this->getJson('/api/my/routine-executions/history?'.$adjacent)->assertOk()->assertJsonPath('total', 1)
+            ->assertJsonCount(1, 'items')->assertJsonPath('items.0.routine_execution_identifier', '33333333-3333-4333-8333-000000000003');
+    }
+
+    public function test_interval_validation_and_authentication(): void
+    {
+        $this->getJson('/api/my/routine-executions')->assertUnauthorized();
+        $this->createExecutionHistory('11111111-1111-4111-8111-111111111111', '22222222-2222-4222-8222-222222222222', '33333333-3333-4333-8333-333333333333');
+        $this->withSession(['account_identifier' => '11111111-1111-4111-8111-111111111111']);
+        foreach ([
+            ['start' => '2026-01-01T00:00:00Z'],
+            ['end' => '2026-01-01T00:00:00Z'],
+            ['start' => '', 'end' => ''],
+            ['start' => '2026-01-01T00:00:00', 'end' => '2027-01-01T00:00:00Z'],
+            ['start' => '2026-02-30T00:00:00Z', 'end' => '2027-01-01T00:00:00Z'],
+            ['start' => '2026-01-02T00:00:00Z', 'end' => '2026-01-01T00:00:00Z'],
+            ['start' => '2026-01-01T00:00:00Z', 'end' => '2026-01-01T09:00:00+09:00'],
+        ] as $parameters) {
+            $this->getJson('/api/my/routine-executions/history?'.http_build_query($parameters))->assertUnprocessable();
+        }
+        $this->withSession(['account_identifier' => '11111111-1111-4111-8111-111111111111'])->getJson('/api/my/routine-executions/history?'.http_build_query(['start' => '2026-01-01T00:00:00.000001Z', 'end' => '2026-01-01T00:00:00.000002Z']))->assertOk();
+        $this->getJson('/api/my/routine-executions?page=0&number_of_items_per_page=121')->assertUnprocessable()->assertJsonValidationErrors(['page', 'number_of_items_per_page']);
+    }
+
+    public function test_interval_rejects_dates_outside_the_utc_database_range_after_offset_conversion(): void
+    {
+        $account = '11111111-1111-4111-8111-111111111111';
+        $this->createExecutionHistory($account, '22222222-2222-4222-8222-222222222222', '33333333-3333-4333-8333-333333333333');
+        $this->withSession(['account_identifier' => $account]);
+
+        foreach ([
+            [['start' => '0001-01-01T00:00:00+00:01', 'end' => '0001-01-02T00:00:00Z'], 'start'],
+            [['start' => '0001-01-01T00:00:00+00:02', 'end' => '0001-01-01T00:00:00+00:01'], 'end'],
+            [['start' => '9999-12-31T23:59:59-00:01', 'end' => '9999-12-31T23:59:59-00:02'], 'start'],
+            [['start' => '9999-12-30T00:00:00Z', 'end' => '9999-12-31T23:59:59-00:01'], 'end'],
+        ] as [$parameters, $field]) {
+            $this->getJson('/api/my/routine-executions/history?'.http_build_query($parameters))
+                ->assertUnprocessable()->assertJsonValidationErrors([$field]);
+        }
+
+        $this->getJson('/api/my/routine-executions/history?'.http_build_query([
+            'start' => '0001-01-01T00:01:00+00:01',
+            'end' => '9999-12-31T23:58:59.999999-00:01',
+        ]))->assertOk()->assertJsonPath('total', 1);
+    }
+
+    public function test_interval_returns_all_matching_executions_regardless_of_pagination(): void
+    {
+        $account = '11111111-1111-4111-8111-111111111111';
+        $routine = '22222222-2222-4222-8222-222222222222';
+        $execution = '33333333-3333-4333-8333-333333333333';
+        $other = '55555555-5555-4555-8555-555555555555';
+        $this->createExecutionHistory($account, $routine, $execution);
+        DB::table('posts')->delete();
+        DB::table('accounts')->insert(['account_identifier' => $other, 'account_name' => 'other', 'email_address' => 'other@example.com', 'available' => true, 'status' => 'active']);
+        for ($i = 0; $i < 125; $i++) {
+            DB::table('routine_executions')->insert(['routine_execution_identifier' => sprintf('33333333-3333-4333-8333-%012d', $i), 'routine_identifier' => $routine, 'executor_account_identifier' => $account, 'executed_at' => '2026-09-07 10:00:00']);
+        }
+        DB::table('routine_executions')->insert(['routine_execution_identifier' => '66666666-6666-4666-8666-666666666666', 'routine_identifier' => $routine, 'executor_account_identifier' => $other, 'executed_at' => '2026-09-07 10:00:00']);
+        DB::table('routine_executions')->insert(['routine_execution_identifier' => '77777777-7777-4777-8777-777777777777', 'routine_identifier' => $routine, 'executor_account_identifier' => $account, 'executed_at' => '2026-09-08 00:00:00']);
+        $expected = [];
+        for ($i = 0; $i < 125; $i++) {
+            $expected[] = sprintf('33333333-3333-4333-8333-%012d', $i);
+        }
+        $expected[] = $execution;
+        foreach ([[], ['page' => 2, 'number_of_items_per_page' => 50], ['page' => 'invalid', 'number_of_items_per_page' => 121]] as $pagination) {
+            $query = http_build_query(array_merge(['start' => '2026-09-07T00:00:00Z', 'end' => '2026-09-08T00:00:00Z'], $pagination));
+            $response = $this->withSession(['account_identifier' => $account])->getJson('/api/my/routine-executions/history?'.$query)->assertOk()->assertJsonPath('total', 126);
+            self::assertSame($expected, array_column($response->json('items'), 'routine_execution_identifier'));
+        }
+        $this->getJson('/api/my/routine-executions?page=1&number_of_items_per_page=1')->assertOk()->assertJsonPath('total', 127)->assertJsonCount(1, 'items')->assertJsonPath('items.0.routine_execution_identifier', '77777777-7777-4777-8777-777777777777');
+        $this->getJson('/api/my/routine-executions?page=2&number_of_items_per_page=1')->assertOk()->assertJsonPath('total', 127)->assertJsonCount(1, 'items')->assertJsonPath('items.0.routine_execution_identifier', $expected[0]);
+    }
+
+    public function test_interval_preserves_routine_author_visibility_and_block_rules(): void
+    {
+        $account = '11111111-1111-4111-8111-111111111111';
+        $routine = '22222222-2222-4222-8222-222222222222';
+        $execution = '33333333-3333-4333-8333-333333333333';
+        $author = '66666666-6666-4666-8666-666666666666';
+        $this->createExecutionHistory($account, $routine, $execution);
+        DB::table('accounts')->insert(['account_identifier' => $author, 'account_name' => 'author', 'email_address' => 'author@example.com', 'available' => true, 'status' => 'active', 'visibility' => 'private']);
+        DB::table('routines')->where('routine_identifier', $routine)->update(['account_identifier' => $author]);
+        $url = '/api/my/routine-executions/history?'.http_build_query(['start' => '2026-01-01T00:00:00Z', 'end' => '2027-01-01T00:00:00Z']);
+        $this->withSession(['account_identifier' => $account])->getJson($url)->assertOk()->assertJsonPath('total', 0);
+        DB::table('follows')->insert(['following_account_identifier' => $account, 'followed_account_identifier' => $author]);
+        $this->withSession(['account_identifier' => $account])->getJson($url)->assertOk()->assertJsonPath('total', 1);
+        DB::table('blocks')->insert(['blocking_account_identifier' => $author, 'blocked_account_identifier' => $account]);
+        $this->withSession(['account_identifier' => $account])->getJson($url)->assertOk()->assertJsonPath('total', 0);
     }
 
     private function expectedResponse(string $accountIdentifier, string $routineIdentifier, string $routineExecutionIdentifier): array

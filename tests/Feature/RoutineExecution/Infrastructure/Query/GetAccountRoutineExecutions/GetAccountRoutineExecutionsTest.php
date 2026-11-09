@@ -34,6 +34,7 @@ final class GetAccountRoutineExecutionsTest extends TestCase
             'accountName' => '実行者',
             'iconImageUrl' => "https://images.example/accounts/{$accountIdentifier}/icon",
             'executedActionCount' => 0,
+            'executedAt' => '2026-09-07T10:00:00.000000+00:00',
             'postedAt' => '2026-09-07T10:00:00+00:00',
             'routineExecutionMemo' => '振り返り',
             'supportCount' => 7,

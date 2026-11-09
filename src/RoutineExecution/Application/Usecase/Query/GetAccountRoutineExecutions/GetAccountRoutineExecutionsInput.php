@@ -6,7 +6,17 @@ namespace Src\RoutineExecution\Application\Usecase\Query\GetAccountRoutineExecut
 
 final readonly class GetAccountRoutineExecutionsInput implements GetAccountRoutineExecutionsInputPort
 {
-    public function __construct(private string $accountIdentifier, private int $page, private int $numberOfItemsPerPage, private ?string $viewerAccountIdentifier = null) {}
+    public function __construct(private string $accountIdentifier, private int $page, private int $numberOfItemsPerPage, private ?string $viewerAccountIdentifier = null, private ?string $start = null, private ?string $end = null) {}
+
+    public function start(): ?string
+    {
+        return $this->start;
+    }
+
+    public function end(): ?string
+    {
+        return $this->end;
+    }
 
     public function accountIdentifier(): string
     {

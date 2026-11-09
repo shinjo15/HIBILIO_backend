@@ -13,4 +13,8 @@ interface GetAccountRoutineExecutionsInputPort
     public function page(): int;
 
     public function numberOfItemsPerPage(): int;
+
+    public function start(): ?string;
+
+    public function end(): ?string;
 }
