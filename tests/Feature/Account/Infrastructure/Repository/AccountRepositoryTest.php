@@ -183,6 +183,27 @@ final class AccountRepositoryTest extends TestCase
         self::assertTrue($repository->find($id)->supportNotificationsEnabled());
     }
 
+    public function test_like_setting_is_saved_and_restored_on_creation_and_sequential_updates(): void
+    {
+        $repository = new AccountRepository;
+        $id = new AccountIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87');
+        $account = Account::create($id, new AccountName('Original'), null, new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]));
+        $account->changeLikeNotifications(true);
+        $account->changeSupportNotifications(true);
+        $repository->save($account);
+        $restored = $repository->findByEmailAddress(new EmailAddress('user@example.com'));
+        self::assertTrue($restored->likeNotificationsEnabled());
+        self::assertTrue($restored->supportNotificationsEnabled());
+        $restored->changeSupportNotifications(false);
+        $repository->save($restored);
+        $restored = $repository->find($id);
+        self::assertTrue($restored->likeNotificationsEnabled());
+        self::assertFalse($restored->supportNotificationsEnabled());
+        $restored->changeLikeNotifications(false);
+        $repository->save($restored);
+        self::assertFalse($repository->find($id)->likeNotificationsEnabled());
+    }
+
     private function insertTag(): void
     {
         DB::table('tags')->insert([

@@ -19,6 +19,8 @@ use Src\Account\Application\Usecase\Command\ChangeAccountUiMode\ChangeAccountUiM
 use Src\Account\Application\Usecase\Command\ChangeAccountUiMode\ChangeAccountUiModeInterface;
 use Src\Account\Application\Usecase\Command\ChangeAccountVisibility\ChangeAccountVisibility;
 use Src\Account\Application\Usecase\Command\ChangeAccountVisibility\ChangeAccountVisibilityInterface;
+use Src\Account\Application\Usecase\Command\ChangeLikeNotifications\ChangeLikeNotifications;
+use Src\Account\Application\Usecase\Command\ChangeLikeNotifications\ChangeLikeNotificationsInterface;
 use Src\Account\Application\Usecase\Command\ChangeSupportNotifications\ChangeSupportNotifications;
 use Src\Account\Application\Usecase\Command\ChangeSupportNotifications\ChangeSupportNotificationsInterface;
 use Src\Account\Application\Usecase\Command\CreateAccount\CreateAccount;
@@ -296,6 +298,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ChangeAccountVisibilityInterface::class, ChangeAccountVisibility::class);
         $this->app->bind(ChangeAccountUiModeInterface::class, ChangeAccountUiMode::class);
         $this->app->bind(ChangeSupportNotificationsInterface::class, ChangeSupportNotifications::class);
+        $this->app->bind(ChangeLikeNotificationsInterface::class, ChangeLikeNotifications::class);
         $this->app->bind(GetAccountDetailsInterface::class, GetAccountDetails::class);
         $this->app->bind(GetAccountRoutinePostsInterface::class, GetAccountRoutinePosts::class);
 

@@ -56,6 +56,19 @@ final class LikeNotificationTest extends TestCase
         $this->assertDatabaseHas('posts', ['post_identifier' => self::POST, 'post_like_count' => 1]);
     }
 
+    public function test_setting_changes_control_notifications_for_subsequent_likes(): void
+    {
+        $this->fixtures();
+        $this->withSession(['account_identifier' => self::AUTHOR])->patchJson('/api/my/account/like-notifications', ['like_notifications_enabled' => false])->assertNoContent();
+        $this->withSession(['account_identifier' => self::ACTOR])->postJson('/api/likes', ['post_identifier' => self::POST])->assertNoContent();
+        $this->assertDatabaseCount('likes', 1);
+        $this->assertDatabaseCount('personal_notifications', 0);
+        $this->withSession(['account_identifier' => self::ACTOR])->deleteJson('/api/likes/'.self::POST)->assertNoContent();
+        $this->withSession(['account_identifier' => self::AUTHOR])->patchJson('/api/my/account/like-notifications', ['like_notifications_enabled' => true])->assertNoContent();
+        $this->withSession(['account_identifier' => self::ACTOR])->postJson('/api/likes', ['post_identifier' => self::POST])->assertNoContent();
+        $this->assertDatabaseHas('personal_notifications', ['receiver_account_identifier' => self::AUTHOR, 'content' => '花子さんが「朝の運動」にいいねしました。']);
+    }
+
     public function test_self_like_creates_notification(): void
     {
         $this->fixtures();
