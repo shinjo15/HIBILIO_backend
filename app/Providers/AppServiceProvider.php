@@ -144,13 +144,11 @@ use Src\Like\Application\UseCase\RemoveLike\RemoveLikeInterface;
 use Src\Like\Domain\Factory\LikeFactoryInterface;
 use Src\Like\Domain\Factory\LikeNotificationFactoryInterface;
 use Src\Like\Domain\Repository\LikeNotificationRepositoryInterface;
-use Src\Like\Domain\Repository\LikeNotificationTargetRepositoryInterface;
 use Src\Like\Domain\Repository\LikeRepositoryInterface;
 use Src\Like\Infrastructure\Factory\LikeFactory;
 use Src\Like\Infrastructure\Factory\LikeNotificationFactory;
 use Src\Like\Infrastructure\Query\GetLikedRoutinePosts\GetLikedRoutinePosts;
 use Src\Like\Infrastructure\Repository\LikeNotificationRepository;
-use Src\Like\Infrastructure\Repository\LikeNotificationTargetRepository;
 use Src\Like\Infrastructure\Repository\LikeRepository;
 use Src\Notification\Application\Usecase\Command\MarkPersonalNotificationAsRead\MarkPersonalNotificationAsRead;
 use Src\Notification\Application\Usecase\Command\MarkPersonalNotificationAsRead\MarkPersonalNotificationAsReadInterface;
@@ -308,7 +306,6 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(LikeNotificationFactoryInterface::class, LikeNotificationFactory::class);
         $this->app->bind(LikeRepositoryInterface::class, LikeRepository::class);
         $this->app->bind(LikeNotificationRepositoryInterface::class, LikeNotificationRepository::class);
-        $this->app->bind(LikeNotificationTargetRepositoryInterface::class, LikeNotificationTargetRepository::class);
 
         $this->app->bind(CreateLikeInterface::class, CreateLike::class);
         $this->app->bind(RemoveLikeInterface::class, RemoveLike::class);

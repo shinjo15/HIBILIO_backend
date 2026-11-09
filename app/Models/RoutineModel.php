@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 final class RoutineModel extends Model
@@ -33,6 +34,11 @@ final class RoutineModel extends Model
         return [
             'available' => 'boolean',
         ];
+    }
+
+    public function account(): BelongsTo
+    {
+        return $this->belongsTo(AccountModel::class, 'account_identifier', 'account_identifier');
     }
 
     public function tags(): BelongsToMany

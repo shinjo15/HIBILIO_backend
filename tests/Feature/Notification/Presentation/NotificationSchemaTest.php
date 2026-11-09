@@ -48,6 +48,23 @@ final class NotificationSchemaTest extends TestCase
         }
     }
 
+    public function test_like_notification_setting_defaults_to_false_for_existing_and_new_accounts(): void
+    {
+        $migration = require database_path('migrations/2026_11_09_000000_add_like_notifications_enabled_to_accounts_table.php');
+        $migration->down();
+        $this->insertAccount(self::RECEIVER);
+        try {
+            $migration->up();
+            $this->assertDatabaseHas('accounts', ['account_identifier' => self::RECEIVER, 'like_notifications_enabled' => false]);
+            $this->insertAccount(self::FIRST);
+            $this->assertDatabaseHas('accounts', ['account_identifier' => self::FIRST, 'like_notifications_enabled' => false]);
+        } finally {
+            if (! Schema::hasColumn('accounts', 'like_notifications_enabled')) {
+                $migration->up();
+            }
+        }
+    }
+
     public function test_notification_migration_up_and_down_preserve_existing_accounts(): void
     {
         $migration = require database_path('migrations/2026_11_07_132115_create_notification_tables.php');
