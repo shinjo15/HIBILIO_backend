@@ -1,0 +1,51 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Src\Notification\Domain\Entity;
+
+use Src\Notification\Domain\Exception\PersonalNotificationAccessDeniedException;
+use Src\Notification\Domain\ValueObject\NotificationIdentifier;
+use Src\Notification\Domain\ValueObject\PersonalNotificationContent;
+use Src\Notification\Domain\ValueObject\PersonalNotificationStatus;
+use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
+
+final class PersonalNotification
+{
+    public function __construct(
+        private readonly NotificationIdentifier $notificationIdentifier,
+        private readonly AccountIdentifier $receiverAccountIdentifier,
+
+        private readonly PersonalNotificationContent $content,
+        private PersonalNotificationStatus $status,
+    ) {}
+
+    public function markAsReadBy(AccountIdentifier $readerAccountIdentifier): void
+    {
+        if ($this->receiverAccountIdentifier->value() !== $readerAccountIdentifier->value()) {
+            throw new PersonalNotificationAccessDeniedException;
+        }
+
+        $this->status = PersonalNotificationStatus::Read;
+    }
+
+    public function notificationIdentifier(): NotificationIdentifier
+    {
+        return $this->notificationIdentifier;
+    }
+
+    public function receiverAccountIdentifier(): AccountIdentifier
+    {
+        return $this->receiverAccountIdentifier;
+    }
+
+    public function content(): PersonalNotificationContent
+    {
+        return $this->content;
+    }
+
+    public function status(): PersonalNotificationStatus
+    {
+        return $this->status;
+    }
+}
