@@ -19,6 +19,23 @@ use Src\Shared\Domain\ValueObject\Identifier\TagIdentifier;
 
 final class AccountTest extends TestCase
 {
+    public function test_like_notification_setting_defaults_off_and_can_be_changed(): void
+    {
+        $account = Account::create(new AccountIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87'), new AccountName('User'), null, new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]));
+        self::assertFalse($account->likeNotificationsEnabled());
+        $account->changeLikeNotifications(true);
+        self::assertTrue($account->likeNotificationsEnabled());
+        $account->changeLikeNotifications(false);
+        self::assertFalse($account->likeNotificationsEnabled());
+    }
+
+    public function test_restore_preserves_both_notification_settings(): void
+    {
+        $account = Account::restore(new AccountIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87'), new AccountName('User'), null, new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]), AccountStatus::ACTIVE, null, supportNotificationsEnabled: true, likeNotificationsEnabled: true);
+        self::assertTrue($account->likeNotificationsEnabled());
+        self::assertTrue($account->supportNotificationsEnabled());
+    }
+
     public function test_creates_an_account_directly_from_valid_value_objects(): void
     {
         $accountIdentifier = new AccountIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87');

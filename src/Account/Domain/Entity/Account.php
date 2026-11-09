@@ -31,6 +31,7 @@ final class Account
         private AccountUiMode $uiMode,
         private readonly bool $available,
         private bool $supportNotificationsEnabled,
+        private bool $likeNotificationsEnabled,
     ) {}
 
     /** @param list<SocialLink> $socialLinks */
@@ -67,6 +68,7 @@ final class Account
             $uiMode,
             true,
             false,
+            false,
         );
     }
 
@@ -84,8 +86,9 @@ final class Account
         AccountUiMode $uiMode = AccountUiMode::SYSTEM,
         bool $available = true,
         bool $supportNotificationsEnabled = false,
+        bool $likeNotificationsEnabled = false,
     ): self {
-        return new self($accountIdentifier, $accountName, $accountBio, $emailAddress, $socialLinks, $favoriteTagIdentifiers, $status, $banUntil, $visibility, $uiMode, $available, $supportNotificationsEnabled);
+        return new self($accountIdentifier, $accountName, $accountBio, $emailAddress, $socialLinks, $favoriteTagIdentifiers, $status, $banUntil, $visibility, $uiMode, $available, $supportNotificationsEnabled, $likeNotificationsEnabled);
     }
 
     public function active(): void
@@ -124,6 +127,16 @@ final class Account
     public function supportNotificationsEnabled(): bool
     {
         return $this->supportNotificationsEnabled;
+    }
+
+    public function changeLikeNotifications(bool $enabled): void
+    {
+        $this->likeNotificationsEnabled = $enabled;
+    }
+
+    public function likeNotificationsEnabled(): bool
+    {
+        return $this->likeNotificationsEnabled;
     }
 
     /** @param list<SocialLink>|null $socialLinks */
