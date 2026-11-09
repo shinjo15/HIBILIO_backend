@@ -36,9 +36,7 @@ final readonly class GetMyNotificationsAction
         return new JsonResponse([
             'notifications' => array_map(static fn (array $notification): array => [
                 'notification_identifier' => $notification['notificationIdentifier'],
-                'category' => $notification['category'],
                 'status' => $notification['status'],
-                'title' => $notification['title'],
                 'content' => $notification['content'],
                 'created_at' => $notification['createdAt'],
             ], $result->notifications()),

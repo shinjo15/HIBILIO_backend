@@ -7,7 +7,7 @@ namespace Src\Notification\Application\Usecase\Query\GetMyNotifications;
 final readonly class GetMyNotificationsOutput implements GetMyNotificationsOutputPort
 {
     /**
-     * @param  list<array{notificationIdentifier: string, category: string, receiverAccountIdentifier: ?string, status: ?string, title: ?string, content: string, createdAt: string}>  $notifications
+     * @param  list<array{notificationIdentifier: string, status: string, content: string, createdAt: string}>  $notifications
      */
     public function __construct(private array $notifications, private int $total) {}
 

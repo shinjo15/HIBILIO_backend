@@ -30,6 +30,7 @@ final class GetMyNotificationsActionTest extends TestCase
         $this->insertAccount(self::OTHER);
         $this->insertPersonalNotification(self::FIRST, self::RECEIVER, '自分への通知');
         $this->insertPersonalNotification(self::SECOND, self::OTHER, '他人への通知');
+        $this->insertAnnouncement(self::THIRD, 'お知らせ', self::TIME);
 
         $this->withSession(['account_identifier' => self::RECEIVER])
             ->getJson('/api/my/notifications?account_identifier='.self::OTHER)
@@ -44,7 +45,7 @@ final class GetMyNotificationsActionTest extends TestCase
         $this->getJson('/api/my/notifications')->assertUnauthorized();
     }
 
-    public function test_global_pages_are_stable_for_equal_timestamps_and_overlapping_identifiers(): void
+    public function test_personal_pages_are_stable_and_independent_of_announcements(): void
     {
         $this->insertAccount(self::RECEIVER);
         $this->insertAccount(self::OTHER);
@@ -55,15 +56,11 @@ final class GetMyNotificationsActionTest extends TestCase
         $this->insertAnnouncement(self::THIRD, 'お知らせ２', self::TIME);
         $this->insertAnnouncement('dddddddd-dddd-4ddd-8ddd-dddddddddddd', '古いお知らせ', '2026-11-07 09:00:00');
 
-        $one = $this->withSession(['account_identifier' => self::RECEIVER])->getJson('/api/my/notifications?page=1&number_of_items_per_page=2');
-        $two = $this->withSession(['account_identifier' => self::RECEIVER])->getJson('/api/my/notifications?page=2&number_of_items_per_page=2');
-        $three = $this->withSession(['account_identifier' => self::RECEIVER])->getJson('/api/my/notifications?page=3&number_of_items_per_page=2');
-        $one->assertOk()->assertJsonPath('total', 5)->assertJsonCount(2, 'notifications')->assertJsonPath('notifications.0.notification_identifier', self::FIRST)->assertJsonPath('notifications.0.category', 'personal')->assertJsonPath('notifications.0.content', '最初の通知')->assertJsonPath('notifications.1.notification_identifier', self::SECOND)->assertJsonPath('notifications.1.status', 'read');
-        $two->assertOk()->assertJsonPath('total', 5)->assertJsonCount(2, 'notifications')->assertJsonPath('notifications.0.notification_identifier', self::FIRST)->assertJsonPath('notifications.0.category', 'system_announcement')->assertJsonPath('notifications.0.status', null)->assertJsonPath('notifications.0.title', 'お知らせ１')->assertJsonPath('notifications.1.notification_identifier', self::THIRD);
-        $three->assertOk()->assertJsonPath('total', 5)->assertJsonCount(1, 'notifications')->assertJsonPath('notifications.0.notification_identifier', 'dddddddd-dddd-4ddd-8ddd-dddddddddddd');
-        foreach ([$one->json('notifications.0'), $two->json('notifications.0')] as $notification) {
-            self::assertEqualsCanonicalizing(['notification_identifier', 'category', 'status', 'title', 'content', 'created_at'], array_keys($notification));
-        }
+        $one = $this->withSession(['account_identifier' => self::RECEIVER])->getJson('/api/my/notifications?page=1&number_of_items_per_page=1');
+        $two = $this->withSession(['account_identifier' => self::RECEIVER])->getJson('/api/my/notifications?page=2&number_of_items_per_page=1');
+        $one->assertOk()->assertJsonPath('total', 2)->assertJsonCount(1, 'notifications')->assertJsonPath('notifications.0.notification_identifier', self::FIRST)->assertJsonPath('notifications.0.content', '最初の通知');
+        $two->assertOk()->assertJsonPath('total', 2)->assertJsonCount(1, 'notifications')->assertJsonPath('notifications.0.notification_identifier', self::SECOND)->assertJsonPath('notifications.0.status', 'read');
+        self::assertEqualsCanonicalizing(['notification_identifier', 'status', 'content', 'created_at'], array_keys($one->json('notifications.0')));
     }
 
     public function test_returns_an_empty_inbox_when_there_are_no_notifications_or_announcements(): void
@@ -76,25 +73,16 @@ final class GetMyNotificationsActionTest extends TestCase
             ->assertExactJson(['notifications' => [], 'total' => 0]);
     }
 
-    public function test_returns_system_announcements_without_personal_notifications(): void
+    public function test_announcements_do_not_appear_in_empty_personal_inbox(): void
     {
         $this->insertAccount(self::RECEIVER);
         $this->insertAnnouncement(self::FIRST, 'お知らせ', self::TIME);
 
-        $response = $this->withSession(['account_identifier' => self::RECEIVER])
-            ->getJson('/api/my/notifications');
-        $response->assertOk()
-            ->assertJsonPath('total', 1)
-            ->assertJsonCount(1, 'notifications')
-            ->assertJsonPath('notifications.0.notification_identifier', self::FIRST)
-            ->assertJsonPath('notifications.0.category', 'system_announcement')
-            ->assertJsonPath('notifications.0.status', null)
-            ->assertJsonPath('notifications.0.title', 'お知らせ')
-            ->assertJsonPath('notifications.0.content', 'お知らせ本文');
-        self::assertEqualsCanonicalizing(['notification_identifier', 'category', 'status', 'title', 'content', 'created_at'], array_keys($response->json('notifications.0')));
+        $this->withSession(['account_identifier' => self::RECEIVER])
+            ->getJson('/api/my/notifications')->assertOk()->assertExactJson(['notifications' => [], 'total' => 0]);
     }
 
-    public function test_out_of_range_page_returns_empty_notifications_and_global_total(): void
+    public function test_out_of_range_page_returns_empty_notifications_and_personal_total(): void
     {
         $this->insertAccount(self::RECEIVER);
         $this->insertPersonalNotification(self::FIRST, self::RECEIVER, '個別通知');
@@ -103,16 +91,7 @@ final class GetMyNotificationsActionTest extends TestCase
         $this->withSession(['account_identifier' => self::RECEIVER])
             ->getJson('/api/my/notifications?page=3&number_of_items_per_page=1')
             ->assertOk()
-            ->assertExactJson(['notifications' => [], 'total' => 2]);
-    }
-
-    public function test_system_announcement_supports_long_unicode_content(): void
-    {
-        $this->insertAccount(self::RECEIVER);
-        $title = str_repeat('題', 101);
-        $content = str_repeat('内', 501);
-        DB::table('system_announcements')->insert(['announcement_identifier' => self::FIRST, 'title' => $title, 'content' => $content, 'created_at' => self::TIME, 'updated_at' => self::TIME]);
-        $this->withSession(['account_identifier' => self::RECEIVER])->getJson('/api/my/notifications')->assertOk()->assertJsonPath('notifications.0.title', $title)->assertJsonPath('notifications.0.content', $content);
+            ->assertExactJson(['notifications' => [], 'total' => 1]);
     }
 
     private function insertAccount(string $identifier): void

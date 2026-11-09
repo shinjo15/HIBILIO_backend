@@ -7,7 +7,7 @@ namespace Src\Notification\Application\Usecase\Query\GetMyNotifications;
 interface GetMyNotificationsOutputPort
 {
     /**
-     * @return list<array{notificationIdentifier: string, category: string, receiverAccountIdentifier: ?string, status: ?string, title: ?string, content: string, createdAt: string}>
+     * @return list<array{notificationIdentifier: string, status: string, content: string, createdAt: string}>
      */
     public function notifications(): array;
 

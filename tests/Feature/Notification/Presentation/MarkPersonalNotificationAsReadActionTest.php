@@ -41,7 +41,7 @@ final class MarkPersonalNotificationAsReadActionTest extends TestCase
 
         $response = $this->withSession(['account_identifier' => self::RECEIVER])->getJson('/api/my/notifications');
         $response->assertOk()->assertJsonPath('total', 1)->assertJsonPath('notifications.0.content', $content)->assertJsonPath('notifications.0.status', 'unread');
-        self::assertEqualsCanonicalizing(['notification_identifier', 'category', 'status', 'title', 'content', 'created_at'], array_keys($response->json('notifications.0')));
+        self::assertEqualsCanonicalizing(['notification_identifier', 'status', 'content', 'created_at'], array_keys($response->json('notifications.0')));
         $this->withSession(['account_identifier' => self::RECEIVER])->patchJson('/api/my/notifications/'.self::FIRST.'/read')->assertNoContent();
         $this->withSession(['account_identifier' => self::RECEIVER])->patchJson('/api/my/notifications/'.self::FIRST.'/read')->assertNoContent();
         $this->assertDatabaseHas('personal_notifications', ['notification_identifier' => self::FIRST, 'status' => 'read', 'content' => $content]);
@@ -63,7 +63,7 @@ final class MarkPersonalNotificationAsReadActionTest extends TestCase
 
             $response = $this->withSession(['account_identifier' => self::RECEIVER])->getJson('/api/my/notifications');
             $response->assertOk()->assertJsonPath('total', 1)->assertJsonPath('notifications.0.content', $content)->assertJsonPath('notifications.0.status', 'unread');
-            self::assertEqualsCanonicalizing(['notification_identifier', 'category', 'status', 'title', 'content', 'created_at'], array_keys($response->json('notifications.0')));
+            self::assertEqualsCanonicalizing(['notification_identifier', 'status', 'content', 'created_at'], array_keys($response->json('notifications.0')));
 
             $this->withSession(['account_identifier' => self::RECEIVER])->patchJson('/api/my/notifications/'.self::FIRST.'/read')->assertNoContent();
             $restored = $repository->find(new NotificationIdentifier(self::FIRST));
