@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\DB;
 use Src\Account\Domain\Entity\Account;
 use Src\Account\Domain\ValueObject\AccountBio;
 use Src\Account\Domain\ValueObject\AccountName;
+use Src\Account\Domain\ValueObject\AccountUiMode;
+use Src\Account\Domain\ValueObject\AccountVisibility;
 use Src\Account\Domain\ValueObject\EmailAddress;
 use Src\Account\Domain\ValueObject\FavoriteTagIdentifiers;
 use Src\Account\Domain\ValueObject\SocialLink;
@@ -114,6 +116,71 @@ final class AccountRepositoryTest extends TestCase
 
         self::assertNotNull($account);
         self::assertFalse($account->isAvailable());
+        $account->changeUiMode(AccountUiMode::DARK);
+        (new AccountRepository)->save($account);
+        $this->assertDatabaseHas('accounts', [
+            'account_identifier' => '3b5581e9-16df-4879-b7d2-5d88dca6ab87',
+            'available' => false,
+            'ui_mode' => 'dark',
+        ]);
+    }
+
+    public function test_save_persists_support_setting_and_other_entity_changes(): void
+    {
+        $repository = new AccountRepository;
+        $id = new AccountIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87');
+        $repository->save(Account::create($id, new AccountName('Original'), null, new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([])));
+        DB::table('accounts')->where('account_identifier', $id->value())->update(['like_notifications_enabled' => true]);
+        $account = $repository->find($id);
+        self::assertNotNull($account);
+
+        $account->changeSupportNotifications(true);
+        $account->changeUiMode(AccountUiMode::DARK);
+        $account->changeVisibility(AccountVisibility::PRIVATE);
+        $account->updateProfile(new AccountName('Updated'), true, new AccountBio('Updated bio'), null, null);
+        $account->permanentlyBan();
+        $repository->save($account);
+
+        $this->assertDatabaseHas('accounts', [
+            'account_identifier' => $id->value(), 'account_name' => 'Updated', 'account_bio' => 'Updated bio',
+            'email_address' => 'user@example.com', 'status' => 'permanently_banned', 'visibility' => 'private',
+            'ui_mode' => 'dark', 'support_notifications_enabled' => true, 'like_notifications_enabled' => true,
+        ]);
+    }
+
+    public function test_sequential_account_saves_preserve_support_setting(): void
+    {
+        $repository = new AccountRepository;
+        $id = new AccountIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87');
+        $repository->save(Account::create($id, new AccountName('Original'), null, new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([])));
+        $settingsAccount = $repository->find($id);
+        $settingsAccount->changeSupportNotifications(true);
+        $repository->save($settingsAccount);
+        $statusAccount = $repository->find($id);
+        $statusAccount->temporarilyBan();
+        $repository->save($statusAccount);
+        $modeAccount = $repository->find($id);
+        $modeAccount->changeUiMode(AccountUiMode::DARK);
+        $repository->save($modeAccount);
+
+        $this->assertDatabaseHas('accounts', [
+            'account_identifier' => $id->value(),
+            'status' => 'temporarily_banned',
+            'ui_mode' => 'dark',
+            'support_notifications_enabled' => true,
+        ]);
+    }
+
+    public function test_creation_persists_changed_entity_setting(): void
+    {
+        $repository = new AccountRepository;
+        $id = new AccountIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87');
+        $account = Account::create($id, new AccountName('Original'), null, new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]));
+        $account->changeSupportNotifications(true);
+        $repository->save($account);
+
+        $this->assertDatabaseHas('accounts', ['account_identifier' => $id->value(), 'support_notifications_enabled' => true]);
+        self::assertTrue($repository->find($id)->supportNotificationsEnabled());
     }
 
     private function insertTag(): void
