@@ -7,12 +7,12 @@ namespace App\Http\Actions\RoutineExecution;
 use App\Http\Requests\RoutineExecution\GetMyRoutineExecutionHistoryRequest;
 use Illuminate\Http\JsonResponse;
 use RuntimeException;
-use Src\RoutineExecution\Application\Usecase\Query\GetAccountRoutineExecutions\GetAccountRoutineExecutionsInterface;
+use Src\RoutineExecution\Application\Usecase\Query\GetMyRoutineExecutionHistory\GetMyRoutineExecutionHistoryInterface;
 use Src\Shared\Application\Service\AuthServiceInterface;
 
 final readonly class GetMyRoutineExecutionHistoryAction
 {
-    public function __construct(private GetAccountRoutineExecutionsInterface $query, private AuthServiceInterface $authService) {}
+    public function __construct(private GetMyRoutineExecutionHistoryInterface $query, private AuthServiceInterface $authService) {}
 
     public function __invoke(GetMyRoutineExecutionHistoryRequest $request): JsonResponse
     {

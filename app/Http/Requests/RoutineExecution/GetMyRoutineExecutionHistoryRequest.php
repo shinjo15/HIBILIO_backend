@@ -8,7 +8,7 @@ use Closure;
 use DateTimeImmutable;
 use DateTimeZone;
 use Illuminate\Foundation\Http\FormRequest;
-use Src\RoutineExecution\Application\Usecase\Query\GetAccountRoutineExecutions\GetAccountRoutineExecutionsInput;
+use Src\RoutineExecution\Application\Usecase\Query\GetMyRoutineExecutionHistory\GetMyRoutineExecutionHistoryInput;
 
 final class GetMyRoutineExecutionHistoryRequest extends FormRequest
 {
@@ -52,11 +52,11 @@ final class GetMyRoutineExecutionHistoryRequest extends FormRequest
         ];
     }
 
-    public function toInput(string $accountIdentifier): GetAccountRoutineExecutionsInput
+    public function toInput(string $accountIdentifier): GetMyRoutineExecutionHistoryInput
     {
         $utc = new DateTimeZone('UTC');
         $normalize = static fn (string $value): string => rtrim(rtrim((new DateTimeImmutable($value))->setTimezone($utc)->format('Y-m-d H:i:s.u'), '0'), '.');
 
-        return new GetAccountRoutineExecutionsInput($accountIdentifier, 1, 40, $accountIdentifier, $normalize($this->string('start')->toString()), $normalize($this->string('end')->toString()));
+        return new GetMyRoutineExecutionHistoryInput($accountIdentifier, $normalize($this->string('start')->toString()), $normalize($this->string('end')->toString()));
     }
 }

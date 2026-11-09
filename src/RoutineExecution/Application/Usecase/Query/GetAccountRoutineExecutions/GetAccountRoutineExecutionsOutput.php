@@ -6,7 +6,7 @@ namespace Src\RoutineExecution\Application\Usecase\Query\GetAccountRoutineExecut
 
 final readonly class GetAccountRoutineExecutionsOutput implements GetAccountRoutineExecutionsOutputPort
 {
-    /** @param list<array{routineExecutionIdentifier: string, routineIdentifier: string, routineName: string, accountIdentifier: string, accountName: string, iconImageUrl: ?string, executedActionCount: int, executedAt: string, postedAt: ?string, routineExecutionMemo: ?string, supportCount: ?int, supported: ?bool}> $items */
+    /** @param list<array{routineExecutionIdentifier: string, routineIdentifier: string, routineName: string, accountIdentifier: string, accountName: string, iconImageUrl: ?string, executedActionCount: int, postedAt: ?string, routineExecutionMemo: ?string, supportCount: ?int, supported: ?bool}> $items */
     public function __construct(private array $items, private int $total) {}
 
     public function items(): array
