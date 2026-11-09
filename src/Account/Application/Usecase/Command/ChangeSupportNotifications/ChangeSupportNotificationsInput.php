@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Src\Account\Application\Usecase\Command\ChangeAccountSupportNotifications;
+namespace Src\Account\Application\Usecase\Command\ChangeSupportNotifications;
 
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
-final readonly class ChangeAccountSupportNotificationsInput implements ChangeAccountSupportNotificationsInputPort
+final readonly class ChangeSupportNotificationsInput implements ChangeSupportNotificationsInputPort
 {
     public function __construct(private AccountIdentifier $accountIdentifier, private bool $enabled) {}
 

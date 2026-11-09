@@ -3,9 +3,9 @@
 declare(strict_types=1);
 
 use App\Http\Actions\Account\ApproveFollowRequestAction;
-use App\Http\Actions\Account\ChangeAccountSupportNotificationsAction;
 use App\Http\Actions\Account\ChangeAccountUiModeAction;
 use App\Http\Actions\Account\ChangeAccountVisibilityAction;
+use App\Http\Actions\Account\ChangeSupportNotificationsAction;
 use App\Http\Actions\Account\CreateAccountAction;
 use App\Http\Actions\Account\CreateBlockAction;
 use App\Http\Actions\Account\CreateFollowAction;
@@ -79,7 +79,7 @@ Route::middleware('web')->group(static function (): void {
     Route::patch('/my/account', UpdateAccountProfileAction::class);
     Route::patch('/my/account/visibility', ChangeAccountVisibilityAction::class);
     Route::patch('/my/account/ui-mode', ChangeAccountUiModeAction::class);
-    Route::patch('/my/account/support-notifications', ChangeAccountSupportNotificationsAction::class);
+    Route::patch('/my/account/support-notifications', ChangeSupportNotificationsAction::class);
     Route::get('/my/routines', GetMyRoutinePostsAction::class);
     Route::get('/my/posts', GetMyPostsAction::class);
     Route::get('/my/routine-executions', GetMyRoutineExecutionsAction::class);

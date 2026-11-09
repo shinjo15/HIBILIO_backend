@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Src\Account\Application\Usecase\Command\ChangeAccountSupportNotifications;
+namespace Src\Account\Application\Usecase\Command\ChangeSupportNotifications;
 
 use Src\Account\Domain\Exception\AccountNotFoundException;
 use Src\Account\Domain\Repository\AccountRepositoryInterface;
 use Src\Shared\Application\Transaction\TransactionManagerInterface;
 
-final readonly class ChangeAccountSupportNotifications implements ChangeAccountSupportNotificationsInterface
+final readonly class ChangeSupportNotifications implements ChangeSupportNotificationsInterface
 {
     public function __construct(private AccountRepositoryInterface $accountRepository, private TransactionManagerInterface $transactionManager) {}
 
-    public function execute(ChangeAccountSupportNotificationsInputPort $input): void
+    public function execute(ChangeSupportNotificationsInputPort $input): void
     {
         $account = $this->accountRepository->find($input->accountIdentifier());
         if ($account === null) {

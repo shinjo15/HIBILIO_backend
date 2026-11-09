@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Src\Account\Application\Usecase\Command\ChangeAccountSupportNotifications;
+namespace Src\Account\Application\Usecase\Command\ChangeSupportNotifications;
 
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
-interface ChangeAccountSupportNotificationsInputPort
+interface ChangeSupportNotificationsInputPort
 {
     public function accountIdentifier(): AccountIdentifier;
 

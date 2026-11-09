@@ -16,7 +16,7 @@ use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Src\Shared\Infrastructure\Service\LaravelAuthService;
 use Tests\TestCase;
 
-final class ChangeAccountSupportNotificationsActionTest extends TestCase
+final class ChangeSupportNotificationsActionTest extends TestCase
 {
     use RefreshDatabase;
 
