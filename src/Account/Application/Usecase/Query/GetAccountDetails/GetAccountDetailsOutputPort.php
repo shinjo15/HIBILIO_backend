@@ -26,7 +26,9 @@ namespace Src\Account\Application\Usecase\Query\GetAccountDetails;
  *     socialLinks: list<array{socialType: string, socialUrl: string}>,
  *     iconImageUrl: ?string,
  *     headerImageUrl: ?string,
- *     isFollowing: ?bool
+ *     isFollowing: ?bool,
+ *     likeNotificationsEnabled?: bool,
+ *     supportNotificationsEnabled?: bool
  * }
  */
 interface GetAccountDetailsOutputPort
@@ -34,6 +36,7 @@ interface GetAccountDetailsOutputPort
     /**
      * null means unavailable. isDetailed=false returns the minimum public profile.
      * isFollowing is null for anonymous viewers, otherwise the viewer-to-account follow state.
+     * Both notification settings are included for the account owner and omitted for all other viewers.
      *
      * @return AccountDetails|null
      */

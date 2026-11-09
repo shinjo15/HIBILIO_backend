@@ -31,6 +31,10 @@ final readonly class GetMyAccountAction
             return new JsonResponse([], 404);
         }
 
+        if (! isset($accountDetails['likeNotificationsEnabled'], $accountDetails['supportNotificationsEnabled'])) {
+            throw new RuntimeException('Account owner notification settings are missing from query output.');
+        }
+
         return new JsonResponse([
             'account_identifier' => $accountDetails['accountIdentifier'],
             'account_name' => $accountDetails['name'],
@@ -39,6 +43,8 @@ final readonly class GetMyAccountAction
             'icon_image_url' => $accountDetails['iconImageUrl'],
             'header_image_url' => $accountDetails['headerImageUrl'],
             'ui_mode' => $accountDetails['uiMode'],
+            'like_notifications_enabled' => $accountDetails['likeNotificationsEnabled'],
+            'support_notifications_enabled' => $accountDetails['supportNotificationsEnabled'],
             'favorite_tags' => array_map(static fn (array $tag): array => [
                 'tag_identifier' => $tag['tagIdentifier'],
                 'tag_name' => $tag['tagName'],
