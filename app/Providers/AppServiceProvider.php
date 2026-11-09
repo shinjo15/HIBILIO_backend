@@ -15,6 +15,8 @@ use Src\Account\Application\Usecase\Command\ApproveFollowRequest\ApproveFollowRe
 use Src\Account\Application\Usecase\Command\ApproveFollowRequest\ApproveFollowRequestInterface;
 use Src\Account\Application\Usecase\Command\ChangeAccountStatus\ChangeAccountStatus;
 use Src\Account\Application\Usecase\Command\ChangeAccountStatus\ChangeAccountStatusInterface;
+use Src\Account\Application\Usecase\Command\ChangeAccountSupportNotifications\ChangeAccountSupportNotifications;
+use Src\Account\Application\Usecase\Command\ChangeAccountSupportNotifications\ChangeAccountSupportNotificationsInterface;
 use Src\Account\Application\Usecase\Command\ChangeAccountUiMode\ChangeAccountUiMode;
 use Src\Account\Application\Usecase\Command\ChangeAccountUiMode\ChangeAccountUiModeInterface;
 use Src\Account\Application\Usecase\Command\ChangeAccountVisibility\ChangeAccountVisibility;
@@ -293,6 +295,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ChangeAccountStatusInterface::class, ChangeAccountStatus::class);
         $this->app->bind(ChangeAccountVisibilityInterface::class, ChangeAccountVisibility::class);
         $this->app->bind(ChangeAccountUiModeInterface::class, ChangeAccountUiMode::class);
+        $this->app->bind(ChangeAccountSupportNotificationsInterface::class, ChangeAccountSupportNotifications::class);
         $this->app->bind(GetAccountDetailsInterface::class, GetAccountDetails::class);
         $this->app->bind(GetAccountRoutinePostsInterface::class, GetAccountRoutinePosts::class);
 

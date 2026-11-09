@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Schema;
 use RuntimeException;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Src\Shared\Domain\ValueObject\Identifier\PostIdentifier;
+use Src\Shared\Infrastructure\Service\LaravelAuthService;
 use Src\Support\Application\UseCase\CreateSupport\CreateSupportInput;
 use Src\Support\Application\UseCase\CreateSupport\CreateSupportInterface;
 use Src\Support\Domain\Entity\SupportNotification;
@@ -64,6 +65,20 @@ final class SupportNotificationTest extends TestCase
         $this->fixtures(true);
         $this->execute(self::EXECUTOR);
         $this->assertDatabaseHas('personal_notifications', ['receiver_account_identifier' => self::EXECUTOR, 'content' => '太郎さんが「朝の運動」の実行を応援しました。', 'status' => 'unread']);
+    }
+
+    public function test_saved_setting_controls_subsequent_support_notifications(): void
+    {
+        $this->fixtures(false);
+        $this->withSession([LaravelAuthService::SESSION_KEY => self::EXECUTOR])->patchJson('/api/my/account/support-notifications', ['support_notifications_enabled' => true])->assertNoContent();
+        $this->execute(self::ACTOR);
+        $this->assertDatabaseCount('personal_notifications', 1);
+        $this->assertDatabaseHas('personal_notifications', ['receiver_account_identifier' => self::EXECUTOR, 'content' => '花子さんが「朝の運動」の実行を応援しました。']);
+
+        $this->withSession([LaravelAuthService::SESSION_KEY => self::EXECUTOR])->patchJson('/api/my/account/support-notifications', ['support_notifications_enabled' => false])->assertNoContent();
+        $this->execute(self::AUTHOR);
+        $this->assertDatabaseCount('supports', 2);
+        $this->assertDatabaseCount('personal_notifications', 1);
     }
 
     public function test_notification_failure_rolls_back_all_changes(): void
