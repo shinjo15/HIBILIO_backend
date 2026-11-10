@@ -22,8 +22,6 @@ final class AccountFactoryTest extends TestCase
         self::assertSame('3b5581e9-16df-4879-b7d2-5d88dca6ab87', $account->accountIdentifier()->value());
         self::assertSame(AccountVisibility::PUBLIC, $account->visibility());
         self::assertSame(AccountUiMode::SYSTEM, $account->uiMode());
-        self::assertSame(0, $account->experience());
-        self::assertSame(1, $account->level());
     }
 }
 

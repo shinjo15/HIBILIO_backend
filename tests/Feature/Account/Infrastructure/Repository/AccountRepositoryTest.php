@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Account\Infrastructure\Repository;
 
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use Src\Account\Domain\Entity\Account;
 use Src\Account\Domain\ValueObject\AccountBio;
 use Src\Account\Domain\ValueObject\AccountName;
@@ -28,57 +26,6 @@ final class AccountRepositoryTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_new_account_persists_its_current_experience(): void
-    {
-        $id = new AccountIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87');
-        $account = Account::create($id, new AccountName('User'), null, new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]), 3000);
-        $account->recordRoutineExecution();
-        $repository = new AccountRepository;
-        $repository->save($account);
-        $this->assertDatabaseHas('accounts', ['account_identifier' => $id->value(), 'experience' => 3100]);
-        self::assertSame(3100, $repository->find($id)->experience());
-    }
-
-    public function test_existing_experience_is_updated_only_by_save_experience(): void
-    {
-        $id = new AccountIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87');
-        $repository = new AccountRepository;
-        $repository->save(Account::create($id, new AccountName('User'), null, new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]), 0));
-        DB::transaction(function () use ($repository, $id): void {
-            $account = $repository->findForUpdate($id);
-            $account->recordRoutineExecution();
-            $repository->save($account);
-            self::assertSame(0, $repository->find($id)->experience());
-            $repository->saveExperience($account);
-            self::assertSame(100, $repository->find($id)->experience());
-        });
-    }
-
-    public function test_migration_assigns_zero_to_existing_accounts(): void
-    {
-        Schema::table('accounts', static function (Blueprint $table): void {
-            $table->dropColumn('experience');
-        });
-        DB::table('accounts')->insert(['account_identifier' => '3b5581e9-16df-4879-b7d2-5d88dca6ab87', 'account_name' => 'User', 'email_address' => 'user@example.com']);
-        $migration = require database_path('migrations/2026_11_10_000000_add_experience_to_accounts_table.php');
-        $migration->up();
-        $this->assertDatabaseHas('accounts', ['account_identifier' => '3b5581e9-16df-4879-b7d2-5d88dca6ab87', 'experience' => 0]);
-    }
-
-    public function test_saving_a_stale_account_does_not_overwrite_experience(): void
-    {
-        $identifier = new AccountIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87');
-        $repository = new AccountRepository;
-        $repository->save(Account::create($identifier, new AccountName('User'), null, new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]), 0));
-        $stale = $repository->find($identifier);
-        DB::table('accounts')->where('account_identifier', $identifier->value())->update(['experience' => 3000]);
-        $stale->changeUiMode(AccountUiMode::DARK);
-        $repository->save($stale);
-        $this->assertDatabaseHas('accounts', ['account_identifier' => $identifier->value(), 'experience' => 3000]);
-        self::assertSame(3000, $repository->find($identifier)->experience());
-        self::assertSame(2, $repository->find($identifier)->level());
-    }
-
     public function test_saves_social_links_with_their_type_url_and_order_and_restores_them(): void
     {
         $this->insertTag();
@@ -90,7 +37,6 @@ final class AccountRepositoryTest extends TestCase
                 new SocialLink(SocialType::X, new SocialUrl('https://x.com/example')),
             ],
             new FavoriteTagIdentifiers([new TagIdentifier('b0caa7f4-e1da-4f48-a8db-12fcf9bf47d5')]),
-            0,
         );
         $repository = new AccountRepository;
 
@@ -124,7 +70,7 @@ final class AccountRepositoryTest extends TestCase
     {
         $account = Account::create(
             new AccountIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87'), new AccountName('朝活ユーザー'), null,
-            new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]), 0,
+            new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]),
         );
 
         (new AccountRepository)->save($account);
@@ -141,14 +87,14 @@ final class AccountRepositoryTest extends TestCase
         $repository = new AccountRepository;
         $account = Account::create(
             new AccountIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87'), new AccountName('朝活ユーザー'), null,
-            new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]), 0,
+            new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]),
         );
         $repository->save($account);
 
         $this->expectException(UniqueConstraintViolationException::class);
         $repository->save(Account::create(
             new AccountIdentifier('75017745-e475-4337-b0f3-3fc3d670e5c7'), new AccountName('別ユーザー'), null,
-            new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]), 0,
+            new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]),
         ));
     }
 
@@ -183,7 +129,7 @@ final class AccountRepositoryTest extends TestCase
     {
         $repository = new AccountRepository;
         $id = new AccountIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87');
-        $repository->save(Account::create($id, new AccountName('Original'), null, new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]), 0));
+        $repository->save(Account::create($id, new AccountName('Original'), null, new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([])));
         DB::table('accounts')->where('account_identifier', $id->value())->update(['like_notifications_enabled' => true]);
         $account = $repository->find($id);
         self::assertNotNull($account);
@@ -206,7 +152,7 @@ final class AccountRepositoryTest extends TestCase
     {
         $repository = new AccountRepository;
         $id = new AccountIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87');
-        $repository->save(Account::create($id, new AccountName('Original'), null, new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]), 0));
+        $repository->save(Account::create($id, new AccountName('Original'), null, new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([])));
         $settingsAccount = $repository->find($id);
         $settingsAccount->changeSupportNotifications(true);
         $repository->save($settingsAccount);
@@ -229,7 +175,7 @@ final class AccountRepositoryTest extends TestCase
     {
         $repository = new AccountRepository;
         $id = new AccountIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87');
-        $account = Account::create($id, new AccountName('Original'), null, new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]), 0);
+        $account = Account::create($id, new AccountName('Original'), null, new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]));
         $account->changeSupportNotifications(true);
         $repository->save($account);
 
@@ -241,7 +187,7 @@ final class AccountRepositoryTest extends TestCase
     {
         $repository = new AccountRepository;
         $id = new AccountIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87');
-        $account = Account::create($id, new AccountName('Original'), null, new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]), 0);
+        $account = Account::create($id, new AccountName('Original'), null, new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]));
         $account->changeLikeNotifications(true);
         $account->changeSupportNotifications(true);
         $repository->save($account);

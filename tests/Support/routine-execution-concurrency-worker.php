@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\DB;
-use Src\Account\Domain\Entity\Account;
-use Src\Account\Domain\Repository\AccountRepositoryInterface;
-use Src\Account\Domain\ValueObject\EmailAddress;
 use Src\RoutineExecution\Application\UseCase\CreateRoutineExecution\CreateRoutineExecutionInput;
 use Src\RoutineExecution\Application\UseCase\CreateRoutineExecution\CreateRoutineExecutionInterface;
+use Src\RoutineExecution\Domain\Entity\Account;
+use Src\RoutineExecution\Domain\Repository\AccountRepositoryInterface;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Src\Shared\Domain\ValueObject\Identifier\RoutineActionIdentifier;
 use Src\Shared\Domain\ValueObject\Identifier\RoutineIdentifier;
@@ -28,26 +27,6 @@ $app->instance(AccountRepositoryInterface::class, new class($repository, $mode) 
 {
     public function __construct(private AccountRepositoryInterface $inner, private string $mode) {}
 
-    public function find(AccountIdentifier $id): ?Account
-    {
-        return $this->inner->find($id);
-    }
-
-    public function findByEmailAddress(EmailAddress $email): ?Account
-    {
-        return $this->inner->findByEmailAddress($email);
-    }
-
-    public function save(Account $account): void
-    {
-        $this->inner->save($account);
-    }
-
-    public function updateProfile(Account $account): void
-    {
-        $this->inner->updateProfile($account);
-    }
-
     public function findForUpdate(AccountIdentifier $id): ?Account
     {
         $account = $this->inner->findForUpdate($id);
@@ -62,9 +41,9 @@ $app->instance(AccountRepositoryInterface::class, new class($repository, $mode) 
         return $account;
     }
 
-    public function saveExperience(Account $account): void
+    public function save(Account $account): void
     {
-        $this->inner->saveExperience($account);
+        $this->inner->save($account);
         if ($this->mode === 'rollback') {
             throw new RuntimeException('injected concurrent rollback');
         }

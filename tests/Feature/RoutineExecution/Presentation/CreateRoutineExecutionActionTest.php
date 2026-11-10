@@ -6,11 +6,11 @@ namespace Tests\Feature\RoutineExecution\Presentation;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use Src\Account\Domain\Repository\AccountRepositoryInterface;
-use Src\Account\Infrastructure\Repository\AccountRepository;
 use Src\RoutineExecution\Application\UseCase\CreateRoutineExecution\CreateRoutineExecutionInputPort;
 use Src\RoutineExecution\Application\UseCase\CreateRoutineExecution\CreateRoutineExecutionInterface;
+use Src\RoutineExecution\Domain\Repository\AccountRepositoryInterface;
 use Src\RoutineExecution\Domain\Repository\RoutineExecutionRepositoryInterface;
+use Src\RoutineExecution\Infrastructure\Repository\AccountRepository;
 use Src\Shared\Application\Service\AuthServiceInterface;
 use Src\Shared\Domain\Repository\PostRepositoryInterface;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
@@ -30,8 +30,8 @@ final class CreateRoutineExecutionActionTest extends TestCase
         DB::table('routine_actions')->insert(['routine_action_identifier' => $action, 'routine_identifier' => $routine, 'action_name' => 'Action']);
 
         $repository = \Mockery::mock(AccountRepositoryInterface::class);
-        $repository->shouldReceive('findForUpdate')->once()->andReturnUsing(fn ($id) => (new AccountRepository)->findForUpdate($id));
-        $repository->shouldReceive('saveExperience')->once()->andReturnUsing(fn () => DB::statement('insert into nonexistent_experience_test_table (id) values (1)'));
+        $repository->shouldReceive('findForUpdate')->once()->andReturnUsing(fn ($id) => $this->app->make(AccountRepository::class)->findForUpdate($id));
+        $repository->shouldReceive('save')->once()->andReturnUsing(fn () => DB::statement('insert into nonexistent_experience_test_table (id) values (1)'));
         $this->app->instance(AccountRepositoryInterface::class, $repository);
 
         $this->withSession(['account_identifier' => $account])->postJson('/api/routine-executions', [
@@ -40,6 +40,29 @@ final class CreateRoutineExecutionActionTest extends TestCase
         ])->assertStatus(500);
 
         $this->assertDatabaseHas('accounts', ['account_identifier' => $account, 'experience' => 0]);
+        $this->assertDatabaseCount('routine_executions', 0);
+        $this->assertDatabaseCount('routine_execution_actions', 0);
+        $this->assertDatabaseCount('posts', 0);
+    }
+
+    public function test_missing_executor_returns_unprocessable_without_saving_execution_actions_or_post(): void
+    {
+        $author = '11111111-1111-4111-8111-111111111111';
+        $routine = '22222222-2222-4222-8222-222222222222';
+        $action = '33333333-3333-4333-8333-333333333333';
+        $missingExecutor = '44444444-4444-4444-8444-444444444444';
+        DB::table('accounts')->insert(['account_identifier' => $author, 'account_name' => 'Author', 'email_address' => 'author@example.com']);
+        DB::table('routines')->insert(['routine_identifier' => $routine, 'routine_name' => 'Routine', 'account_identifier' => $author]);
+        DB::table('routine_actions')->insert(['routine_action_identifier' => $action, 'routine_identifier' => $routine, 'action_name' => 'Action']);
+        $auth = $this->createStub(AuthServiceInterface::class);
+        $auth->method('accountIdentifier')->willReturn($missingExecutor);
+        $this->app->instance(AuthServiceInterface::class, $auth);
+
+        $this->postJson('/api/routine-executions', [
+            'routine_identifier' => $routine,
+            'executed_routine_action_identifiers' => [$action],
+        ])->assertUnprocessable();
+
         $this->assertDatabaseCount('routine_executions', 0);
         $this->assertDatabaseCount('routine_execution_actions', 0);
         $this->assertDatabaseCount('posts', 0);
@@ -81,8 +104,8 @@ final class CreateRoutineExecutionActionTest extends TestCase
     public function test_failure_to_save_experience_rolls_back_execution_and_post(): void
     {
         $repository = \Mockery::mock(AccountRepositoryInterface::class);
-        $repository->shouldReceive('findForUpdate')->once()->andReturnUsing(fn ($id) => (new AccountRepository)->findForUpdate($id));
-        $repository->shouldReceive('saveExperience')->once()->andThrow(new \Exception('experience failure'));
+        $repository->shouldReceive('findForUpdate')->once()->andReturnUsing(fn ($id) => $this->app->make(AccountRepository::class)->findForUpdate($id));
+        $repository->shouldReceive('save')->once()->andThrow(new \Exception('experience failure'));
         $this->app->instance(AccountRepositoryInterface::class, $repository);
         $this->assertInjectedFailureRollsBack('experience failure');
     }

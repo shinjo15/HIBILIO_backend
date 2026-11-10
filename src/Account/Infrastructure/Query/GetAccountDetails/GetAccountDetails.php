@@ -11,13 +11,13 @@ use Src\Account\Application\Usecase\Query\GetAccountDetails\GetAccountDetailsInp
 use Src\Account\Application\Usecase\Query\GetAccountDetails\GetAccountDetailsInterface;
 use Src\Account\Application\Usecase\Query\GetAccountDetails\GetAccountDetailsOutput;
 use Src\Account\Application\Usecase\Query\GetAccountDetails\GetAccountDetailsOutputPort;
-use Src\Account\Domain\Entity\Account;
+use Src\Shared\Domain\Service\ExperienceLevelService;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
 
 final class GetAccountDetails implements GetAccountDetailsInterface
 {
-    public function __construct(private AccountImageUrlServiceInterface $accountImageUrlService) {}
+    public function __construct(private AccountImageUrlServiceInterface $accountImageUrlService, private ExperienceLevelService $experienceLevelService) {}
 
     public function execute(GetAccountDetailsInputPort $input): GetAccountDetailsOutputPort
     {
@@ -107,7 +107,7 @@ final class GetAccountDetails implements GetAccountDetailsInterface
 
         if ($isOwnAccount) {
             $details['experience'] = (int) $account->experience;
-            $details['level'] = Account::levelForExperience((int) $account->experience);
+            $details['level'] = $this->experienceLevelService->levelForExperience((int) $account->experience);
             $details['likeNotificationsEnabled'] = (bool) $account->like_notifications_enabled;
             $details['supportNotificationsEnabled'] = (bool) $account->support_notifications_enabled;
         }

@@ -83,7 +83,7 @@ final class AuthenticateWithPersistentLoginTokenTest extends TestCase
     public function test_revokes_expired_mismatched_missing_banned_and_unavailable_accounts(): void
     {
         $account = $this->account();
-        $unavailable = Account::restore($account->accountIdentifier(), $account->accountName(), null, $account->emailAddress(), [], new FavoriteTagIdentifiers([]), AccountStatus::ACTIVE, null, experience: 0, available: false);
+        $unavailable = Account::restore($account->accountIdentifier(), $account->accountName(), null, $account->emailAddress(), [], new FavoriteTagIdentifiers([]), AccountStatus::ACTIVE, null, available: false);
         $banned = $this->account();
         $banned->permanentlyBan();
 
@@ -126,7 +126,7 @@ final class AuthenticateWithPersistentLoginTokenTest extends TestCase
 
     private function account(): Account
     {
-        return Account::create(new AccountIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87'), new AccountName('User'), null, new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]), 0);
+        return Account::create(new AccountIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87'), new AccountName('User'), null, new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]));
     }
 }
 
@@ -195,13 +195,6 @@ final class FixedHashService implements HashServiceInterface
 }
 final class InMemoryPersistentLoginAccounts implements AccountRepositoryInterface
 {
-    public function findForUpdate(AccountIdentifier $accountIdentifier): ?Account
-    {
-        return $this->find($accountIdentifier);
-    }
-
-    public function saveExperience(Account $account): void {}
-
     public function __construct(private ?Account $account) {}
 
     public function find(AccountIdentifier $accountIdentifier): ?Account

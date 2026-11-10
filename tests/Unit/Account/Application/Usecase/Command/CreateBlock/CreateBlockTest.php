@@ -113,13 +113,6 @@ final class ImmediateTransactionManager implements TransactionManagerInterface
 
 final class InMemoryAccountRepository implements AccountRepositoryInterface
 {
-    public function findForUpdate(AccountIdentifier $accountIdentifier): ?Account
-    {
-        return $this->find($accountIdentifier);
-    }
-
-    public function saveExperience(Account $account): void {}
-
     public function __construct(private bool $exists) {}
 
     public function find(AccountIdentifier $accountIdentifier): ?Account
@@ -135,7 +128,6 @@ final class InMemoryAccountRepository implements AccountRepositoryInterface
             new EmailAddress('target@example.com'),
             [],
             new FavoriteTagIdentifiers([]),
-            0,
         );
     }
 

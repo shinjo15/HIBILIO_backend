@@ -9,6 +9,7 @@
     <testsuites>
         <testsuite name="PostgreSQL">
             <file>tests/Feature/Account/Infrastructure/Repository/AccountRepositoryTest.php</file>
+            <file>tests/Feature/RoutineExecution/Infrastructure/Repository/AccountRepositoryTest.php</file>
             <file>tests/Feature/Account/Presentation/GetMyAccountActionTest.php</file>
             <file>tests/Feature/RoutineExecution/Presentation/CreateRoutineExecutionActionTest.php</file>
             <file>tests/Feature/Infrastructure/RoutineActionSchemaTest.php</file>

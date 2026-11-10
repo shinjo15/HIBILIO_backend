@@ -57,7 +57,6 @@ final class AccountStatusTest extends TestCase
             new EmailAddress('user@example.com'),
             [],
             new FavoriteTagIdentifiers([]),
-            0,
         );
     }
 }

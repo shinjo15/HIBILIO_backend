@@ -32,7 +32,6 @@ final class Account
         private readonly bool $available,
         private bool $supportNotificationsEnabled,
         private bool $likeNotificationsEnabled,
-        private int $experience,
     ) {}
 
     /** @param list<SocialLink> $socialLinks */
@@ -43,12 +42,9 @@ final class Account
         EmailAddress $emailAddress,
         array $socialLinks,
         FavoriteTagIdentifiers $favoriteTagIdentifiers,
-        int $experience,
         AccountVisibility $visibility = AccountVisibility::PUBLIC,
         AccountUiMode $uiMode = AccountUiMode::SYSTEM,
     ): self {
-        self::validateExperience($experience);
-
         if (! array_is_list($socialLinks)) {
             throw new \InvalidArgumentException('SNSリンクは一覧で指定する必要があります。');
         }
@@ -73,7 +69,6 @@ final class Account
             true,
             false,
             false,
-            $experience,
         );
     }
 
@@ -87,46 +82,13 @@ final class Account
         FavoriteTagIdentifiers $favoriteTagIdentifiers,
         AccountStatus $status,
         ?DateTimeImmutable $banUntil,
-        int $experience,
         AccountVisibility $visibility = AccountVisibility::PUBLIC,
         AccountUiMode $uiMode = AccountUiMode::SYSTEM,
         bool $available = true,
         bool $supportNotificationsEnabled = false,
         bool $likeNotificationsEnabled = false,
-
     ): self {
-        self::validateExperience($experience);
-
-        return new self($accountIdentifier, $accountName, $accountBio, $emailAddress, $socialLinks, $favoriteTagIdentifiers, $status, $banUntil, $visibility, $uiMode, $available, $supportNotificationsEnabled, $likeNotificationsEnabled, $experience);
-    }
-
-    public function recordRoutineExecution(): void
-    {
-        $this->experience += 100;
-    }
-
-    public function experience(): int
-    {
-        return $this->experience;
-    }
-
-    public function level(): int
-    {
-        return self::levelForExperience($this->experience);
-    }
-
-    public static function levelForExperience(int $experience): int
-    {
-        self::validateExperience($experience);
-
-        return intdiv($experience, 3000) + 1;
-    }
-
-    private static function validateExperience(int $experience): void
-    {
-        if ($experience < 0) {
-            throw new \InvalidArgumentException('経験値は0以上である必要があります。');
-        }
+        return new self($accountIdentifier, $accountName, $accountBio, $emailAddress, $socialLinks, $favoriteTagIdentifiers, $status, $banUntil, $visibility, $uiMode, $available, $supportNotificationsEnabled, $likeNotificationsEnabled);
     }
 
     public function active(): void

@@ -91,7 +91,7 @@ final class LoginPasscodeUseCaseTest extends TestCase
 
     private function account(): Account
     {
-        return Account::create(new AccountIdentifier('f0cfa1a3-1ac7-44af-9bf4-b36c9262f028'), new AccountName('ユーザー'), null, new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]), 0);
+        return Account::create(new AccountIdentifier('f0cfa1a3-1ac7-44af-9bf4-b36c9262f028'), new AccountName('ユーザー'), null, new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]));
     }
 
     private function challenge(): LoginPasscodeChallenge
@@ -101,13 +101,6 @@ final class LoginPasscodeUseCaseTest extends TestCase
 }
 final class InMemoryAccounts implements AccountRepositoryInterface
 {
-    public function findForUpdate(AccountIdentifier $accountIdentifier): ?Account
-    {
-        return $this->find($accountIdentifier);
-    }
-
-    public function saveExperience(Account $account): void {}
-
     public function __construct(private ?Account $account) {}
 
     public function find(AccountIdentifier $accountIdentifier): ?Account
