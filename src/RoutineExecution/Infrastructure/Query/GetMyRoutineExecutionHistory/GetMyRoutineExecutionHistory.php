@@ -7,18 +7,19 @@ namespace Src\RoutineExecution\Infrastructure\Query\GetMyRoutineExecutionHistory
 use DateTimeImmutable;
 use DateTimeZone;
 use Illuminate\Support\Facades\DB;
+use Src\Account\Application\Service\AccountImageUrlServiceInterface;
 use Src\RoutineExecution\Application\Usecase\Query\GetMyRoutineExecutionHistory\GetMyRoutineExecutionHistoryInputPort;
 use Src\RoutineExecution\Application\Usecase\Query\GetMyRoutineExecutionHistory\GetMyRoutineExecutionHistoryInterface;
 use Src\RoutineExecution\Application\Usecase\Query\GetMyRoutineExecutionHistory\GetMyRoutineExecutionHistoryOutput;
 use Src\RoutineExecution\Application\Usecase\Query\GetMyRoutineExecutionHistory\GetMyRoutineExecutionHistoryOutputPort;
-use Src\RoutineExecution\Infrastructure\Service\RoutineExecutionAccountIconUrl;
+use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Src\Shared\Infrastructure\Query\Account\PrivateAccountVisibility;
 use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
 use Src\Shared\Infrastructure\Query\Post\PostInteractionState;
 
 final class GetMyRoutineExecutionHistory implements GetMyRoutineExecutionHistoryInterface
 {
-    public function __construct(private RoutineExecutionAccountIconUrl $accountIconUrl) {}
+    public function __construct(private AccountImageUrlServiceInterface $accountImageUrlService) {}
 
     public function execute(GetMyRoutineExecutionHistoryInputPort $input): GetMyRoutineExecutionHistoryOutputPort
     {
@@ -57,7 +58,7 @@ final class GetMyRoutineExecutionHistory implements GetMyRoutineExecutionHistory
         PostInteractionState::selectSupported($query, $accountIdentifier, 'posts.post_identifier');
 
         $records = $query->get();
-        $iconImageUrl = $records->isEmpty() ? null : $this->accountIconUrl->forAccount($accountIdentifier);
+        $iconImageUrl = $records->isEmpty() ? null : $this->accountImageUrlService->iconImageUrl(new AccountIdentifier($accountIdentifier));
         $items = $records->map(fn (object $record): array => [
             'routineExecutionIdentifier' => (string) $record->routine_execution_identifier,
             'routineIdentifier' => (string) $record->routine_identifier,
