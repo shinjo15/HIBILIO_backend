@@ -11,6 +11,7 @@
             <file>tests/Feature/Infrastructure/RoutineActionSchemaTest.php</file>
             <file>tests/Feature/Database/Seeders/TagSeederTest.php</file>
             <file>tests/Feature/Account/Presentation/GetFavoriteTagPostsActionTest.php</file>
+            <file>tests/Feature/Account/Presentation/GetAccountRoutinesActionTest.php</file>
             <file>tests/Feature/RoutineExecution/Infrastructure/Query/GetAccountRoutineExecutions/GetAccountRoutineExecutionsTest.php</file>
             <file>tests/Feature/RoutineExecution/Infrastructure/Query/GetMyRoutineExecutionHistory/GetMyRoutineExecutionHistoryTest.php</file>
             <file>tests/Feature/RoutineExecution/Presentation/GetAccountRoutineExecutionsActionTest.php</file>

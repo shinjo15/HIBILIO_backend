@@ -72,6 +72,7 @@ Route::middleware('web')->group(static function (): void {
     Route::get('/accounts/{account_identifier}/following', GetAccountFollowingAccountsAction::class)->whereUuid('account_identifier');
     Route::get('/accounts/{account_identifier}/likes', GetAccountLikedRoutinePostsAction::class);
     Route::get('/accounts/{account_identifier}/posts', GetAccountRoutinePostsAction::class);
+    Route::get('/accounts/{account_identifier}/routines', GetAccountRoutinePostsAction::class)->whereUuid('account_identifier');
     Route::get('/accounts/{account_identifier}/routine-executions', GetAccountRoutineExecutionsAction::class);
     Route::get('/my/account', GetMyAccountAction::class);
     Route::get('/my/following', GetMyFollowingAccountsAction::class);
