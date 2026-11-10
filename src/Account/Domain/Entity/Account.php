@@ -32,6 +32,7 @@ final class Account
         private readonly bool $available,
         private bool $supportNotificationsEnabled,
         private bool $likeNotificationsEnabled,
+        private int $experience = 0,
     ) {}
 
     /** @param list<SocialLink> $socialLinks */
@@ -87,8 +88,40 @@ final class Account
         bool $available = true,
         bool $supportNotificationsEnabled = false,
         bool $likeNotificationsEnabled = false,
+        int $experience = 0,
     ): self {
-        return new self($accountIdentifier, $accountName, $accountBio, $emailAddress, $socialLinks, $favoriteTagIdentifiers, $status, $banUntil, $visibility, $uiMode, $available, $supportNotificationsEnabled, $likeNotificationsEnabled);
+        self::validateExperience($experience);
+
+        return new self($accountIdentifier, $accountName, $accountBio, $emailAddress, $socialLinks, $favoriteTagIdentifiers, $status, $banUntil, $visibility, $uiMode, $available, $supportNotificationsEnabled, $likeNotificationsEnabled, $experience);
+    }
+
+    public function recordRoutineExecution(): void
+    {
+        $this->experience += 100;
+    }
+
+    public function experience(): int
+    {
+        return $this->experience;
+    }
+
+    public function level(): int
+    {
+        return self::levelForExperience($this->experience);
+    }
+
+    public static function levelForExperience(int $experience): int
+    {
+        self::validateExperience($experience);
+
+        return intdiv($experience, 3000) + 1;
+    }
+
+    private static function validateExperience(int $experience): void
+    {
+        if ($experience < 0) {
+            throw new \InvalidArgumentException('経験値は0以上である必要があります。');
+        }
     }
 
     public function active(): void

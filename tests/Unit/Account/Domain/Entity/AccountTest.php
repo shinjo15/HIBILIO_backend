@@ -19,6 +19,50 @@ use Src\Shared\Domain\ValueObject\Identifier\TagIdentifier;
 
 final class AccountTest extends TestCase
 {
+    public function test_restore_rejects_negative_experience(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        Account::restore(new AccountIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87'), new AccountName('User'), null, new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]), AccountStatus::ACTIVE, null, experience: -1);
+    }
+
+    public function test_new_account_starts_at_zero_experience_and_level_one(): void
+    {
+        $account = Account::create(new AccountIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87'), new AccountName('User'), null, new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]));
+
+        self::assertTrue(method_exists($account, 'experience'));
+        self::assertSame(0, $account->experience());
+        self::assertSame(1, $account->level());
+    }
+
+    public function test_experience_increases_by_one_hundred_per_execution_and_levels_at_thresholds(): void
+    {
+        $account = Account::create(new AccountIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87'), new AccountName('User'), null, new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]));
+        self::assertTrue(method_exists($account, 'recordRoutineExecution'));
+        for ($i = 0; $i < 29; $i++) {
+            $account->recordRoutineExecution();
+        }
+        self::assertSame(2900, $account->experience());
+        self::assertSame(1, $account->level());
+        $account->recordRoutineExecution();
+        self::assertSame(3000, $account->experience());
+        self::assertSame(2, $account->level());
+    }
+
+    public function test_level_boundaries(): void
+    {
+        self::assertSame(1, Account::levelForExperience(0));
+        self::assertSame(1, Account::levelForExperience(2999));
+        self::assertSame(2, Account::levelForExperience(3000));
+        self::assertSame(2, Account::levelForExperience(5999));
+        self::assertSame(3, Account::levelForExperience(6000));
+    }
+
+    public function test_level_rejects_negative_experience(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        Account::levelForExperience(-3000);
+    }
+
     public function test_like_notification_setting_defaults_off_and_can_be_changed(): void
     {
         $account = Account::create(new AccountIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87'), new AccountName('User'), null, new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]));
