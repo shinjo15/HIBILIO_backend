@@ -39,7 +39,7 @@ final class GetMyRoutinesActionTest extends TestCase
             ['routine_identifier' => '44444444-4444-4444-8444-444444444444', 'parent_routine_identifier' => $parent, 'account_identifier' => $owner, 'routine_name' => 'Unavailable child', 'available' => false],
         ]);
 
-        foreach (["/api/accounts/{$owner}/posts", '/api/my/routines'] as $url) {
+        foreach (["/api/accounts/{$owner}/routines", '/api/my/routines'] as $url) {
             $response = $this->withSession(['account_identifier' => $owner])->getJson($url)->assertOk()->assertJsonPath('total', 2);
             $items = collect($response->json('items'))->keyBy('routine_identifier');
             self::assertNull($items[$parent]['post_identifier']);
@@ -60,7 +60,7 @@ final class GetMyRoutinesActionTest extends TestCase
             ->assertJsonPath('items.0.post_identifier', null)->assertJsonPath('items.0.execution_count', 1);
     }
 
-    public function test_posted_routine_matches_account_posts_response(): void
+    public function test_posted_routine_matches_account_routines_response(): void
     {
         $account = '11111111-1111-4111-8111-111111111111';
         $routine = '22222222-2222-4222-8222-222222222222';
@@ -74,7 +74,7 @@ final class GetMyRoutinesActionTest extends TestCase
         DB::table('routine_actions')->insert(['routine_action_identifier' => '55555555-5555-4555-8555-555555555555', 'routine_identifier' => $routine, 'action_name' => 'Action', 'action_minutes' => 5, 'available' => true, 'created_at' => now(), 'updated_at' => now()]);
         DB::table('posts')->insert(['post_identifier' => '66666666-6666-4666-8666-666666666666', 'routine_identifier' => $routine, 'post_category' => 'action', 'available' => true, 'created_at' => now(), 'updated_at' => now()]);
 
-        $posts = $this->withSession(['account_identifier' => $account])->getJson("/api/accounts/{$account}/posts")->assertOk()->json('items.0');
+        $posts = $this->withSession(['account_identifier' => $account])->getJson("/api/accounts/{$account}/routines")->assertOk()->json('items.0');
         $routines = $this->withSession(['account_identifier' => $account])->getJson('/api/my/routines')->assertOk()->json('items.0');
         self::assertSame($posts, $routines);
         self::assertSame(1, $routines['execution_count']);
@@ -117,7 +117,7 @@ final class GetMyRoutinesActionTest extends TestCase
             DB::table('routines')->insert(['routine_identifier' => $routine, 'account_identifier' => $owner, 'routine_name' => 'Routine', 'available' => true, 'created_at' => "2026-09-0{$n} 10:00:00", 'updated_at' => now()]);
             DB::table('posts')->insert(['post_identifier' => $post, 'routine_identifier' => $routine, 'post_category' => 'routine', 'available' => true, 'created_at' => '2026-09-0'.(3 - $n).' 10:00:00', 'updated_at' => now()]);
         }
-        $posts = $this->withSession(['account_identifier' => $owner])->getJson("/api/accounts/{$owner}/posts?number_of_items_per_page=1")->assertOk()->json();
+        $posts = $this->withSession(['account_identifier' => $owner])->getJson("/api/accounts/{$owner}/routines?number_of_items_per_page=1")->assertOk()->json();
         $routines = $this->withSession(['account_identifier' => $owner])->getJson('/api/my/routines?number_of_items_per_page=1')->assertOk()->json();
         self::assertSame($posts, $routines);
         self::assertSame(2, $routines['total']);
@@ -143,25 +143,25 @@ final class GetMyRoutinesActionTest extends TestCase
             self::assertArrayHasKey('customization_origin', $item);
             self::assertSame($expectedOrigin, $item['customization_origin']);
         };
-        $assertChild($this->withSession(['account_identifier' => $owner])->getJson("/api/accounts/{$owner}/posts"), null);
+        $assertChild($this->withSession(['account_identifier' => $owner])->getJson("/api/accounts/{$owner}/routines"), null);
         $assertChild($this->withSession(['account_identifier' => $owner])->getJson('/api/my/routines'), null);
         DB::table('follows')->insert(['following_account_identifier' => $owner, 'followed_account_identifier' => $author]);
-        $assertChild($this->withSession(['account_identifier' => $owner])->getJson("/api/accounts/{$owner}/posts"), $origin);
+        $assertChild($this->withSession(['account_identifier' => $owner])->getJson("/api/accounts/{$owner}/routines"), $origin);
         $assertChild($this->withSession(['account_identifier' => $owner])->getJson('/api/my/routines'), $origin);
         DB::table('routines')->where('routine_identifier', $parent)->update(['available' => false]);
-        $assertChild($this->withSession(['account_identifier' => $owner])->getJson("/api/accounts/{$owner}/posts"), null);
+        $assertChild($this->withSession(['account_identifier' => $owner])->getJson("/api/accounts/{$owner}/routines"), null);
         $assertChild($this->withSession(['account_identifier' => $owner])->getJson('/api/my/routines'), null);
         DB::table('routines')->where('routine_identifier', $parent)->update(['available' => true]);
         DB::table('accounts')->where('account_identifier', $author)->update(['available' => false]);
-        $assertChild($this->withSession(['account_identifier' => $owner])->getJson("/api/accounts/{$owner}/posts"), null);
+        $assertChild($this->withSession(['account_identifier' => $owner])->getJson("/api/accounts/{$owner}/routines"), null);
         $assertChild($this->withSession(['account_identifier' => $owner])->getJson('/api/my/routines'), null);
         DB::table('accounts')->where('account_identifier', $author)->update(['available' => true, 'status' => 'suspended']);
-        $assertChild($this->withSession(['account_identifier' => $owner])->getJson("/api/accounts/{$owner}/posts"), null);
+        $assertChild($this->withSession(['account_identifier' => $owner])->getJson("/api/accounts/{$owner}/routines"), null);
         $assertChild($this->withSession(['account_identifier' => $owner])->getJson('/api/my/routines'), null);
         DB::table('accounts')->where('account_identifier', $author)->update(['status' => 'active']);
         foreach ([[$author, $owner], [$owner, $author]] as [$blocking, $blocked]) {
             DB::table('blocks')->insert(['blocking_account_identifier' => $blocking, 'blocked_account_identifier' => $blocked, 'created_at' => now(), 'updated_at' => now()]);
-            $assertChild($this->withSession(['account_identifier' => $owner])->getJson("/api/accounts/{$owner}/posts"), null);
+            $assertChild($this->withSession(['account_identifier' => $owner])->getJson("/api/accounts/{$owner}/routines"), null);
             $assertChild($this->withSession(['account_identifier' => $owner])->getJson('/api/my/routines'), null);
             DB::table('blocks')->delete();
         }

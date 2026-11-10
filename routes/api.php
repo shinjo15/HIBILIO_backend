@@ -12,6 +12,7 @@ use App\Http\Actions\Account\CreateBlockAction;
 use App\Http\Actions\Account\CreateFollowAction;
 use App\Http\Actions\Account\GetAccountDetailsAction;
 use App\Http\Actions\Account\GetAccountFollowingAccountsAction;
+use App\Http\Actions\Account\GetAccountPostsAction;
 use App\Http\Actions\Account\GetAccountRoutinePostsAction;
 use App\Http\Actions\Account\GetFavoriteTagPostsAction;
 use App\Http\Actions\Account\GetFollowingPostsAction;
@@ -72,7 +73,7 @@ Route::middleware('web')->group(static function (): void {
     Route::get('/accounts/{account_identifier}', GetAccountDetailsAction::class);
     Route::get('/accounts/{account_identifier}/following', GetAccountFollowingAccountsAction::class)->whereUuid('account_identifier');
     Route::get('/accounts/{account_identifier}/likes', GetAccountLikedRoutinePostsAction::class);
-    Route::get('/accounts/{account_identifier}/posts', GetAccountRoutinePostsAction::class);
+    Route::get('/accounts/{account_identifier}/posts', GetAccountPostsAction::class);
     Route::get('/accounts/{account_identifier}/routines', GetAccountRoutinePostsAction::class)->whereUuid('account_identifier');
     Route::get('/accounts/{account_identifier}/routine-executions', GetAccountRoutineExecutionsAction::class);
     Route::get('/my/account', GetMyAccountAction::class);

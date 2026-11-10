@@ -1,0 +1,55 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Actions\Account;
+
+use App\Http\Requests\Account\GetAccountPostsRequest;
+use Illuminate\Http\JsonResponse;
+use Src\Account\Application\Usecase\Query\GetMyPosts\GetMyPostsInterface;
+use Src\Shared\Application\Service\AuthServiceInterface;
+use Src\Shared\Domain\Exception\BlockedAccountVisibilityException;
+
+final readonly class GetAccountPostsAction
+{
+    public function __construct(private GetMyPostsInterface $getPosts, private AuthServiceInterface $authService) {}
+
+    public function __invoke(GetAccountPostsRequest $request): JsonResponse
+    {
+        try {
+            $result = $this->getPosts->execute($request->toInput($this->authService->accountIdentifier()));
+        } catch (BlockedAccountVisibilityException) {
+            return new JsonResponse([], 404);
+        }
+
+        return new JsonResponse(['items' => array_map(static fn (array $post): array => [
+            'post_identifier' => $post['postIdentifier'],
+            'routine_identifier' => $post['routineIdentifier'],
+            'routine_execution_identifier' => $post['routineExecutionIdentifier'],
+            'post_category' => $post['postCategory'],
+            'customization_origin' => $post['customizationOrigin'] === null ? null : [
+                'routine_identifier' => $post['customizationOrigin']['routineIdentifier'],
+                'routine_name' => $post['customizationOrigin']['routineName'],
+                'account_name' => $post['customizationOrigin']['accountName'],
+                'icon_image_url' => $post['customizationOrigin']['iconImageUrl'],
+            ],
+            'account_identifier' => $post['accountIdentifier'],
+            'account_name' => $post['accountName'],
+            'icon_image_url' => $post['iconImageUrl'],
+            'posted_at' => $post['postedAt'],
+            'routine_name' => $post['routineName'],
+            'routine_execution_minutes' => $post['routineExecutionMinutes'],
+            'tags' => array_map(static fn (array $tag): array => ['tag_identifier' => $tag['tagIdentifier'], 'tag_name' => $tag['tagName']], $post['tags']),
+            'routine_actions' => array_map(static fn (array $action): array => ['routine_action_identifier' => $action['routineActionIdentifier'], 'action_name' => $action['actionName'], 'action_minutes' => $action['actionMinutes']], $post['routineActions']),
+            'post_like_count' => $post['postLikeCount'],
+            'post_support_count' => $post['supportCount'],
+            ...($post['postCategory'] === 'action' ? ['support_count' => $post['supportCount']] : []),
+            'liked' => $post['liked'],
+            'supported' => $post['supported'],
+            'executed_action_count' => $post['executedActionCount'],
+            'routine_execution_memo' => $post['routineExecutionMemo'],
+            'execution_count' => $post['executionCount'],
+            'customization_count' => $post['customizationCount'],
+        ], $result->items()), 'total' => $result->total()]);
+    }
+}

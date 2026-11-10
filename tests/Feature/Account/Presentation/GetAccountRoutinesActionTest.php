@@ -31,7 +31,7 @@ final class GetAccountRoutinesActionTest extends TestCase
             ->assertJsonPath('items.0.post_identifier', null);
     }
 
-    public function test_matches_my_routines_and_posts_for_self_and_other_with_pagination(): void
+    public function test_matches_my_routines_for_self_and_preserves_routine_pagination(): void
     {
         $owner = '11111111-1111-4111-8111-111111111111';
         $viewer = '22222222-2222-4222-8222-222222222222';
@@ -52,8 +52,7 @@ final class GetAccountRoutinesActionTest extends TestCase
             foreach ([1, 2, 3] as $page) {
                 $params = "?page={$page}&number_of_items_per_page=1";
                 $actual = $this->withSession(['account_identifier' => $account])->getJson("/api/accounts/{$owner}/routines{$params}")->assertOk()->assertJsonPath('total', 2)->json();
-                $posts = $this->withSession(['account_identifier' => $account])->getJson("/api/accounts/{$owner}/posts{$params}")->assertOk()->json();
-                self::assertSame($posts, $actual);
+
                 self::assertCount($page === 3 ? 0 : 1, $actual['items']);
                 if ($page !== 3) {
                     $expected = $page === 1

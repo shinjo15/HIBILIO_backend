@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Http\Requests;
 
+use App\Http\Requests\Account\GetAccountPostsRequest;
 use App\Http\Requests\Account\GetAccountRoutinePostsRequest;
 use App\Http\Requests\Account\GetFavoriteTagPostsRequest;
 use App\Http\Requests\Account\GetFollowingPostsRequest;
@@ -47,7 +48,8 @@ final class PaginatedRequestTest extends TestCase
     public static function paginatedRequests(): array
     {
         return [
-            'account posts' => [GetAccountRoutinePostsRequest::class],
+            'account posts' => [GetAccountPostsRequest::class],
+            'account routine posts' => [GetAccountRoutinePostsRequest::class],
             'favorite tag posts' => [GetFavoriteTagPostsRequest::class],
             'following posts' => [GetFollowingPostsRequest::class],
             'my posts' => [GetMyRoutinePostsRequest::class],

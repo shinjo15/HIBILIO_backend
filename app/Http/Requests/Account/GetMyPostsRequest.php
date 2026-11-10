@@ -21,6 +21,6 @@ final class GetMyPostsRequest extends PaginatedRequest
 
     public function toInput(string $accountIdentifier): GetMyPostsInput
     {
-        return new GetMyPostsInput($accountIdentifier, $this->page(), $this->numberOfItemsPerPage());
+        return new GetMyPostsInput($accountIdentifier, $this->page(), $this->numberOfItemsPerPage(), $accountIdentifier);
     }
 }

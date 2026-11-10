@@ -6,7 +6,12 @@ namespace Src\Account\Application\Usecase\Query\GetMyPosts;
 
 final readonly class GetMyPostsInput implements GetMyPostsInputPort
 {
-    public function __construct(private string $accountIdentifier, private int $page, private int $numberOfItemsPerPage) {}
+    public function __construct(private string $accountIdentifier, private int $page, private int $numberOfItemsPerPage, private ?string $viewerAccountIdentifier) {}
+
+    public function viewerAccountIdentifier(): ?string
+    {
+        return $this->viewerAccountIdentifier;
+    }
 
     public function accountIdentifier(): string
     {
