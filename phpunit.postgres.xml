@@ -24,6 +24,7 @@
             <file>tests/Feature/RoutineExecution/Infrastructure/Query/GetMyRoutineExecutionHistory/GetMyRoutineExecutionHistoryTest.php</file>
             <file>tests/Feature/RoutineExecution/Presentation/GetAccountRoutineExecutionsActionTest.php</file>
             <file>tests/Feature/RoutineExecution/Presentation/GetMyRoutineExecutionHistoryActionTest.php</file>
+            <file>tests/Feature/RoutineExecution/Presentation/GetRecentExecutedRoutinesActionTest.php</file>
             <file>tests/Feature/Like/Application/UseCase/CreateLike/CreateLikePersistenceTest.php</file>
             <file>tests/Feature/Like/Presentation/LikeNotificationTest.php</file>
             <file>tests/Feature/Support/Application/UseCase/CreateSupport/CreateSupportPersistenceTest.php</file>
