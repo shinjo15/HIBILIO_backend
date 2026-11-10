@@ -25,18 +25,23 @@ final class AccountTest extends TestCase
         Account::restore(new AccountIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87'), new AccountName('User'), null, new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]), AccountStatus::ACTIVE, null, experience: -1);
     }
 
-    public function test_new_account_starts_at_zero_experience_and_level_one(): void
+    public function test_create_preserves_supplied_experience(): void
     {
-        $account = Account::create(new AccountIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87'), new AccountName('User'), null, new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]));
+        $account = Account::create(new AccountIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87'), new AccountName('User'), null, new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]), 3000);
 
-        self::assertTrue(method_exists($account, 'experience'));
-        self::assertSame(0, $account->experience());
-        self::assertSame(1, $account->level());
+        self::assertSame(3000, $account->experience());
+        self::assertSame(2, $account->level());
+    }
+
+    public function test_create_rejects_negative_experience(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        Account::create(new AccountIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87'), new AccountName('User'), null, new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]), -1);
     }
 
     public function test_experience_increases_by_one_hundred_per_execution_and_levels_at_thresholds(): void
     {
-        $account = Account::create(new AccountIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87'), new AccountName('User'), null, new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]));
+        $account = Account::create(new AccountIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87'), new AccountName('User'), null, new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]), 0);
         self::assertTrue(method_exists($account, 'recordRoutineExecution'));
         for ($i = 0; $i < 29; $i++) {
             $account->recordRoutineExecution();
@@ -65,7 +70,7 @@ final class AccountTest extends TestCase
 
     public function test_like_notification_setting_defaults_off_and_can_be_changed(): void
     {
-        $account = Account::create(new AccountIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87'), new AccountName('User'), null, new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]));
+        $account = Account::create(new AccountIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87'), new AccountName('User'), null, new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]), 0);
         self::assertFalse($account->likeNotificationsEnabled());
         $account->changeLikeNotifications(true);
         self::assertTrue($account->likeNotificationsEnabled());
@@ -75,7 +80,7 @@ final class AccountTest extends TestCase
 
     public function test_restore_preserves_both_notification_settings(): void
     {
-        $account = Account::restore(new AccountIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87'), new AccountName('User'), null, new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]), AccountStatus::ACTIVE, null, supportNotificationsEnabled: true, likeNotificationsEnabled: true);
+        $account = Account::restore(new AccountIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87'), new AccountName('User'), null, new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]), AccountStatus::ACTIVE, null, experience: 0, supportNotificationsEnabled: true, likeNotificationsEnabled: true);
         self::assertTrue($account->likeNotificationsEnabled());
         self::assertTrue($account->supportNotificationsEnabled());
     }
@@ -103,6 +108,7 @@ final class AccountTest extends TestCase
             emailAddress: $emailAddress,
             socialLinks: $socialLinks,
             favoriteTagIdentifiers: $favoriteTagIdentifiers,
+            experience: 0,
         );
 
         $this->assertSame($accountIdentifier, $account->accountIdentifier());
@@ -123,6 +129,7 @@ final class AccountTest extends TestCase
             emailAddress: new EmailAddress('user@example.com'),
             socialLinks: [],
             favoriteTagIdentifiers: new FavoriteTagIdentifiers([]),
+            experience: 0,
         );
 
         $this->assertNull($account->accountBio());
@@ -139,6 +146,7 @@ final class AccountTest extends TestCase
             emailAddress: new EmailAddress('user@example.com'),
             socialLinks: ['first' => new \stdClass],
             favoriteTagIdentifiers: new FavoriteTagIdentifiers([]),
+            experience: 0,
         );
     }
 
@@ -153,6 +161,7 @@ final class AccountTest extends TestCase
             emailAddress: new EmailAddress('user@example.com'),
             socialLinks: [new \stdClass],
             favoriteTagIdentifiers: new FavoriteTagIdentifiers([]),
+            experience: 0,
         );
     }
 
@@ -167,6 +176,7 @@ final class AccountTest extends TestCase
             new FavoriteTagIdentifiers([]),
             AccountStatus::ACTIVE,
             null,
+            experience: 0,
             available: false,
         );
 

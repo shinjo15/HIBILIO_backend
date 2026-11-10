@@ -33,6 +33,7 @@ final class CreateAccountTest extends TestCase
             new EmailAddress('user@example.com'),
             [],
             new FavoriteTagIdentifiers([]),
+            0,
         );
         $accountRepository = new InMemoryAccountRepository;
         $mailService = new FakeAccountRegistrationMailService;
@@ -60,7 +61,7 @@ final class CreateAccountTest extends TestCase
         $accountRepository = new InMemoryAccountRepository;
         $accountRepository->existingAccount = Account::create(
             new AccountIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87'), new AccountName('既存ユーザー'), null,
-            new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]),
+            new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]), 0,
         );
         $mailService = new FakeAccountRegistrationMailService;
 

@@ -29,6 +29,7 @@ final class UpdateAccountProfileTest extends TestCase
             new EmailAddress('user@example.com'),
             [],
             new FavoriteTagIdentifiers([]),
+            0,
         );
         $accountRepository = new InMemoryAccountRepository($account);
 

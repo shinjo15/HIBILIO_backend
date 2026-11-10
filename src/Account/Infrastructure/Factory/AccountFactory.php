@@ -21,6 +21,6 @@ final readonly class AccountFactory implements AccountFactoryInterface
 
     public function create(AccountName $accountName, ?AccountBio $accountBio, EmailAddress $emailAddress, array $socialLinks, FavoriteTagIdentifiers $favoriteTagIdentifiers): Account
     {
-        return Account::create(new AccountIdentifier($this->uuidService->generate()), $accountName, $accountBio, $emailAddress, $socialLinks, $favoriteTagIdentifiers, AccountVisibility::PUBLIC, AccountUiMode::SYSTEM);
+        return Account::create(new AccountIdentifier($this->uuidService->generate()), $accountName, $accountBio, $emailAddress, $socialLinks, $favoriteTagIdentifiers, 0, AccountVisibility::PUBLIC, AccountUiMode::SYSTEM);
     }
 }

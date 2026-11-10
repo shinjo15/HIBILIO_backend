@@ -32,7 +32,7 @@ final class Account
         private readonly bool $available,
         private bool $supportNotificationsEnabled,
         private bool $likeNotificationsEnabled,
-        private int $experience = 0,
+        private int $experience,
     ) {}
 
     /** @param list<SocialLink> $socialLinks */
@@ -43,9 +43,12 @@ final class Account
         EmailAddress $emailAddress,
         array $socialLinks,
         FavoriteTagIdentifiers $favoriteTagIdentifiers,
+        int $experience,
         AccountVisibility $visibility = AccountVisibility::PUBLIC,
         AccountUiMode $uiMode = AccountUiMode::SYSTEM,
     ): self {
+        self::validateExperience($experience);
+
         if (! array_is_list($socialLinks)) {
             throw new \InvalidArgumentException('SNSリンクは一覧で指定する必要があります。');
         }
@@ -70,6 +73,7 @@ final class Account
             true,
             false,
             false,
+            $experience,
         );
     }
 
@@ -83,12 +87,13 @@ final class Account
         FavoriteTagIdentifiers $favoriteTagIdentifiers,
         AccountStatus $status,
         ?DateTimeImmutable $banUntil,
+        int $experience,
         AccountVisibility $visibility = AccountVisibility::PUBLIC,
         AccountUiMode $uiMode = AccountUiMode::SYSTEM,
         bool $available = true,
         bool $supportNotificationsEnabled = false,
         bool $likeNotificationsEnabled = false,
-        int $experience = 0,
+
     ): self {
         self::validateExperience($experience);
 

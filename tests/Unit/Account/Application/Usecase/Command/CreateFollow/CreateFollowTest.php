@@ -166,6 +166,7 @@ final class InMemoryAccountRepository implements AccountRepositoryInterface
             new EmailAddress('target@example.com'),
             [],
             new FavoriteTagIdentifiers([]),
+            0,
             $this->private ? AccountVisibility::PRIVATE : AccountVisibility::PUBLIC,
         );
     }

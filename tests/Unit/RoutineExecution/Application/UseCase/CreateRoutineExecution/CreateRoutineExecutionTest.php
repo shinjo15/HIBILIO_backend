@@ -116,7 +116,7 @@ final class CreateRoutineExecutionTest extends TestCase
             public function save(Post $post): void {}
         };
 
-        $account = Account::create(new AccountIdentifier('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'), new AccountName('User'), null, new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]));
+        $account = Account::create(new AccountIdentifier('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'), new AccountName('User'), null, new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]), 0);
         $accountRepository = $this->createMock(AccountRepositoryInterface::class);
         $accountRepository->expects(self::once())->method('findForUpdate')->willReturn($account);
         $accountRepository->expects(self::once())->method('saveExperience')->with($account);
