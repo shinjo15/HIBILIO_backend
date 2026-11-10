@@ -2,28 +2,28 @@
 
 declare(strict_types=1);
 
-namespace Src\Account\Infrastructure\Query\GetMyPosts;
+namespace Src\Account\Infrastructure\Query\GetAccountPosts;
 
 use DateTimeImmutable;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\JoinClause;
 use Illuminate\Support\Facades\DB;
 use Src\Account\Application\Service\AccountImageUrlServiceInterface;
-use Src\Account\Application\Usecase\Query\GetMyPosts\GetMyPostsInputPort;
-use Src\Account\Application\Usecase\Query\GetMyPosts\GetMyPostsInterface;
-use Src\Account\Application\Usecase\Query\GetMyPosts\GetMyPostsOutput;
-use Src\Account\Application\Usecase\Query\GetMyPosts\GetMyPostsOutputPort;
+use Src\Account\Application\Usecase\Query\GetAccountPosts\GetAccountPostsInputPort;
+use Src\Account\Application\Usecase\Query\GetAccountPosts\GetAccountPostsInterface;
+use Src\Account\Application\Usecase\Query\GetAccountPosts\GetAccountPostsOutput;
+use Src\Account\Application\Usecase\Query\GetAccountPosts\GetAccountPostsOutputPort;
 use Src\Shared\Domain\Exception\BlockedAccountVisibilityException;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Src\Shared\Infrastructure\Query\Account\PrivateAccountVisibility;
 use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
 use Src\Shared\Infrastructure\Query\Post\PostInteractionState;
 
-final class GetMyPosts implements GetMyPostsInterface
+final class GetAccountPosts implements GetAccountPostsInterface
 {
     public function __construct(private AccountImageUrlServiceInterface $accountImageUrlService) {}
 
-    public function execute(GetMyPostsInputPort $input): GetMyPostsOutputPort
+    public function execute(GetAccountPostsInputPort $input): GetAccountPostsOutputPort
     {
         $viewer = $input->viewerAccountIdentifier();
         if ($viewer !== null && $viewer !== $input->accountIdentifier() && BlockVisibility::exists($viewer, $input->accountIdentifier())) {
@@ -116,6 +116,6 @@ final class GetMyPosts implements GetMyPostsInterface
             ];
         })->values()->all();
 
-        return new GetMyPostsOutput($items, $paginator->total());
+        return new GetAccountPostsOutput($items, $paginator->total());
     }
 }

@@ -6,13 +6,13 @@ namespace App\Http\Actions\Account;
 
 use App\Http\Requests\Account\GetAccountPostsRequest;
 use Illuminate\Http\JsonResponse;
-use Src\Account\Application\Usecase\Query\GetMyPosts\GetMyPostsInterface;
+use Src\Account\Application\Usecase\Query\GetAccountPosts\GetAccountPostsInterface;
 use Src\Shared\Application\Service\AuthServiceInterface;
 use Src\Shared\Domain\Exception\BlockedAccountVisibilityException;
 
 final readonly class GetAccountPostsAction
 {
-    public function __construct(private GetMyPostsInterface $getPosts, private AuthServiceInterface $authService) {}
+    public function __construct(private GetAccountPostsInterface $getPosts, private AuthServiceInterface $authService) {}
 
     public function __invoke(GetAccountPostsRequest $request): JsonResponse
     {
