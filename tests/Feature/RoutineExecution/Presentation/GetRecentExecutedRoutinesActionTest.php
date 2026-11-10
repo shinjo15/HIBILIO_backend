@@ -7,9 +7,9 @@ namespace Tests\Feature\RoutineExecution\Presentation;
 use App\Http\Requests\RoutineExecution\GetRecentExecutedRoutinesRequest;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use Src\RoutineExecution\Application\Usecase\Query\GetRecentExecutedRoutines\GetRecentExecutedRoutinesInputPort;
-use Src\RoutineExecution\Application\Usecase\Query\GetRecentExecutedRoutines\GetRecentExecutedRoutinesInterface;
-use Src\RoutineExecution\Application\Usecase\Query\GetRecentExecutedRoutines\GetRecentExecutedRoutinesOutputPort;
+use Src\RoutineExecution\Application\Usecase\Query\GetRecentlyExecutedRoutines\GetRecentlyExecutedRoutinesInputPort;
+use Src\RoutineExecution\Application\Usecase\Query\GetRecentlyExecutedRoutines\GetRecentlyExecutedRoutinesInterface;
+use Src\RoutineExecution\Application\Usecase\Query\GetRecentlyExecutedRoutines\GetRecentlyExecutedRoutinesOutputPort;
 use Tests\Support\InteractsWithAccountImageUrlService;
 use Tests\TestCase;
 
@@ -34,12 +34,12 @@ final class GetRecentExecutedRoutinesActionTest extends TestCase
 
         $request = GetRecentExecutedRoutinesRequest::create('/', 'GET', ['page' => '1', 'number_of_items_per_page' => '2']);
         $input = $request->toInput($me);
-        $this->assertInstanceOf(GetRecentExecutedRoutinesInputPort::class, $input);
+        $this->assertInstanceOf(GetRecentlyExecutedRoutinesInputPort::class, $input);
         $this->assertSame($me, $input->accountIdentifier());
         $this->assertSame(1, $input->page());
         $this->assertSame(2, $input->numberOfItemsPerPage());
-        $output = app(GetRecentExecutedRoutinesInterface::class)->execute($input);
-        $this->assertInstanceOf(GetRecentExecutedRoutinesOutputPort::class, $output);
+        $output = app(GetRecentlyExecutedRoutinesInterface::class)->execute($input);
+        $this->assertInstanceOf(GetRecentlyExecutedRoutinesOutputPort::class, $output);
         $this->assertSame(1, $output->total());
         $this->assertSame([[
             'postIdentifier' => null, 'routineIdentifier' => $routine,

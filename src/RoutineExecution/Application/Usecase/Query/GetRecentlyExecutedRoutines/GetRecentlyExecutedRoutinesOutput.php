@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Src\RoutineExecution\Application\Usecase\Query\GetRecentExecutedRoutines;
+namespace Src\RoutineExecution\Application\Usecase\Query\GetRecentlyExecutedRoutines;
 
-final readonly class GetRecentExecutedRoutinesOutput implements GetRecentExecutedRoutinesOutputPort
+final readonly class GetRecentlyExecutedRoutinesOutput implements GetRecentlyExecutedRoutinesOutputPort
 {
     /** @param list<array{customizationOrigin: array{routineIdentifier: string, routineName: string, accountName: string, iconImageUrl: ?string}|null, ...}> $items */
     public function __construct(private array $items, private int $total) {}

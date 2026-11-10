@@ -196,7 +196,7 @@ use Src\RoutineExecution\Application\UseCase\CreateRoutineExecution\CreateRoutin
 use Src\RoutineExecution\Application\UseCase\CreateRoutineExecution\CreateRoutineExecutionInterface;
 use Src\RoutineExecution\Application\Usecase\Query\GetAccountRoutineExecutions\GetAccountRoutineExecutionsInterface;
 use Src\RoutineExecution\Application\Usecase\Query\GetMyRoutineExecutionHistory\GetMyRoutineExecutionHistoryInterface;
-use Src\RoutineExecution\Application\Usecase\Query\GetRecentExecutedRoutines\GetRecentExecutedRoutinesInterface;
+use Src\RoutineExecution\Application\Usecase\Query\GetRecentlyExecutedRoutines\GetRecentlyExecutedRoutinesInterface;
 use Src\RoutineExecution\Application\Usecase\Query\GetRoutineExecutionDetails\GetRoutineExecutionDetailsInterface;
 use Src\RoutineExecution\Domain\Factory\RoutineExecutionActionFactoryInterface;
 use Src\RoutineExecution\Domain\Factory\RoutineExecutionFactoryInterface;
@@ -207,7 +207,7 @@ use Src\RoutineExecution\Infrastructure\Factory\RoutineExecutionActionFactory;
 use Src\RoutineExecution\Infrastructure\Factory\RoutineExecutionFactory;
 use Src\RoutineExecution\Infrastructure\Query\GetAccountRoutineExecutions\GetAccountRoutineExecutions;
 use Src\RoutineExecution\Infrastructure\Query\GetMyRoutineExecutionHistory\GetMyRoutineExecutionHistory;
-use Src\RoutineExecution\Infrastructure\Query\GetRecentExecutedRoutines\GetRecentExecutedRoutines;
+use Src\RoutineExecution\Infrastructure\Query\GetRecentlyExecutedRoutines\GetRecentlyExecutedRoutines;
 use Src\RoutineExecution\Infrastructure\Query\GetRoutineExecutionDetails\GetRoutineExecutionDetails;
 use Src\RoutineExecution\Infrastructure\Repository\AccountRepository as RoutineExecutionAccountRepository;
 use Src\RoutineExecution\Infrastructure\Repository\RoutineExecutionActionRepository;
@@ -329,7 +329,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(RemoveLikeInterface::class, RemoveLike::class);
 
         $this->app->bind(GetLikedRoutinePostsInterface::class, GetLikedRoutinePosts::class);
-        $this->app->bind(GetRecentExecutedRoutinesInterface::class, GetRecentExecutedRoutines::class);
+        $this->app->bind(GetRecentlyExecutedRoutinesInterface::class, GetRecentlyExecutedRoutines::class);
         $this->app->bind(PersonalNotificationRepositoryInterface::class, PersonalNotificationRepository::class);
         $this->app->bind(GetMyNotificationsInterface::class, GetMyNotifications::class);
         $this->app->bind(GetMyUnreadNotificationCountInterface::class, GetMyUnreadNotificationCount::class);

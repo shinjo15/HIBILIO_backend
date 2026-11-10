@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Src\RoutineExecution\Application\Usecase\Query\GetRecentExecutedRoutines;
+namespace Src\RoutineExecution\Application\Usecase\Query\GetRecentlyExecutedRoutines;
 
-interface GetRecentExecutedRoutinesInputPort
+interface GetRecentlyExecutedRoutinesInputPort
 {
     public function accountIdentifier(): string;
 
