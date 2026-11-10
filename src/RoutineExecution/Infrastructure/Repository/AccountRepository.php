@@ -7,19 +7,16 @@ namespace Src\RoutineExecution\Infrastructure\Repository;
 use App\Models\AccountModel;
 use Illuminate\Support\Facades\DB;
 use Src\RoutineExecution\Domain\Entity\Account;
-use Src\RoutineExecution\Domain\Factory\AccountFactoryInterface;
 use Src\RoutineExecution\Domain\Repository\AccountRepositoryInterface;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
 final readonly class AccountRepository implements AccountRepositoryInterface
 {
-    public function __construct(private AccountFactoryInterface $accountFactory) {}
-
     public function findForUpdate(AccountIdentifier $accountIdentifier): ?Account
     {
         $model = AccountModel::query()->where('account_identifier', $accountIdentifier->value())->lockForUpdate()->first();
 
-        return $model === null ? null : $this->accountFactory->restore(new AccountIdentifier($model->account_identifier), (int) $model->experience);
+        return $model === null ? null : new Account(new AccountIdentifier($model->account_identifier), (int) $model->experience);
     }
 
     public function save(Account $account): void
