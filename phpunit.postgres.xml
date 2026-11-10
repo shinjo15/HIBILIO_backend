@@ -26,6 +26,7 @@
             <file>tests/Feature/Support/Application/UseCase/CreateSupport/SupportNotificationTest.php</file>
             <file>tests/Feature/Notification/Presentation/NotificationSchemaTest.php</file>
             <file>tests/Feature/Notification/Presentation/GetMyNotificationsActionTest.php</file>
+            <file>tests/Feature/Notification/Presentation/GetMyUnreadNotificationCountActionTest.php</file>
             <file>tests/Feature/Notification/Presentation/GetAnnouncementsActionTest.php</file>
             <file>tests/Feature/Notification/Presentation/MarkPersonalNotificationAsReadActionTest.php</file>
             <directory>tests/Postgres</directory>
