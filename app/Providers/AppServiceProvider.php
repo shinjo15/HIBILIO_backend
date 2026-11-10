@@ -195,6 +195,7 @@ use Src\Routine\Infrastructure\Repository\RoutineRepository;
 use Src\RoutineExecution\Application\UseCase\CreateRoutineExecution\CreateRoutineExecution;
 use Src\RoutineExecution\Application\UseCase\CreateRoutineExecution\CreateRoutineExecutionInterface;
 use Src\RoutineExecution\Application\Usecase\Query\GetAccountRoutineExecutions\GetAccountRoutineExecutionsInterface;
+use Src\RoutineExecution\Application\Usecase\Query\GetMostExecutedRoutines\GetMostExecutedRoutinesInterface;
 use Src\RoutineExecution\Application\Usecase\Query\GetMyRoutineExecutionHistory\GetMyRoutineExecutionHistoryInterface;
 use Src\RoutineExecution\Application\Usecase\Query\GetRecentExecutedRoutines\GetRecentExecutedRoutinesInterface;
 use Src\RoutineExecution\Application\Usecase\Query\GetRoutineExecutionDetails\GetRoutineExecutionDetailsInterface;
@@ -206,6 +207,7 @@ use Src\RoutineExecution\Domain\Repository\RoutineExecutionRepositoryInterface;
 use Src\RoutineExecution\Infrastructure\Factory\RoutineExecutionActionFactory;
 use Src\RoutineExecution\Infrastructure\Factory\RoutineExecutionFactory;
 use Src\RoutineExecution\Infrastructure\Query\GetAccountRoutineExecutions\GetAccountRoutineExecutions;
+use Src\RoutineExecution\Infrastructure\Query\GetMostExecutedRoutines\GetMostExecutedRoutines;
 use Src\RoutineExecution\Infrastructure\Query\GetMyRoutineExecutionHistory\GetMyRoutineExecutionHistory;
 use Src\RoutineExecution\Infrastructure\Query\GetRecentExecutedRoutines\GetRecentExecutedRoutines;
 use Src\RoutineExecution\Infrastructure\Query\GetRoutineExecutionDetails\GetRoutineExecutionDetails;
@@ -330,6 +332,7 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->bind(GetLikedRoutinePostsInterface::class, GetLikedRoutinePosts::class);
         $this->app->bind(GetRecentExecutedRoutinesInterface::class, GetRecentExecutedRoutines::class);
+        $this->app->bind(GetMostExecutedRoutinesInterface::class, GetMostExecutedRoutines::class);
         $this->app->bind(PersonalNotificationRepositoryInterface::class, PersonalNotificationRepository::class);
         $this->app->bind(GetMyNotificationsInterface::class, GetMyNotifications::class);
         $this->app->bind(GetMyUnreadNotificationCountInterface::class, GetMyUnreadNotificationCount::class);

@@ -52,6 +52,7 @@ use App\Http\Actions\Routine\GetRoutineExecutionPostsAction;
 use App\Http\Actions\Routine\SearchRoutinesAction;
 use App\Http\Actions\RoutineExecution\CreateRoutineExecutionAction;
 use App\Http\Actions\RoutineExecution\GetAccountRoutineExecutionsAction;
+use App\Http\Actions\RoutineExecution\GetMostExecutedRoutinesAction;
 use App\Http\Actions\RoutineExecution\GetMyRoutineExecutionHistoryAction;
 use App\Http\Actions\RoutineExecution\GetMyRoutineExecutionsAction;
 use App\Http\Actions\RoutineExecution\GetRecentExecutedRoutinesAction;
@@ -89,6 +90,7 @@ Route::middleware('web')->group(static function (): void {
     Route::patch('/my/account/like-notifications', ChangeLikeNotificationsAction::class);
     Route::get('/my/routines', GetMyRoutinePostsAction::class);
     Route::get('/my/routines/recent-executions', GetRecentExecutedRoutinesAction::class);
+    Route::get('/my/routines/most-executed', GetMostExecutedRoutinesAction::class);
     Route::get('/my/posts', GetMyPostsAction::class);
     Route::get('/my/routine-executions', GetMyRoutineExecutionsAction::class);
     Route::get('/my/routine-executions/history', GetMyRoutineExecutionHistoryAction::class);
