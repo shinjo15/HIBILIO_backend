@@ -101,6 +101,13 @@ final class LoginPasscodeUseCaseTest extends TestCase
 }
 final class InMemoryAccounts implements AccountRepositoryInterface
 {
+    public function findForUpdate(AccountIdentifier $accountIdentifier): ?Account
+    {
+        return $this->find($accountIdentifier);
+    }
+
+    public function saveExperience(Account $account): void {}
+
     public function __construct(private ?Account $account) {}
 
     public function find(AccountIdentifier $accountIdentifier): ?Account

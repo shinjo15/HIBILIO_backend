@@ -80,6 +80,13 @@ final class CreateAccountTest extends TestCase
 
 final class InMemoryAccountRepository implements AccountRepositoryInterface
 {
+    public function findForUpdate(AccountIdentifier $accountIdentifier): ?Account
+    {
+        return $this->find($accountIdentifier);
+    }
+
+    public function saveExperience(Account $account): void {}
+
     public ?Account $existingAccount = null;
 
     public ?Account $savedAccount = null;

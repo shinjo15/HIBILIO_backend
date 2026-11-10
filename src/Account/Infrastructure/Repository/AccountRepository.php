@@ -30,6 +30,16 @@ final class AccountRepository implements AccountRepositoryInterface
         return $this->restore(AccountModel::query()->with(['socialLinks', 'favoriteTags'])->where('account_identifier', $accountIdentifier->value())->first());
     }
 
+    public function findForUpdate(AccountIdentifier $accountIdentifier): ?Account
+    {
+        return $this->restore(AccountModel::query()->with(['socialLinks', 'favoriteTags'])->where('account_identifier', $accountIdentifier->value())->lockForUpdate()->first());
+    }
+
+    public function saveExperience(Account $account): void
+    {
+        AccountModel::query()->where('account_identifier', $account->accountIdentifier()->value())->update(['experience' => $account->experience()]);
+    }
+
     public function findByEmailAddress(EmailAddress $emailAddress): ?Account
     {
         return $this->restore(AccountModel::query()->with(['socialLinks', 'favoriteTags'])->where('email_address', $emailAddress->value())->first());
@@ -45,7 +55,7 @@ final class AccountRepository implements AccountRepositoryInterface
 
                 return;
             }
-            $model = AccountModel::query()->create(['account_identifier' => $account->accountIdentifier()->value(), 'available' => true, ...$values]);
+            $model = AccountModel::query()->create(['account_identifier' => $account->accountIdentifier()->value(), 'available' => true, 'experience' => $account->experience(), ...$values]);
             $model->socialLinks()->createMany(array_map(static fn (SocialLink $link, int $position): array => ['type' => $link->socialType()->value, 'url' => $link->socialUrl()->value(), 'position' => $position], $account->socialLinks(), array_keys($account->socialLinks())));
             $model->favoriteTags()->createMany(array_map(static fn (TagIdentifier $id): array => ['tag_identifier' => $id->value()], $account->favoriteTagIdentifiers()->values()));
         });
@@ -96,6 +106,6 @@ final class AccountRepository implements AccountRepositoryInterface
             return null;
         }
 
-        return Account::restore(new AccountIdentifier($model->account_identifier), new AccountName($model->account_name), $model->account_bio === null ? null : new AccountBio($model->account_bio), new EmailAddress($model->email_address), $model->socialLinks->map(static fn (AccountSocialLinkModel $link): SocialLink => new SocialLink(SocialType::from($link->type), new SocialUrl($link->url)))->all(), new FavoriteTagIdentifiers($model->favoriteTags->map(static fn (FavoriteTagModel $tag): TagIdentifier => new TagIdentifier($tag->tag_identifier))->all()), AccountStatus::from($model->status), $model->ban_until, AccountVisibility::from($model->visibility), AccountUiMode::from($model->ui_mode), (bool) $model->available, (bool) $model->support_notifications_enabled, (bool) $model->like_notifications_enabled);
+        return Account::restore(new AccountIdentifier($model->account_identifier), new AccountName($model->account_name), $model->account_bio === null ? null : new AccountBio($model->account_bio), new EmailAddress($model->email_address), $model->socialLinks->map(static fn (AccountSocialLinkModel $link): SocialLink => new SocialLink(SocialType::from($link->type), new SocialUrl($link->url)))->all(), new FavoriteTagIdentifiers($model->favoriteTags->map(static fn (FavoriteTagModel $tag): TagIdentifier => new TagIdentifier($tag->tag_identifier))->all()), AccountStatus::from($model->status), $model->ban_until, AccountVisibility::from($model->visibility), AccountUiMode::from($model->ui_mode), (bool) $model->available, (bool) $model->support_notifications_enabled, (bool) $model->like_notifications_enabled, (int) $model->experience);
     }
 }

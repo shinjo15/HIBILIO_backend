@@ -6,6 +6,11 @@ namespace Tests\Unit\RoutineExecution\Application\UseCase\CreateRoutineExecution
 
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
+use Src\Account\Domain\Entity\Account;
+use Src\Account\Domain\Repository\AccountRepositoryInterface;
+use Src\Account\Domain\ValueObject\AccountName;
+use Src\Account\Domain\ValueObject\EmailAddress;
+use Src\Account\Domain\ValueObject\FavoriteTagIdentifiers;
 use Src\Post\Domain\Entity\Post;
 use Src\Post\Domain\ValueObject\PostCategory;
 use Src\Post\Domain\ValueObject\PostLikeCount;
@@ -111,6 +116,10 @@ final class CreateRoutineExecutionTest extends TestCase
             public function save(Post $post): void {}
         };
 
+        $account = Account::create(new AccountIdentifier('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'), new AccountName('User'), null, new EmailAddress('user@example.com'), [], new FavoriteTagIdentifiers([]));
+        $accountRepository = $this->createMock(AccountRepositoryInterface::class);
+        $accountRepository->expects(self::once())->method('findForUpdate')->willReturn($account);
+        $accountRepository->expects(self::once())->method('saveExperience')->with($account);
         $useCase = new CreateRoutineExecution(
             transactionManager: $transactionManager,
             routineExecutionFactory: new class implements RoutineExecutionFactoryInterface
@@ -146,6 +155,7 @@ final class CreateRoutineExecutionTest extends TestCase
             routineActionRepository: $routineActionRepository,
             postFactory: $postFactory,
             postRepository: $postRepository,
+            accountRepository: $accountRepository,
         );
 
         $useCase->execute(new CreateRoutineExecutionInput(
@@ -159,6 +169,7 @@ final class CreateRoutineExecutionTest extends TestCase
         ));
 
         self::assertSame(1, $transactionManager->transactionCount);
+        self::assertSame(100, $account->experience());
         self::assertSame(1, $routineActionRepository->findByIdentifiersCount);
         self::assertSame(
             'cccccccc-cccc-4ccc-8ccc-cccccccccccc',

@@ -43,6 +43,8 @@ final readonly class GetMyAccountAction
             'icon_image_url' => $accountDetails['iconImageUrl'],
             'header_image_url' => $accountDetails['headerImageUrl'],
             'ui_mode' => $accountDetails['uiMode'],
+            'experience' => $accountDetails['experience'],
+            'level' => $accountDetails['level'],
             'like_notifications_enabled' => $accountDetails['likeNotificationsEnabled'],
             'support_notifications_enabled' => $accountDetails['supportNotificationsEnabled'],
             'favorite_tags' => array_map(static fn (array $tag): array => [

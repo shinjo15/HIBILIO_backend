@@ -11,6 +11,7 @@ use Src\Account\Application\Usecase\Query\GetAccountDetails\GetAccountDetailsInp
 use Src\Account\Application\Usecase\Query\GetAccountDetails\GetAccountDetailsInterface;
 use Src\Account\Application\Usecase\Query\GetAccountDetails\GetAccountDetailsOutput;
 use Src\Account\Application\Usecase\Query\GetAccountDetails\GetAccountDetailsOutputPort;
+use Src\Account\Domain\Entity\Account;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
 
@@ -29,7 +30,7 @@ final class GetAccountDetails implements GetAccountDetailsInterface
             BlockVisibility::exclude($query, $input->viewerAccountIdentifier(), 'accounts.account_identifier');
         }
 
-        $query->select(['account_identifier', 'account_name', 'account_bio', 'visibility', 'ui_mode', 'like_notifications_enabled', 'support_notifications_enabled']);
+        $query->select(['account_identifier', 'account_name', 'account_bio', 'visibility', 'ui_mode', 'like_notifications_enabled', 'support_notifications_enabled', 'experience']);
 
         if ($input->viewerAccountIdentifier() === null) {
             $query
@@ -105,6 +106,8 @@ final class GetAccountDetails implements GetAccountDetailsInterface
         ];
 
         if ($isOwnAccount) {
+            $details['experience'] = (int) $account->experience;
+            $details['level'] = Account::levelForExperience((int) $account->experience);
             $details['likeNotificationsEnabled'] = (bool) $account->like_notifications_enabled;
             $details['supportNotificationsEnabled'] = (bool) $account->support_notifications_enabled;
         }

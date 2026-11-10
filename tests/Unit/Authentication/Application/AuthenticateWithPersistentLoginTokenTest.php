@@ -195,6 +195,13 @@ final class FixedHashService implements HashServiceInterface
 }
 final class InMemoryPersistentLoginAccounts implements AccountRepositoryInterface
 {
+    public function findForUpdate(AccountIdentifier $accountIdentifier): ?Account
+    {
+        return $this->find($accountIdentifier);
+    }
+
+    public function saveExperience(Account $account): void {}
+
     public function __construct(private ?Account $account) {}
 
     public function find(AccountIdentifier $accountIdentifier): ?Account

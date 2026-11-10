@@ -6,7 +6,6 @@ namespace App\Http\Actions\RoutineExecution;
 
 use App\Http\Requests\RoutineExecution\CreateRoutineExecutionRequest;
 use Illuminate\Http\Response;
-use RuntimeException;
 use Src\RoutineExecution\Application\UseCase\CreateRoutineExecution\CreateRoutineExecutionInterface;
 use Src\Shared\Application\Service\AuthServiceInterface;
 
@@ -16,14 +15,17 @@ final readonly class CreateRoutineExecutionAction
 
     public function __invoke(CreateRoutineExecutionRequest $request): Response
     {
-        try {
-            $this->createRoutineExecution->execute($request->toInput($this->authService->accountIdentifier() ?? throw new RuntimeException));
-
-            return new Response('', 201);
-        } catch (RuntimeException) {
+        $accountIdentifier = $this->authService->accountIdentifier();
+        if ($accountIdentifier === null) {
             return new Response('', 401);
+        }
+
+        try {
+            $this->createRoutineExecution->execute($request->toInput($accountIdentifier));
         } catch (\DomainException|\InvalidArgumentException) {
             return new Response('', 422);
         }
+
+        return new Response('', 201);
     }
 }
