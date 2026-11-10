@@ -2,28 +2,33 @@
 
 declare(strict_types=1);
 
-namespace Src\Account\Infrastructure\Query\GetMyPosts;
+namespace Src\Account\Infrastructure\Query\GetAccountPosts;
 
 use DateTimeImmutable;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\JoinClause;
 use Illuminate\Support\Facades\DB;
 use Src\Account\Application\Service\AccountImageUrlServiceInterface;
-use Src\Account\Application\Usecase\Query\GetMyPosts\GetMyPostsInputPort;
-use Src\Account\Application\Usecase\Query\GetMyPosts\GetMyPostsInterface;
-use Src\Account\Application\Usecase\Query\GetMyPosts\GetMyPostsOutput;
-use Src\Account\Application\Usecase\Query\GetMyPosts\GetMyPostsOutputPort;
+use Src\Account\Application\Usecase\Query\GetAccountPosts\GetAccountPostsInputPort;
+use Src\Account\Application\Usecase\Query\GetAccountPosts\GetAccountPostsInterface;
+use Src\Account\Application\Usecase\Query\GetAccountPosts\GetAccountPostsOutput;
+use Src\Account\Application\Usecase\Query\GetAccountPosts\GetAccountPostsOutputPort;
+use Src\Shared\Domain\Exception\BlockedAccountVisibilityException;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Src\Shared\Infrastructure\Query\Account\PrivateAccountVisibility;
 use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
 use Src\Shared\Infrastructure\Query\Post\PostInteractionState;
 
-final class GetMyPosts implements GetMyPostsInterface
+final class GetAccountPosts implements GetAccountPostsInterface
 {
     public function __construct(private AccountImageUrlServiceInterface $accountImageUrlService) {}
 
-    public function execute(GetMyPostsInputPort $input): GetMyPostsOutputPort
+    public function execute(GetAccountPostsInputPort $input): GetAccountPostsOutputPort
     {
+        $viewer = $input->viewerAccountIdentifier();
+        if ($viewer !== null && $viewer !== $input->accountIdentifier() && BlockVisibility::exists($viewer, $input->accountIdentifier())) {
+            throw new BlockedAccountVisibilityException;
+        }
         $query = DB::table('posts')
             ->join('routines', 'posts.routine_identifier', '=', 'routines.routine_identifier')
             ->join('accounts as routine_authors', 'routines.account_identifier', '=', 'routine_authors.account_identifier')
@@ -49,15 +54,20 @@ final class GetMyPosts implements GetMyPostsInterface
             ->orderByRaw('CASE WHEN posts.created_at IS NULL THEN 1 ELSE 0 END')
             ->orderByDesc('posts.created_at')->orderBy('posts.post_identifier');
 
-        BlockVisibility::exclude($query, $input->accountIdentifier(), 'routine_authors.account_identifier');
-        PrivateAccountVisibility::exclude($query, $input->accountIdentifier(), 'routine_authors.account_identifier', 'routine_authors.visibility');
-        PostInteractionState::selectBoth($query, $input->accountIdentifier(), 'posts.post_identifier');
+        if ($viewer !== null) {
+            BlockVisibility::exclude($query, $viewer, 'routine_authors.account_identifier');
+        }
+        PrivateAccountVisibility::exclude($query, $viewer, 'accounts.account_identifier', 'accounts.visibility');
+        PrivateAccountVisibility::exclude($query, $viewer, 'routine_authors.account_identifier', 'routine_authors.visibility');
+        PostInteractionState::selectBoth($query, $viewer, 'posts.post_identifier');
 
         $parents = DB::table('routines as parent_routines')->join('accounts as parent_accounts', 'parent_routines.account_identifier', '=', 'parent_accounts.account_identifier')
             ->where('parent_routines.available', true)->where('parent_accounts.available', true)->where('parent_accounts.status', 'active')
             ->select('parent_routines.routine_identifier', 'parent_routines.routine_name', 'parent_accounts.account_identifier', 'parent_accounts.account_name');
-        BlockVisibility::exclude($parents, $input->accountIdentifier(), 'parent_accounts.account_identifier');
-        PrivateAccountVisibility::exclude($parents, $input->accountIdentifier(), 'parent_accounts.account_identifier', 'parent_accounts.visibility');
+        if ($viewer !== null) {
+            BlockVisibility::exclude($parents, $viewer, 'parent_accounts.account_identifier');
+        }
+        PrivateAccountVisibility::exclude($parents, $viewer, 'parent_accounts.account_identifier', 'parent_accounts.visibility');
         $query->leftJoinSub($parents, 'origin', 'origin.routine_identifier', '=', 'routines.parent_routine_identifier')
             ->addSelect('origin.routine_identifier as origin_identifier', 'origin.routine_name as origin_name', 'origin.account_identifier as origin_author_identifier', 'origin.account_name as origin_author_name');
 
@@ -106,6 +116,6 @@ final class GetMyPosts implements GetMyPostsInterface
             ];
         })->values()->all();
 
-        return new GetMyPostsOutput($items, $paginator->total());
+        return new GetAccountPostsOutput($items, $paginator->total());
     }
 }

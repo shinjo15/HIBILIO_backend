@@ -7,12 +7,12 @@ namespace App\Http\Actions\Account;
 use App\Http\Requests\Account\GetMyPostsRequest;
 use Illuminate\Http\JsonResponse;
 use RuntimeException;
-use Src\Account\Application\Usecase\Query\GetMyPosts\GetMyPostsInterface;
+use Src\Account\Application\Usecase\Query\GetAccountPosts\GetAccountPostsInterface;
 use Src\Shared\Application\Service\AuthServiceInterface;
 
 final readonly class GetMyPostsAction
 {
-    public function __construct(private GetMyPostsInterface $getMyPosts, private AuthServiceInterface $authService) {}
+    public function __construct(private GetAccountPostsInterface $getMyPosts, private AuthServiceInterface $authService) {}
 
     public function __invoke(GetMyPostsRequest $request): JsonResponse
     {

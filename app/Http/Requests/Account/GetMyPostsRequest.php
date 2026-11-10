@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Account;
 
 use App\Http\Requests\PaginatedRequest;
-use Src\Account\Application\Usecase\Query\GetMyPosts\GetMyPostsInput;
+use Src\Account\Application\Usecase\Query\GetAccountPosts\GetAccountPostsInput;
 
 final class GetMyPostsRequest extends PaginatedRequest
 {
@@ -19,8 +19,8 @@ final class GetMyPostsRequest extends PaginatedRequest
         return $this->paginationRules();
     }
 
-    public function toInput(string $accountIdentifier): GetMyPostsInput
+    public function toInput(string $accountIdentifier): GetAccountPostsInput
     {
-        return new GetMyPostsInput($accountIdentifier, $this->page(), $this->numberOfItemsPerPage());
+        return new GetAccountPostsInput($accountIdentifier, $this->page(), $this->numberOfItemsPerPage(), $accountIdentifier);
     }
 }

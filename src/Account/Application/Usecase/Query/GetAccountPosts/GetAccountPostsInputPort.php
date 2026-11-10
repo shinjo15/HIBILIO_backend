@@ -2,11 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Src\Account\Application\Usecase\Query\GetMyPosts;
+namespace Src\Account\Application\Usecase\Query\GetAccountPosts;
 
-interface GetMyPostsInputPort
+interface GetAccountPostsInputPort
 {
     public function accountIdentifier(): string;
+
+    public function viewerAccountIdentifier(): ?string;
 
     public function page(): int;
 
