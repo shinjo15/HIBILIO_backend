@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Src\RoutineExecution\Application\Usecase\Query\GetRecentExecutedRoutines;
+namespace Src\RoutineExecution\Application\Usecase\Query\GetRecentlyExecutedRoutines;
 
-final readonly class GetRecentExecutedRoutinesInput implements GetRecentExecutedRoutinesInputPort
+final readonly class GetRecentlyExecutedRoutinesInput implements GetRecentlyExecutedRoutinesInputPort
 {
     public function __construct(private string $accountIdentifier, private int $page, private int $numberOfItemsPerPage) {}
 

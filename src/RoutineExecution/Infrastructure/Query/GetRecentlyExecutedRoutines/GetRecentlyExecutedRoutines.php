@@ -2,25 +2,25 @@
 
 declare(strict_types=1);
 
-namespace Src\RoutineExecution\Infrastructure\Query\GetRecentExecutedRoutines;
+namespace Src\RoutineExecution\Infrastructure\Query\GetRecentlyExecutedRoutines;
 
 use DateTimeImmutable;
 use Illuminate\Support\Facades\DB;
 use Src\Account\Application\Service\AccountImageUrlServiceInterface;
-use Src\RoutineExecution\Application\Usecase\Query\GetRecentExecutedRoutines\GetRecentExecutedRoutinesInputPort;
-use Src\RoutineExecution\Application\Usecase\Query\GetRecentExecutedRoutines\GetRecentExecutedRoutinesInterface;
-use Src\RoutineExecution\Application\Usecase\Query\GetRecentExecutedRoutines\GetRecentExecutedRoutinesOutput;
-use Src\RoutineExecution\Application\Usecase\Query\GetRecentExecutedRoutines\GetRecentExecutedRoutinesOutputPort;
+use Src\RoutineExecution\Application\Usecase\Query\GetRecentlyExecutedRoutines\GetRecentlyExecutedRoutinesInputPort;
+use Src\RoutineExecution\Application\Usecase\Query\GetRecentlyExecutedRoutines\GetRecentlyExecutedRoutinesInterface;
+use Src\RoutineExecution\Application\Usecase\Query\GetRecentlyExecutedRoutines\GetRecentlyExecutedRoutinesOutput;
+use Src\RoutineExecution\Application\Usecase\Query\GetRecentlyExecutedRoutines\GetRecentlyExecutedRoutinesOutputPort;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Src\Shared\Infrastructure\Query\Account\PrivateAccountVisibility;
 use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
 use Src\Shared\Infrastructure\Query\Post\PostInteractionState;
 
-final class GetRecentExecutedRoutines implements GetRecentExecutedRoutinesInterface
+final class GetRecentlyExecutedRoutines implements GetRecentlyExecutedRoutinesInterface
 {
     public function __construct(private AccountImageUrlServiceInterface $images) {}
 
-    public function execute(GetRecentExecutedRoutinesInputPort $input): GetRecentExecutedRoutinesOutputPort
+    public function execute(GetRecentlyExecutedRoutinesInputPort $input): GetRecentlyExecutedRoutinesOutputPort
     {
         $accountIdentifier = $input->accountIdentifier();
         $executions = DB::table('routine_executions')->select('routine_identifier')
@@ -101,6 +101,6 @@ final class GetRecentExecutedRoutines implements GetRecentExecutedRoutinesInterf
             ];
         })->values()->all();
 
-        return new GetRecentExecutedRoutinesOutput($items, $paginator->total());
+        return new GetRecentlyExecutedRoutinesOutput($items, $paginator->total());
     }
 }

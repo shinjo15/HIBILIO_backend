@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Src\RoutineExecution\Application\Usecase\Query\GetRecentExecutedRoutines;
+namespace Src\RoutineExecution\Application\Usecase\Query\GetRecentlyExecutedRoutines;
 
-interface GetRecentExecutedRoutinesOutputPort
+interface GetRecentlyExecutedRoutinesOutputPort
 {
     /** @return list<array{customizationOrigin: array{routineIdentifier: string, routineName: string, accountName: string, iconImageUrl: ?string}|null, ...}> */
     public function items(): array;

@@ -7,12 +7,12 @@ namespace App\Http\Actions\RoutineExecution;
 use App\Http\Requests\RoutineExecution\GetRecentExecutedRoutinesRequest;
 use Illuminate\Http\JsonResponse;
 use RuntimeException;
-use Src\RoutineExecution\Application\Usecase\Query\GetRecentExecutedRoutines\GetRecentExecutedRoutinesInterface;
+use Src\RoutineExecution\Application\Usecase\Query\GetRecentlyExecutedRoutines\GetRecentlyExecutedRoutinesInterface;
 use Src\Shared\Application\Service\AuthServiceInterface;
 
 final readonly class GetRecentExecutedRoutinesAction
 {
-    public function __construct(private GetRecentExecutedRoutinesInterface $query, private AuthServiceInterface $authService) {}
+    public function __construct(private GetRecentlyExecutedRoutinesInterface $query, private AuthServiceInterface $authService) {}
 
     public function __invoke(GetRecentExecutedRoutinesRequest $request): JsonResponse
     {
