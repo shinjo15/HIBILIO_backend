@@ -6,6 +6,5 @@ namespace Src\RoutineExecution\Application\Usecase\Query\GetRecentExecutedRoutin
 
 interface GetRecentExecutedRoutinesInterface
 {
-    /** @return array{items: list<array{post_identifier: ?string, liked: ?bool, ...}>, total: int} */
-    public function execute(string $accountIdentifier, int $page, int $numberOfItemsPerPage): array;
+    public function execute(GetRecentExecutedRoutinesInputPort $input): GetRecentExecutedRoutinesOutputPort;
 }

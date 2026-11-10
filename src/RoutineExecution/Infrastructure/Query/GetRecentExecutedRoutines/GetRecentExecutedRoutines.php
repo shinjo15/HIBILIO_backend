@@ -7,7 +7,10 @@ namespace Src\RoutineExecution\Infrastructure\Query\GetRecentExecutedRoutines;
 use DateTimeImmutable;
 use Illuminate\Support\Facades\DB;
 use Src\Account\Application\Service\AccountImageUrlServiceInterface;
+use Src\RoutineExecution\Application\Usecase\Query\GetRecentExecutedRoutines\GetRecentExecutedRoutinesInputPort;
 use Src\RoutineExecution\Application\Usecase\Query\GetRecentExecutedRoutines\GetRecentExecutedRoutinesInterface;
+use Src\RoutineExecution\Application\Usecase\Query\GetRecentExecutedRoutines\GetRecentExecutedRoutinesOutput;
+use Src\RoutineExecution\Application\Usecase\Query\GetRecentExecutedRoutines\GetRecentExecutedRoutinesOutputPort;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Src\Shared\Infrastructure\Query\Account\PrivateAccountVisibility;
 use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
@@ -17,8 +20,9 @@ final class GetRecentExecutedRoutines implements GetRecentExecutedRoutinesInterf
 {
     public function __construct(private AccountImageUrlServiceInterface $images) {}
 
-    public function execute(string $accountIdentifier, int $page, int $numberOfItemsPerPage): array
+    public function execute(GetRecentExecutedRoutinesInputPort $input): GetRecentExecutedRoutinesOutputPort
     {
+        $accountIdentifier = $input->accountIdentifier();
         $executions = DB::table('routine_executions')->select('routine_identifier')
             ->selectRaw('count(*) as my_execution_count, max(executed_at) as last_executed_at')
             ->where('executor_account_identifier', $accountIdentifier)->groupBy('routine_identifier');
@@ -53,7 +57,7 @@ final class GetRecentExecutedRoutines implements GetRecentExecutedRoutinesInterf
         BlockVisibility::exclude($query, $accountIdentifier, 'accounts.account_identifier');
         PrivateAccountVisibility::exclude($query, $accountIdentifier, 'accounts.account_identifier', 'accounts.visibility');
         PostInteractionState::selectLiked($query, $accountIdentifier, 'posts.post_identifier');
-        $paginator = $query->paginate($numberOfItemsPerPage, ['*'], 'page', $page);
+        $paginator = $query->paginate($input->numberOfItemsPerPage(), ['*'], 'page', $input->page());
         $ids = $paginator->getCollection()->pluck('routine_identifier')->all();
         $tags = DB::table('routine_tags')->join('tags', 'routine_tags.tag_identifier', '=', 'tags.tag_identifier')
             ->whereIn('routine_tags.routine_identifier', $ids)->where('routine_tags.available', true)->where('tags.available', true)
@@ -71,32 +75,32 @@ final class GetRecentExecutedRoutines implements GetRecentExecutedRoutinesInterf
         };
         $items = $paginator->getCollection()->map(static function (object $row) use ($tags, $actions, $icon): array {
             $origin = $row->origin_identifier === null ? null : [
-                'routine_identifier' => (string) $row->origin_identifier, 'routine_name' => (string) $row->origin_name,
-                'account_name' => (string) $row->origin_author_name, 'icon_image_url' => $icon((string) $row->origin_author_identifier),
+                'routineIdentifier' => (string) $row->origin_identifier, 'routineName' => (string) $row->origin_name,
+                'accountName' => (string) $row->origin_author_name, 'iconImageUrl' => $icon((string) $row->origin_author_identifier),
             ];
 
             return [
-                'post_identifier' => $row->post_identifier === null ? null : (string) $row->post_identifier,
-                'routine_identifier' => (string) $row->routine_identifier,
-                'customization_origin' => $origin,
-                'account_identifier' => (string) $row->account_identifier,
-                'account_name' => (string) $row->account_name,
-                'icon_image_url' => $icon((string) $row->account_identifier),
-                'posted_at' => $row->posted_at === null ? null : (new DateTimeImmutable((string) $row->posted_at))->format(DATE_ATOM),
-                'routine_name' => (string) $row->routine_name,
-                'routine_execution_minutes' => $row->routine_execution_minutes === null ? null : (int) $row->routine_execution_minutes,
-                'tags' => ($tags[$row->routine_identifier] ?? collect())->map(static fn (object $tag): array => ['tag_identifier' => (string) $tag->tag_identifier, 'tag_name' => (string) $tag->tag_name])->values()->all(),
-                'routine_actions' => ($actions[$row->routine_identifier] ?? collect())->map(static fn (object $action): array => ['routine_action_identifier' => (string) $action->routine_action_identifier, 'action_name' => (string) $action->action_name, 'action_minutes' => $action->action_minutes === null ? null : (int) $action->action_minutes])->values()->all(),
-                'post_like_count' => $row->post_like_count === null ? null : (int) $row->post_like_count,
-                'post_support_count' => $row->post_support_count === null ? null : (int) $row->post_support_count,
+                'postIdentifier' => $row->post_identifier === null ? null : (string) $row->post_identifier,
+                'routineIdentifier' => (string) $row->routine_identifier,
+                'customizationOrigin' => $origin,
+                'accountIdentifier' => (string) $row->account_identifier,
+                'accountName' => (string) $row->account_name,
+                'iconImageUrl' => $icon((string) $row->account_identifier),
+                'postedAt' => $row->posted_at === null ? null : (new DateTimeImmutable((string) $row->posted_at))->format(DATE_ATOM),
+                'routineName' => (string) $row->routine_name,
+                'routineExecutionMinutes' => $row->routine_execution_minutes === null ? null : (int) $row->routine_execution_minutes,
+                'tags' => ($tags[$row->routine_identifier] ?? collect())->map(static fn (object $tag): array => ['tagIdentifier' => (string) $tag->tag_identifier, 'tagName' => (string) $tag->tag_name])->values()->all(),
+                'routineActions' => ($actions[$row->routine_identifier] ?? collect())->map(static fn (object $action): array => ['routineActionIdentifier' => (string) $action->routine_action_identifier, 'actionName' => (string) $action->action_name, 'actionMinutes' => $action->action_minutes === null ? null : (int) $action->action_minutes])->values()->all(),
+                'postLikeCount' => $row->post_like_count === null ? null : (int) $row->post_like_count,
+                'postSupportCount' => $row->post_support_count === null ? null : (int) $row->post_support_count,
                 'liked' => $row->post_identifier === null ? null : (bool) $row->liked,
-                'execution_count' => (int) $row->execution_count,
-                'customization_count' => (int) $row->customization_count,
-                'my_execution_count' => (int) $row->my_execution_count,
-                'last_executed_at' => (new DateTimeImmutable((string) $row->last_executed_at))->format(DATE_ATOM),
+                'executionCount' => (int) $row->execution_count,
+                'customizationCount' => (int) $row->customization_count,
+                'myExecutionCount' => (int) $row->my_execution_count,
+                'lastExecutedAt' => (new DateTimeImmutable((string) $row->last_executed_at))->format(DATE_ATOM),
             ];
         })->values()->all();
 
-        return ['items' => $items, 'total' => $paginator->total()];
+        return new GetRecentExecutedRoutinesOutput($items, $paginator->total());
     }
 }

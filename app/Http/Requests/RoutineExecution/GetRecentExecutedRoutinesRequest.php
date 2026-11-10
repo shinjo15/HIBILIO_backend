@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\RoutineExecution;
 
 use App\Http\Requests\PaginatedRequest;
+use Src\RoutineExecution\Application\Usecase\Query\GetRecentExecutedRoutines\GetRecentExecutedRoutinesInput;
 
 final class GetRecentExecutedRoutinesRequest extends PaginatedRequest
 {
@@ -18,13 +19,8 @@ final class GetRecentExecutedRoutinesRequest extends PaginatedRequest
         return $this->paginationRules();
     }
 
-    public function currentPage(): int
+    public function toInput(string $accountIdentifier): GetRecentExecutedRoutinesInput
     {
-        return $this->page();
-    }
-
-    public function perPage(): int
-    {
-        return $this->numberOfItemsPerPage();
+        return new GetRecentExecutedRoutinesInput($accountIdentifier, $this->page(), $this->numberOfItemsPerPage());
     }
 }

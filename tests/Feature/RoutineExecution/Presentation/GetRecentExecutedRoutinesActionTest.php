@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Feature\RoutineExecution\Presentation;
 
+use App\Http\Requests\RoutineExecution\GetRecentExecutedRoutinesRequest;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Src\RoutineExecution\Application\Usecase\Query\GetRecentExecutedRoutines\GetRecentExecutedRoutinesInputPort;
+use Src\RoutineExecution\Application\Usecase\Query\GetRecentExecutedRoutines\GetRecentExecutedRoutinesInterface;
+use Src\RoutineExecution\Application\Usecase\Query\GetRecentExecutedRoutines\GetRecentExecutedRoutinesOutputPort;
 use Tests\Support\InteractsWithAccountImageUrlService;
 use Tests\TestCase;
 
@@ -13,6 +17,55 @@ final class GetRecentExecutedRoutinesActionTest extends TestCase
 {
     use InteractsWithAccountImageUrlService;
     use RefreshDatabase;
+
+    public function test_request_and_query_exchange_primitive_input_and_output_contracts(): void
+    {
+        $me = '11111111-1111-4111-8111-111111111111';
+        $this->account($me);
+        $parent = $this->routine(1, $me);
+        $routine = $this->routine(2, $me);
+        DB::table('routines')->where('routine_identifier', $routine)->update(['parent_routine_identifier' => $parent]);
+        $this->execution(1, $routine, $me, '2026-01-01 00:00:00');
+        $tag = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+        DB::table('tags')->insert(['tag_identifier' => $tag, 'tag_name' => 'tag', 'available' => true]);
+        DB::table('routine_tags')->insert(['routine_identifier' => $routine, 'tag_identifier' => $tag, 'available' => true]);
+        $action = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
+        DB::table('routine_actions')->insert(['routine_action_identifier' => $action, 'routine_identifier' => $routine, 'action_name' => 'action', 'action_minutes' => null, 'available' => true]);
+
+        $request = GetRecentExecutedRoutinesRequest::create('/', 'GET', ['page' => '1', 'number_of_items_per_page' => '2']);
+        $input = $request->toInput($me);
+        $this->assertInstanceOf(GetRecentExecutedRoutinesInputPort::class, $input);
+        $this->assertSame($me, $input->accountIdentifier());
+        $this->assertSame(1, $input->page());
+        $this->assertSame(2, $input->numberOfItemsPerPage());
+        $output = app(GetRecentExecutedRoutinesInterface::class)->execute($input);
+        $this->assertInstanceOf(GetRecentExecutedRoutinesOutputPort::class, $output);
+        $this->assertSame(1, $output->total());
+        $this->assertSame([[
+            'postIdentifier' => null, 'routineIdentifier' => $routine,
+            'customizationOrigin' => ['routineIdentifier' => $parent, 'routineName' => 'routine', 'accountName' => 'name', 'iconImageUrl' => "https://images.example/accounts/{$me}/icon"],
+            'accountIdentifier' => $me, 'accountName' => 'name', 'iconImageUrl' => "https://images.example/accounts/{$me}/icon",
+            'postedAt' => null, 'routineName' => 'routine', 'routineExecutionMinutes' => null,
+            'tags' => [['tagIdentifier' => $tag, 'tagName' => 'tag']],
+            'routineActions' => [['routineActionIdentifier' => $action, 'actionName' => 'action', 'actionMinutes' => null]],
+            'postLikeCount' => null, 'postSupportCount' => null, 'liked' => null,
+            'executionCount' => 0, 'customizationCount' => 0, 'myExecutionCount' => 1,
+            'lastExecutedAt' => '2026-01-01T00:00:00+00:00',
+        ]], $output->items());
+        $this->withSession(['account_identifier' => $me])->getJson('/api/my/routines/recent-executions')->assertOk()->assertExactJson([
+            'items' => [[
+                'post_identifier' => null, 'routine_identifier' => $routine,
+                'customization_origin' => ['routine_identifier' => $parent, 'routine_name' => 'routine', 'account_name' => 'name', 'icon_image_url' => "https://images.example/accounts/{$me}/icon"],
+                'account_identifier' => $me, 'account_name' => 'name', 'icon_image_url' => "https://images.example/accounts/{$me}/icon",
+                'posted_at' => null, 'routine_name' => 'routine', 'routine_execution_minutes' => null,
+                'tags' => [['tag_identifier' => $tag, 'tag_name' => 'tag']],
+                'routine_actions' => [['routine_action_identifier' => $action, 'action_name' => 'action', 'action_minutes' => null]],
+                'post_like_count' => null, 'post_support_count' => null, 'liked' => null,
+                'execution_count' => 0, 'customization_count' => 0, 'my_execution_count' => 1,
+                'last_executed_at' => '2026-01-01T00:00:00+00:00',
+            ]], 'total' => 1,
+        ]);
+    }
 
     public function test_empty_list_and_authentication(): void
     {
