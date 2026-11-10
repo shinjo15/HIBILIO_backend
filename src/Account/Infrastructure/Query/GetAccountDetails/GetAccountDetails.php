@@ -11,12 +11,13 @@ use Src\Account\Application\Usecase\Query\GetAccountDetails\GetAccountDetailsInp
 use Src\Account\Application\Usecase\Query\GetAccountDetails\GetAccountDetailsInterface;
 use Src\Account\Application\Usecase\Query\GetAccountDetails\GetAccountDetailsOutput;
 use Src\Account\Application\Usecase\Query\GetAccountDetails\GetAccountDetailsOutputPort;
+use Src\Shared\Domain\Service\ExperienceLevelService;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
 
 final class GetAccountDetails implements GetAccountDetailsInterface
 {
-    public function __construct(private AccountImageUrlServiceInterface $accountImageUrlService) {}
+    public function __construct(private AccountImageUrlServiceInterface $accountImageUrlService, private ExperienceLevelService $experienceLevelService) {}
 
     public function execute(GetAccountDetailsInputPort $input): GetAccountDetailsOutputPort
     {
@@ -29,7 +30,7 @@ final class GetAccountDetails implements GetAccountDetailsInterface
             BlockVisibility::exclude($query, $input->viewerAccountIdentifier(), 'accounts.account_identifier');
         }
 
-        $query->select(['account_identifier', 'account_name', 'account_bio', 'visibility', 'ui_mode', 'like_notifications_enabled', 'support_notifications_enabled']);
+        $query->select(['account_identifier', 'account_name', 'account_bio', 'visibility', 'ui_mode', 'like_notifications_enabled', 'support_notifications_enabled', 'experience']);
 
         if ($input->viewerAccountIdentifier() === null) {
             $query
@@ -105,6 +106,8 @@ final class GetAccountDetails implements GetAccountDetailsInterface
         ];
 
         if ($isOwnAccount) {
+            $details['experience'] = (int) $account->experience;
+            $details['level'] = $this->experienceLevelService->levelForExperience((int) $account->experience);
             $details['likeNotificationsEnabled'] = (bool) $account->like_notifications_enabled;
             $details['supportNotificationsEnabled'] = (bool) $account->support_notifications_enabled;
         }

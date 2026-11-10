@@ -27,6 +27,8 @@ namespace Src\Account\Application\Usecase\Query\GetAccountDetails;
  *     iconImageUrl: ?string,
  *     headerImageUrl: ?string,
  *     isFollowing: ?bool,
+ *     experience?: int,
+ *     level?: int,
  *     likeNotificationsEnabled?: bool,
  *     supportNotificationsEnabled?: bool
  * }

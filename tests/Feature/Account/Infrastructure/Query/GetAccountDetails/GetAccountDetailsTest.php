@@ -10,6 +10,7 @@ use Src\Account\Application\Service\AccountImageUrlServiceInterface;
 use Src\Account\Application\Usecase\Query\GetAccountDetails\GetAccountDetailsInput;
 use Src\Account\Application\Usecase\Query\GetAccountDetails\GetAccountDetailsInterface;
 use Src\Account\Infrastructure\Query\GetAccountDetails\GetAccountDetails;
+use Src\Shared\Domain\Service\ExperienceLevelService;
 use Tests\TestCase;
 
 final class GetAccountDetailsTest extends TestCase
@@ -54,6 +55,18 @@ final class GetAccountDetailsTest extends TestCase
             'headerImageUrl' => null,
             'isFollowing' => null,
         ], $result->accountDetails());
+    }
+
+    public function test_owner_query_does_not_validate_stored_experience(): void
+    {
+        $identifier = '11111111-1111-4111-8111-111111111111';
+        $this->insertAccount($identifier, true, 'active', 'アカウント', null);
+        DB::table('accounts')->where('account_identifier', $identifier)->update(['experience' => -1]);
+
+        $details = $this->app->make(GetAccountDetailsInterface::class)
+            ->execute(new GetAccountDetailsInput($identifier, $identifier))->accountDetails();
+
+        self::assertNotNull($details);
     }
 
     public function test_returns_null_for_unavailable_or_non_active_accounts(): void
@@ -196,7 +209,7 @@ final class GetAccountDetailsTest extends TestCase
         $images = $this->createMock(AccountImageUrlServiceInterface::class);
         $images->expects(self::once())->method('iconImageUrl')->willReturn('https://images.example/icon');
         $images->expects(self::once())->method('headerImageUrl')->willReturn('https://images.example/header');
-        $query = new GetAccountDetails($images);
+        $query = new GetAccountDetails($images, new ExperienceLevelService);
 
         self::assertSame([
             'accountIdentifier' => $target,

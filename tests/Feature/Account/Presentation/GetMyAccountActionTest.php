@@ -45,6 +45,8 @@ final class GetMyAccountActionTest extends TestCase
                 'icon_image_url' => null,
                 'header_image_url' => null,
                 'ui_mode' => 'system',
+                'experience' => 0,
+                'level' => 1,
                 'like_notifications_enabled' => false,
                 'support_notifications_enabled' => false,
                 'favorite_tags' => [[
@@ -56,6 +58,16 @@ final class GetMyAccountActionTest extends TestCase
                     'social_url' => 'https://x.com/example',
                 ]],
             ]);
+    }
+
+    public function test_returns_the_saved_experience_and_calculated_level(): void
+    {
+        $identifier = '11111111-1111-4111-8111-111111111111';
+        $this->insertAccount($identifier, true, 'active', 'アカウント', null);
+        DB::table('accounts')->where('account_identifier', $identifier)->update(['experience' => 3000]);
+        $this->withSession(['account_identifier' => $identifier])->getJson('/api/my/account')
+            ->assertOk()->assertJsonPath('experience', 3000)->assertJsonPath('level', 2);
+        $this->getJson("/api/accounts/{$identifier}")->assertOk()->assertJsonMissingPath('experience')->assertJsonMissingPath('level');
     }
 
     public function test_returns_unauthorized_without_an_authenticated_account(): void
@@ -121,6 +133,8 @@ final class GetMyAccountActionTest extends TestCase
                 'icon_image_url' => null,
                 'header_image_url' => null,
                 'ui_mode' => 'system',
+                'experience' => 0,
+                'level' => 1,
                 'like_notifications_enabled' => false,
                 'support_notifications_enabled' => false,
                 'favorite_tags' => [],
@@ -151,6 +165,8 @@ final class GetMyAccountActionTest extends TestCase
                         'icon_image_url' => null,
                         'header_image_url' => null,
                         'ui_mode' => 'system',
+                        'experience' => 0,
+                        'level' => 1,
                         'like_notifications_enabled' => $likeEnabled,
                         'support_notifications_enabled' => $supportEnabled,
                         'favorite_tags' => [],

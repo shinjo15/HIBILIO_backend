@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Src\RoutineExecution\Application\UseCase\CreateRoutineExecution;
 
 use Src\Routine\Domain\Repository\RoutineActionRepositoryInterface;
+use Src\RoutineExecution\Domain\Exception\AccountNotFoundException;
 use Src\RoutineExecution\Domain\Factory\RoutineExecutionActionFactoryInterface;
 use Src\RoutineExecution\Domain\Factory\RoutineExecutionFactoryInterface;
+use Src\RoutineExecution\Domain\Repository\AccountRepositoryInterface;
 use Src\RoutineExecution\Domain\Repository\RoutineExecutionActionRepositoryInterface;
 use Src\RoutineExecution\Domain\Repository\RoutineExecutionRepositoryInterface;
 use Src\Shared\Application\Transaction\TransactionManagerInterface;
@@ -24,12 +26,14 @@ final readonly class CreateRoutineExecution implements CreateRoutineExecutionInt
         private RoutineActionRepositoryInterface $routineActionRepository,
         private PostFactoryInterface $postFactory,
         private PostRepositoryInterface $postRepository,
+        private AccountRepositoryInterface $accountRepository,
     ) {}
 
     public function execute(CreateRoutineExecutionInputPort $input): void
     {
         $this->transactionManager->transaction(function () use ($input): void {
             $this->validateRoutineActions($input);
+            $account = $this->accountRepository->findForUpdate($input->executorAccountIdentifier()) ?? throw new AccountNotFoundException;
             $routineExecution = $this->routineExecutionFactory->create(
                 $input->executorAccountIdentifier(),
                 $input->routineIdentifier(),
@@ -50,6 +54,8 @@ final readonly class CreateRoutineExecution implements CreateRoutineExecutionInt
                 $routineExecution->routineIdentifier(),
                 $routineExecution->routineExecutionIdentifier(),
             ));
+            $account->recordRoutineExecution();
+            $this->accountRepository->save($account);
         });
     }
 

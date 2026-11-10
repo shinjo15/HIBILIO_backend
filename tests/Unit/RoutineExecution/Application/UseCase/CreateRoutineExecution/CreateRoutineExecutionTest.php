@@ -15,10 +15,13 @@ use Src\Routine\Domain\Repository\RoutineActionRepositoryInterface;
 use Src\Routine\Domain\ValueObject\RoutineActionName;
 use Src\RoutineExecution\Application\UseCase\CreateRoutineExecution\CreateRoutineExecution;
 use Src\RoutineExecution\Application\UseCase\CreateRoutineExecution\CreateRoutineExecutionInput;
+use Src\RoutineExecution\Domain\Entity\Account;
 use Src\RoutineExecution\Domain\Entity\RoutineExecution;
 use Src\RoutineExecution\Domain\Entity\RoutineExecutionAction;
+use Src\RoutineExecution\Domain\Exception\AccountNotFoundException;
 use Src\RoutineExecution\Domain\Factory\RoutineExecutionActionFactoryInterface;
 use Src\RoutineExecution\Domain\Factory\RoutineExecutionFactoryInterface;
+use Src\RoutineExecution\Domain\Repository\AccountRepositoryInterface;
 use Src\RoutineExecution\Domain\Repository\RoutineExecutionActionRepositoryInterface;
 use Src\RoutineExecution\Domain\Repository\RoutineExecutionRepositoryInterface;
 use Src\RoutineExecution\Domain\ValueObject\ExecutedAt;
@@ -34,6 +37,47 @@ use Src\Shared\Domain\ValueObject\Identifier\RoutineIdentifier;
 
 final class CreateRoutineExecutionTest extends TestCase
 {
+    public function test_missing_executor_does_not_save_execution_actions_or_post(): void
+    {
+        $accountId = new AccountIdentifier('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+        $routineId = new RoutineIdentifier('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
+        $actionId = new RoutineActionIdentifier('10000000-0000-4000-8000-000000000001');
+        $actions = $this->createStub(RoutineActionRepositoryInterface::class);
+        $actions->method('findByIdentifiers')->willReturn([
+            RoutineAction::create($actionId, null, $routineId, new RoutineActionName('行動'), null, null),
+        ]);
+        $accounts = $this->createMock(AccountRepositoryInterface::class);
+        $accounts->expects(self::once())->method('findForUpdate')->with($accountId)->willReturn(null);
+        $accounts->expects(self::never())->method('save');
+        $executions = $this->createMock(RoutineExecutionRepositoryInterface::class);
+        $executions->expects(self::never())->method('save');
+        $executionActions = $this->createMock(RoutineExecutionActionRepositoryInterface::class);
+        $executionActions->expects(self::never())->method('save');
+        $posts = $this->createMock(PostRepositoryInterface::class);
+        $posts->expects(self::never())->method('save');
+        $transactions = new class implements TransactionManagerInterface
+        {
+            public function transaction(callable $callback): mixed
+            {
+                return $callback();
+            }
+        };
+        $useCase = new CreateRoutineExecution(
+            $transactions,
+            $this->createStub(RoutineExecutionFactoryInterface::class),
+            $this->createStub(RoutineExecutionActionFactoryInterface::class),
+            $executions,
+            $executionActions,
+            $actions,
+            $this->createStub(PostFactoryInterface::class),
+            $posts,
+            $accounts,
+        );
+
+        $this->expectException(AccountNotFoundException::class);
+        $useCase->execute(new CreateRoutineExecutionInput($accountId, $routineId, [$actionId], null));
+    }
+
     public function test_saves_an_execution_and_only_the_selected_actions_in_one_transaction(): void
     {
         $routineExecutionRepository = new class implements RoutineExecutionRepositoryInterface
@@ -111,6 +155,10 @@ final class CreateRoutineExecutionTest extends TestCase
             public function save(Post $post): void {}
         };
 
+        $account = new Account(new AccountIdentifier('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'), 0);
+        $accountRepository = $this->createMock(AccountRepositoryInterface::class);
+        $accountRepository->expects(self::once())->method('findForUpdate')->willReturn($account);
+        $accountRepository->expects(self::once())->method('save')->with($account);
         $useCase = new CreateRoutineExecution(
             transactionManager: $transactionManager,
             routineExecutionFactory: new class implements RoutineExecutionFactoryInterface
@@ -146,6 +194,7 @@ final class CreateRoutineExecutionTest extends TestCase
             routineActionRepository: $routineActionRepository,
             postFactory: $postFactory,
             postRepository: $postRepository,
+            accountRepository: $accountRepository,
         );
 
         $useCase->execute(new CreateRoutineExecutionInput(
@@ -159,6 +208,7 @@ final class CreateRoutineExecutionTest extends TestCase
         ));
 
         self::assertSame(1, $transactionManager->transactionCount);
+        self::assertSame(100, $account->experience());
         self::assertSame(1, $routineActionRepository->findByIdentifiersCount);
         self::assertSame(
             'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
