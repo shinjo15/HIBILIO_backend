@@ -158,9 +158,11 @@ use Src\Notification\Application\Usecase\Command\MarkPersonalNotificationAsRead\
 use Src\Notification\Application\Usecase\Command\MarkPersonalNotificationAsRead\MarkPersonalNotificationAsReadInterface;
 use Src\Notification\Application\Usecase\Query\GetAnnouncements\GetAnnouncementsInterface;
 use Src\Notification\Application\Usecase\Query\GetMyNotifications\GetMyNotificationsInterface;
+use Src\Notification\Application\Usecase\Query\GetMyUnreadNotificationCount\GetMyUnreadNotificationCountInterface;
 use Src\Notification\Domain\Repository\PersonalNotificationRepositoryInterface;
 use Src\Notification\Infrastructure\Query\GetAnnouncements\GetAnnouncements;
 use Src\Notification\Infrastructure\Query\GetMyNotifications\GetMyNotifications;
+use Src\Notification\Infrastructure\Query\GetMyUnreadNotificationCount\GetMyUnreadNotificationCount;
 use Src\Notification\Infrastructure\Repository\PersonalNotificationRepository;
 use Src\Post\Infrastructure\Factory\PostFactory;
 use Src\Post\Infrastructure\Repository\PostRepository;
@@ -327,6 +329,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(GetLikedRoutinePostsInterface::class, GetLikedRoutinePosts::class);
         $this->app->bind(PersonalNotificationRepositoryInterface::class, PersonalNotificationRepository::class);
         $this->app->bind(GetMyNotificationsInterface::class, GetMyNotifications::class);
+        $this->app->bind(GetMyUnreadNotificationCountInterface::class, GetMyUnreadNotificationCount::class);
         $this->app->bind(GetAnnouncementsInterface::class, GetAnnouncements::class);
         $this->app->bind(MarkPersonalNotificationAsReadInterface::class, MarkPersonalNotificationAsRead::class);
         $this->app->bind(FollowFactoryInterface::class, FollowFactory::class);
