@@ -71,7 +71,7 @@ final class GetMyRoutinesActionTest extends TestCase
         DB::table('likes')->insert(['account_identifier' => $account, 'post_identifier' => $post, 'created_at' => now(), 'updated_at' => now()]);
         DB::table('tags')->insert(['tag_identifier' => '44444444-4444-4444-8444-444444444444', 'tag_name' => 'Tag', 'available' => true, 'created_at' => now(), 'updated_at' => now()]);
         DB::table('routine_tags')->insert(['routine_identifier' => $routine, 'tag_identifier' => '44444444-4444-4444-8444-444444444444', 'available' => true, 'created_at' => now(), 'updated_at' => now()]);
-        DB::table('routine_actions')->insert(['routine_action_identifier' => '55555555-5555-4555-8555-555555555555', 'routine_identifier' => $routine, 'action_name' => 'Action', 'action_minutes' => 5, 'available' => true, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('routine_actions')->insert(['routine_action_identifier' => '55555555-5555-4555-8555-555555555555', 'routine_identifier' => $routine, 'action_name' => 'Action', 'action_minutes' => 5, 'position' => 0, 'available' => true, 'created_at' => now(), 'updated_at' => now()]);
         DB::table('posts')->insert(['post_identifier' => '66666666-6666-4666-8666-666666666666', 'routine_identifier' => $routine, 'post_category' => 'action', 'available' => true, 'created_at' => now(), 'updated_at' => now()]);
 
         $posts = $this->withSession(['account_identifier' => $account])->getJson("/api/accounts/{$account}/routines")->assertOk()->json('items.0');

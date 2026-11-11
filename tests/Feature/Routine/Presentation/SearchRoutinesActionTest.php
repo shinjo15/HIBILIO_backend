@@ -43,6 +43,7 @@ final class SearchRoutinesActionTest extends TestCase
         $this->routineTag($routineIdentifier, $tagIdentifier);
         DB::table('routines')->where('routine_identifier', $routineIdentifier)->update(['routine_execution_minutes' => 15]);
         DB::table('routine_actions')->insert([
+            'position' => 0,
             'routine_action_identifier' => '66666666-6666-4666-8666-666666666666',
             'routine_identifier' => $routineIdentifier,
             'action_name' => '屈伸',

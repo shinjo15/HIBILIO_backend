@@ -42,7 +42,7 @@ final class RoutineActionRepository implements RoutineActionRepositoryInterface
                 $routineAction->action_minutes === null
                     ? null
                     : new RoutineActionMinutes($routineAction->action_minutes),
-                new RoutineActionPosition((int) ($routineAction->position ?? 0)),
+                new RoutineActionPosition($routineAction->position),
                 $routineAction->video_url === null ? null : new RoutineVideoUrl($routineAction->video_url),
             ))
             ->all();

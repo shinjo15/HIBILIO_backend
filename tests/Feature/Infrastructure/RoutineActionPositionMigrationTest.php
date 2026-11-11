@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Infrastructure;
 
+use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Application;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use RuntimeException;
@@ -14,7 +14,20 @@ use Tests\TestCase;
 
 final class RoutineActionPositionMigrationTest extends TestCase
 {
-    use RefreshDatabase;
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->artisan('migrate:fresh', ['--force' => true])->assertExitCode(0);
+    }
+
+    protected function tearDown(): void
+    {
+        try {
+            $this->artisan('migrate:fresh', ['--force' => true])->assertExitCode(0);
+        } finally {
+            parent::tearDown();
+        }
+    }
 
     public function createApplication(): Application
     {
@@ -66,6 +79,10 @@ final class RoutineActionPositionMigrationTest extends TestCase
             self::assertSame(1, DB::table('routine_actions')->where('routine_action_identifier', 'b')->value('position'));
             self::assertSame('keep B', DB::table('routine_actions')->where('routine_action_identifier', 'b')->value('action_name'));
             self::assertSame('b', DB::table('selected_actions')->value('routine_action_identifier'));
+            $position = collect(Schema::getColumns('routine_actions'))->firstWhere('name', 'position');
+            self::assertFalse($position['nullable']);
+            self::assertNull($position['default']);
+            self::assertNotEmpty(Schema::getForeignKeys('selected_actions'));
         } finally {
             DB::setDefaultConnection($default);
             DB::purge('position_migration_fixture');
@@ -75,6 +92,7 @@ final class RoutineActionPositionMigrationTest extends TestCase
     public function test_backfills_each_routine_without_losing_existing_data(): void
     {
         $migration = require database_path('migrations/2026_11_11_000000_add_position_to_routine_actions.php');
+        $migration->down();
         $routines = ['aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'];
         foreach ($routines as $routine) {
             DB::table('routines')->insert([
@@ -117,13 +135,9 @@ final class RoutineActionPositionMigrationTest extends TestCase
             'routine_execution_identifier' => 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
             'routine_action_identifier' => $rows[0][0],
         ]);
-        DB::table('routine_actions')->where('routine_action_identifier', $rows[1][0])->update(['position' => 1]);
-        DB::table('routine_actions')->where('routine_action_identifier', $rows[4][0])->update(['position' => 7]);
-
-        $migration->up();
         $migration->up();
 
-        foreach ([$rows[2][0] => 0, $rows[1][0] => 1, $rows[0][0] => 2, $rows[3][0] => 3, $rows[4][0] => 7] as $id => $position) {
+        foreach ([$rows[2][0] => 0, $rows[1][0] => 1, $rows[0][0] => 2, $rows[3][0] => 3, $rows[4][0] => 0] as $id => $position) {
             $this->assertDatabaseHas('routine_actions', [
                 'routine_action_identifier' => $id,
                 'position' => $position,
@@ -140,5 +154,27 @@ final class RoutineActionPositionMigrationTest extends TestCase
             'routine_action_identifier' => $rows[0][0],
         ]);
         self::assertSame(5, DB::table('routine_actions')->count());
+        $column = collect(Schema::getColumns('routine_actions'))->firstWhere('name', 'position');
+        self::assertFalse($column['nullable']);
+        self::assertNull($column['default']);
+        self::assertNotNull(collect(Schema::getForeignKeys('routine_actions'))->firstWhere('columns', ['parent_routine_action_identifier']));
+        self::assertNotNull(collect(Schema::getForeignKeys('routine_execution_actions'))->firstWhere('columns', ['routine_action_identifier']));
+        self::assertNotNull(collect(Schema::getIndexes('routine_actions'))->firstWhere('columns', ['routine_identifier']));
+        if (DB::connection()->getDriverName() === 'sqlite') {
+            self::assertSame([], DB::select('PRAGMA foreign_key_check'));
+        }
+
+        foreach ([[], ['position' => null]] as $position) {
+            try {
+                DB::table('routine_actions')->insert(array_merge([
+                    'routine_action_identifier' => '66666666-6666-4666-8666-666666666666',
+                    'routine_identifier' => $routines[0],
+                    'action_name' => 'invalid',
+                ], $position));
+                self::fail('An action without a position must be rejected.');
+            } catch (QueryException $exception) {
+                self::assertStringContainsString('position', $exception->getMessage());
+            }
+        }
     }
 }

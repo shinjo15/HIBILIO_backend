@@ -27,7 +27,7 @@ final class CreateRoutineExecutionActionTest extends TestCase
         $action = '33333333-3333-4333-8333-333333333333';
         DB::table('accounts')->insert(['account_identifier' => $account, 'account_name' => 'User', 'email_address' => 'user@example.com']);
         DB::table('routines')->insert(['routine_identifier' => $routine, 'routine_name' => 'Routine', 'account_identifier' => $account]);
-        DB::table('routine_actions')->insert(['routine_action_identifier' => $action, 'routine_identifier' => $routine, 'action_name' => 'Action']);
+        DB::table('routine_actions')->insert(['routine_action_identifier' => $action, 'routine_identifier' => $routine, 'action_name' => 'Action', 'position' => 0]);
 
         $repository = \Mockery::mock(AccountRepositoryInterface::class);
         $repository->shouldReceive('findForUpdate')->once()->andReturnUsing(fn ($id) => $this->app->make(AccountRepository::class)->findForUpdate($id));
@@ -53,7 +53,7 @@ final class CreateRoutineExecutionActionTest extends TestCase
         $missingExecutor = '44444444-4444-4444-8444-444444444444';
         DB::table('accounts')->insert(['account_identifier' => $author, 'account_name' => 'Author', 'email_address' => 'author@example.com']);
         DB::table('routines')->insert(['routine_identifier' => $routine, 'routine_name' => 'Routine', 'account_identifier' => $author]);
-        DB::table('routine_actions')->insert(['routine_action_identifier' => $action, 'routine_identifier' => $routine, 'action_name' => 'Action']);
+        DB::table('routine_actions')->insert(['routine_action_identifier' => $action, 'routine_identifier' => $routine, 'action_name' => 'Action', 'position' => 0]);
         $auth = $this->createStub(AuthServiceInterface::class);
         $auth->method('accountIdentifier')->willReturn($missingExecutor);
         $this->app->instance(AuthServiceInterface::class, $auth);
@@ -85,7 +85,7 @@ final class CreateRoutineExecutionActionTest extends TestCase
         DB::table('accounts')->insert(['account_identifier' => $account, 'account_name' => 'User', 'email_address' => 'user@example.com']);
         DB::table('accounts')->insert(['account_identifier' => $author, 'account_name' => 'Author', 'email_address' => 'author@example.com']);
         DB::table('routines')->insert(['routine_identifier' => $routine, 'routine_name' => 'Routine', 'account_identifier' => $author]);
-        DB::table('routine_actions')->insert(['routine_action_identifier' => $action, 'routine_identifier' => $routine, 'action_name' => 'Action']);
+        DB::table('routine_actions')->insert(['routine_action_identifier' => $action, 'routine_identifier' => $routine, 'action_name' => 'Action', 'position' => 0]);
         $this->withSession(['account_identifier' => $account])->postJson('/api/routine-executions', [
             'routine_identifier' => $routine,
             'executed_routine_action_identifiers' => [$action],
@@ -133,7 +133,7 @@ final class CreateRoutineExecutionActionTest extends TestCase
         $action = '33333333-3333-4333-8333-333333333333';
         DB::table('accounts')->insert(['account_identifier' => $account, 'account_name' => 'User', 'email_address' => 'user@example.com']);
         DB::table('routines')->insert(['routine_identifier' => $routine, 'routine_name' => 'Routine', 'account_identifier' => $account]);
-        DB::table('routine_actions')->insert(['routine_action_identifier' => $action, 'routine_identifier' => $routine, 'action_name' => 'Action']);
+        DB::table('routine_actions')->insert(['routine_action_identifier' => $action, 'routine_identifier' => $routine, 'action_name' => 'Action', 'position' => 0]);
         $this->withoutExceptionHandling();
         $caught = null;
         try {

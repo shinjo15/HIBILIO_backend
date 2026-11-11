@@ -65,7 +65,7 @@ final class GetMostExecutedRoutinesActionTest extends TestCase
         $action = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
         DB::table('tags')->insert(['tag_identifier' => $tag, 'tag_name' => 'tag', 'available' => true]);
         DB::table('routine_tags')->insert(['routine_identifier' => $child, 'tag_identifier' => $tag, 'available' => true]);
-        DB::table('routine_actions')->insert(['routine_action_identifier' => $action, 'routine_identifier' => $child, 'action_name' => 'action', 'action_minutes' => null, 'available' => true]);
+        DB::table('routine_actions')->insert(['routine_action_identifier' => $action, 'routine_identifier' => $child, 'action_name' => 'action', 'action_minutes' => null, 'position' => 0, 'available' => true]);
         foreach ([[1, null, true], [2, '2025-01-01 00:00:00', false], [3, '2025-02-01 00:00:00', true], [4, '2025-02-01 00:00:00', true]] as [$n, $date, $available]) {
             DB::table('posts')->insert(['post_identifier' => sprintf('aaaaaaaa-aaaa-4aaa-8aaa-%012d', $n), 'routine_identifier' => $child, 'post_category' => 'routine', 'available' => $available, 'created_at' => $date, 'post_like_count' => 5, 'post_support_count' => 3]);
         }

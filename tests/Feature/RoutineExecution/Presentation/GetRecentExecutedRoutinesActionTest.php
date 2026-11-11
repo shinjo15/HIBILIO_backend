@@ -30,7 +30,7 @@ final class GetRecentExecutedRoutinesActionTest extends TestCase
         DB::table('tags')->insert(['tag_identifier' => $tag, 'tag_name' => 'tag', 'available' => true]);
         DB::table('routine_tags')->insert(['routine_identifier' => $routine, 'tag_identifier' => $tag, 'available' => true]);
         $action = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
-        DB::table('routine_actions')->insert(['routine_action_identifier' => $action, 'routine_identifier' => $routine, 'action_name' => 'action', 'action_minutes' => null, 'available' => true]);
+        DB::table('routine_actions')->insert(['routine_action_identifier' => $action, 'routine_identifier' => $routine, 'action_name' => 'action', 'action_minutes' => null, 'position' => 0, 'available' => true]);
 
         $request = GetRecentExecutedRoutinesRequest::create('/', 'GET', ['page' => '1', 'number_of_items_per_page' => '2']);
         $input = $request->toInput($me);
@@ -187,7 +187,7 @@ final class GetRecentExecutedRoutinesActionTest extends TestCase
         DB::table('tags')->insert(['tag_identifier' => $tag, 'tag_name' => 'tag', 'available' => true]);
         DB::table('routine_tags')->insert(['routine_identifier' => $routine, 'tag_identifier' => $tag, 'available' => true]);
         $action = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
-        DB::table('routine_actions')->insert(['routine_action_identifier' => $action, 'routine_identifier' => $routine, 'action_name' => 'action', 'action_minutes' => null, 'available' => true]);
+        DB::table('routine_actions')->insert(['routine_action_identifier' => $action, 'routine_identifier' => $routine, 'action_name' => 'action', 'action_minutes' => null, 'position' => 0, 'available' => true]);
         $this->withSession(['account_identifier' => $me])->getJson('/api/my/routines/recent-executions')->assertOk()
             ->assertJsonPath('total', 2)->assertJsonPath('items.0.routine_identifier', $parent)
             ->assertJsonPath('items.0.customization_count', 1)->assertJsonPath('items.1.routine_identifier', $routine)

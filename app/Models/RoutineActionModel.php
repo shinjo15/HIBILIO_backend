@@ -32,6 +32,7 @@ final class RoutineActionModel extends Model
     {
         return [
             'available' => 'boolean',
+            'position' => 'integer',
         ];
     }
 }

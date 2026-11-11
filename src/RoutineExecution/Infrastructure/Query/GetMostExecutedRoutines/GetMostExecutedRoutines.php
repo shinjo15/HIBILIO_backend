@@ -63,7 +63,7 @@ final class GetMostExecutedRoutines implements GetMostExecutedRoutinesInterface
             ->whereIn('routine_tags.routine_identifier', $ids)->where('routine_tags.available', true)->where('tags.available', true)
             ->orderBy('tags.tag_identifier')->get(['routine_tags.routine_identifier', 'tags.tag_identifier', 'tags.tag_name'])->groupBy('routine_identifier');
         $actions = DB::table('routine_actions')->whereIn('routine_identifier', $ids)->where('available', true)
-            ->orderByRaw('case when position is null then 1 else 0 end')->orderBy('position')->orderByRaw('case when created_at is null then 1 else 0 end')->orderBy('created_at')->orderBy('routine_action_identifier')
+            ->orderBy('position')->orderBy('routine_action_identifier')
             ->get(['routine_identifier', 'routine_action_identifier', 'action_name', 'action_minutes'])->groupBy('routine_identifier');
         $icons = [];
         $icon = function (string $id) use (&$icons): ?string {

@@ -33,6 +33,10 @@ return new class extends Migration
             WHERE routine_actions.routine_action_identifier = ranked_actions.routine_action_identifier
                 AND routine_actions.position IS NULL
             SQL);
+
+        Schema::table('routine_actions', function (Blueprint $table): void {
+            $table->unsignedInteger('position')->nullable(false)->change();
+        });
     }
 
     public function down(): void

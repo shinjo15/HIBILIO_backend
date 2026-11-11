@@ -206,7 +206,7 @@ final class RoutineActionVideoLinkTest extends TestCase
         $migration->down();
         DB::table('accounts')->insert(['account_identifier' => '11111111-1111-4111-8111-111111111111', 'account_name' => 'owner', 'email_address' => 'owner@example.com', 'available' => true, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()]);
         DB::table('routines')->insert(['routine_identifier' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'account_identifier' => '11111111-1111-4111-8111-111111111111', 'routine_name' => 'old', 'available' => true, 'created_at' => now(), 'updated_at' => now()]);
-        DB::table('routine_actions')->insert(['routine_action_identifier' => 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'routine_identifier' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'action_name' => 'old action', 'available' => true, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('routine_actions')->insert(['routine_action_identifier' => 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'routine_identifier' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'action_name' => 'old action', 'position' => 0, 'available' => true, 'created_at' => now(), 'updated_at' => now()]);
         $migration->up();
         $this->assertDatabaseHas('routine_actions', ['action_name' => 'old action', 'video_url' => null, 'available' => true]);
     }
@@ -218,8 +218,8 @@ final class RoutineActionVideoLinkTest extends TestCase
         }
         DB::table('routines')->insert(['routine_identifier' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'account_identifier' => '11111111-1111-4111-8111-111111111111', 'routine_name' => 'routine', 'video_url' => 'https://example.com/routine', 'available' => true, 'created_at' => now(), 'updated_at' => now()]);
         DB::table('routines')->insert(['routine_identifier' => 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'account_identifier' => '11111111-1111-4111-8111-111111111111', 'routine_name' => 'other routine', 'available' => true, 'created_at' => now(), 'updated_at' => now()]);
-        foreach ([['cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'first'], ['dddddddd-dddd-4ddd-8ddd-dddddddddddd', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'second'], ['eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'other']] as [$id, $routine, $name]) {
-            DB::table('routine_actions')->insert(['routine_action_identifier' => $id, 'routine_identifier' => $routine, 'action_name' => $name, 'video_url' => 'https://example.com/'.$name, 'available' => true, 'created_at' => now(), 'updated_at' => now()]);
+        foreach ([['cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'first', 0], ['dddddddd-dddd-4ddd-8ddd-dddddddddddd', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'second', 1], ['eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'other', 0]] as [$id, $routine, $name, $position]) {
+            DB::table('routine_actions')->insert(['routine_action_identifier' => $id, 'routine_identifier' => $routine, 'action_name' => $name, 'position' => $position, 'video_url' => 'https://example.com/'.$name, 'available' => true, 'created_at' => now(), 'updated_at' => now()]);
         }
     }
 }
