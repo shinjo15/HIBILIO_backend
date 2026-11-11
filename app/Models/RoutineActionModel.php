@@ -23,6 +23,7 @@ final class RoutineActionModel extends Model
         'action_name',
         'action_memo',
         'action_minutes',
+        'position',
         'video_url',
         'available',
     ];
@@ -31,6 +32,7 @@ final class RoutineActionModel extends Model
     {
         return [
             'available' => 'boolean',
+            'position' => 'integer',
         ];
     }
 }

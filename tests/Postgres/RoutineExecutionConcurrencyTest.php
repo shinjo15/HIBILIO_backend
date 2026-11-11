@@ -26,7 +26,7 @@ final class RoutineExecutionConcurrencyTest extends TestCase
         $action = '33333333-3333-4333-8333-333333333333';
         DB::table('accounts')->insert(['account_identifier' => $account, 'account_name' => 'User', 'email_address' => 'concurrent@example.com']);
         DB::table('routines')->insert(['routine_identifier' => $routine, 'routine_name' => 'Routine', 'account_identifier' => $account]);
-        DB::table('routine_actions')->insert(['routine_action_identifier' => $action, 'routine_identifier' => $routine, 'action_name' => 'Action']);
+        DB::table('routine_actions')->insert(['routine_action_identifier' => $action, 'routine_identifier' => $routine, 'action_name' => 'Action', 'position' => 0]);
 
         $input = new InputStream;
         $first = new Process([PHP_BINARY, base_path('tests/Support/routine-execution-concurrency-worker.php'), $mode], base_path(), null, $input, 30);

@@ -129,8 +129,8 @@ final class GetRoutineExecutionDetails implements GetRoutineExecutionDetailsInte
         return DB::table('routine_execution_actions')
             ->join('routine_actions', 'routine_execution_actions.routine_action_identifier', '=', 'routine_actions.routine_action_identifier')
             ->where('routine_execution_actions.routine_execution_identifier', $routineExecutionIdentifier)
-            ->orderBy('routine_execution_actions.created_at')
-            ->orderBy('routine_execution_actions.routine_action_identifier')
+            ->orderBy('routine_actions.position')
+            ->orderBy('routine_actions.routine_action_identifier')
             ->get([
                 'routine_actions.routine_action_identifier',
                 'routine_actions.action_name',

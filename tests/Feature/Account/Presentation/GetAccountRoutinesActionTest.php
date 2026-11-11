@@ -47,7 +47,7 @@ final class GetAccountRoutinesActionTest extends TestCase
         DB::table('likes')->insert(['account_identifier' => $viewer, 'post_identifier' => '44444444-4444-4444-8444-444444444444']);
         DB::table('tags')->insert(['tag_identifier' => '55555555-5555-4555-8555-555555555555', 'tag_name' => 'Tag', 'available' => true]);
         DB::table('routine_tags')->insert(['routine_identifier' => '30000000-0000-4000-8000-000000000001', 'tag_identifier' => '55555555-5555-4555-8555-555555555555', 'available' => true]);
-        DB::table('routine_actions')->insert(['routine_action_identifier' => '66666666-6666-4666-8666-666666666666', 'routine_identifier' => '30000000-0000-4000-8000-000000000001', 'action_name' => 'Action', 'action_minutes' => 5, 'available' => true]);
+        DB::table('routine_actions')->insert(['routine_action_identifier' => '66666666-6666-4666-8666-666666666666', 'routine_identifier' => '30000000-0000-4000-8000-000000000001', 'action_name' => 'Action', 'action_minutes' => 5, 'position' => 0, 'available' => true]);
         foreach ([$owner, $viewer] as $account) {
             foreach ([1, 2, 3] as $page) {
                 $params = "?page={$page}&number_of_items_per_page=1";

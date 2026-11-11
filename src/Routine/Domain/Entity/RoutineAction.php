@@ -7,6 +7,7 @@ namespace Src\Routine\Domain\Entity;
 use Src\Routine\Domain\ValueObject\RoutineActionMemo;
 use Src\Routine\Domain\ValueObject\RoutineActionMinutes;
 use Src\Routine\Domain\ValueObject\RoutineActionName;
+use Src\Routine\Domain\ValueObject\RoutineActionPosition;
 use Src\Routine\Domain\ValueObject\RoutineVideoUrl;
 use Src\Shared\Domain\ValueObject\Identifier\RoutineActionIdentifier;
 use Src\Shared\Domain\ValueObject\Identifier\RoutineIdentifier;
@@ -20,6 +21,7 @@ final class RoutineAction
         private readonly RoutineActionName $routineActionName,
         private readonly ?RoutineActionMemo $routineActionMemo,
         private readonly ?RoutineActionMinutes $routineActionMinutes,
+        private readonly RoutineActionPosition $position,
         private readonly ?RoutineVideoUrl $videoUrl,
     ) {}
 
@@ -30,6 +32,7 @@ final class RoutineAction
         RoutineActionName $routineActionName,
         ?RoutineActionMemo $routineActionMemo,
         ?RoutineActionMinutes $routineActionMinutes,
+        RoutineActionPosition $position,
         ?RoutineVideoUrl $videoUrl = null,
     ): self {
         return new self(
@@ -39,6 +42,7 @@ final class RoutineAction
             routineActionName: $routineActionName,
             routineActionMemo: $routineActionMemo,
             routineActionMinutes: $routineActionMinutes,
+            position: $position,
             videoUrl: $videoUrl,
         );
     }
@@ -71,6 +75,11 @@ final class RoutineAction
     public function routineActionMinutes(): ?RoutineActionMinutes
     {
         return $this->routineActionMinutes;
+    }
+
+    public function position(): RoutineActionPosition
+    {
+        return $this->position;
     }
 
     public function videoUrl(): ?RoutineVideoUrl

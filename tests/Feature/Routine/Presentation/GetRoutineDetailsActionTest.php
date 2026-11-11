@@ -200,6 +200,7 @@ final class GetRoutineDetailsActionTest extends TestCase
     private function insertRoutineAction(string $identifier, string $routineIdentifier, bool $available, string $name, ?string $memo, ?int $minutes, string $createdAt): void
     {
         DB::table('routine_actions')->insert([
+            'position' => DB::table('routine_actions')->where('routine_identifier', $routineIdentifier)->count(),
             'routine_action_identifier' => $identifier,
             'parent_routine_action_identifier' => null,
             'routine_identifier' => $routineIdentifier,

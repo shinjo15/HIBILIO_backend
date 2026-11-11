@@ -69,7 +69,7 @@ final class GetRoutineDetails implements GetRoutineDetailsInterface
         $routineActions = DB::table('routine_actions')
             ->where('routine_identifier', $input->routineIdentifier())
             ->where('available', true)
-            ->orderBy('created_at')
+            ->orderBy('position')
             ->orderBy('routine_action_identifier')
             ->get([
                 'routine_action_identifier',

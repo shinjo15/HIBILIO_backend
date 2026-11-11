@@ -199,6 +199,7 @@ final class GetAccountLikedRoutinePostsActionTest extends TestCase
     private function createRoutineAction(string $identifier, string $routineIdentifier, string $name, int $minutes): void
     {
         DB::table('routine_actions')->insert([
+            'position' => DB::table('routine_actions')->where('routine_identifier', $routineIdentifier)->count(),
             'routine_action_identifier' => $identifier,
             'routine_identifier' => $routineIdentifier,
             'action_name' => $name,

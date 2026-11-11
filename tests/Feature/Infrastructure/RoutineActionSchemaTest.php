@@ -78,6 +78,7 @@ final class RoutineActionSchemaTest extends TestCase
             'parent_routine_action_identifier' => $parentIdentifier,
             'routine_identifier' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
             'action_name' => '制約確認',
+            'position' => 0,
         ]);
     }
 }

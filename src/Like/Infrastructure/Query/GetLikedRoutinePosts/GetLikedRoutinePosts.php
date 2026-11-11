@@ -183,7 +183,7 @@ final class GetLikedRoutinePosts implements GetLikedRoutinePostsInterface
         return DB::table('routine_actions')
             ->whereIn('routine_identifier', $routineIdentifiers)
             ->where('available', true)
-            ->orderBy('created_at')
+            ->orderBy('position')
             ->orderBy('routine_action_identifier')
             ->get([
                 'routine_identifier',

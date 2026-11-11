@@ -226,6 +226,7 @@ final class GetFollowingPostsActionTest extends TestCase
         int $actionMinutes,
     ): void {
         DB::table('routine_actions')->insert([
+            'position' => DB::table('routine_actions')->where('routine_identifier', $routineIdentifier)->count(),
             'routine_action_identifier' => $routineActionIdentifier,
             'routine_identifier' => $routineIdentifier,
             'action_name' => $actionName,

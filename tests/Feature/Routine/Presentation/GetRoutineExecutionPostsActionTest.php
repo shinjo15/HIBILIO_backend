@@ -151,6 +151,7 @@ final class GetRoutineExecutionPostsActionTest extends TestCase
     private function insertRoutineAction(string $identifier, string $routineIdentifier): void
     {
         DB::table('routine_actions')->insert([
+            'position' => 0,
             'routine_action_identifier' => $identifier,
             'routine_identifier' => $routineIdentifier,
             'action_name' => 'Action',

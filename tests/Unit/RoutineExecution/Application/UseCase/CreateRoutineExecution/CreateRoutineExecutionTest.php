@@ -13,6 +13,7 @@ use Src\Post\Domain\ValueObject\PostSupportCount;
 use Src\Routine\Domain\Entity\RoutineAction;
 use Src\Routine\Domain\Repository\RoutineActionRepositoryInterface;
 use Src\Routine\Domain\ValueObject\RoutineActionName;
+use Src\Routine\Domain\ValueObject\RoutineActionPosition;
 use Src\RoutineExecution\Application\UseCase\CreateRoutineExecution\CreateRoutineExecution;
 use Src\RoutineExecution\Application\UseCase\CreateRoutineExecution\CreateRoutineExecutionInput;
 use Src\RoutineExecution\Domain\Entity\Account;
@@ -44,7 +45,7 @@ final class CreateRoutineExecutionTest extends TestCase
         $actionId = new RoutineActionIdentifier('10000000-0000-4000-8000-000000000001');
         $actions = $this->createStub(RoutineActionRepositoryInterface::class);
         $actions->method('findByIdentifiers')->willReturn([
-            RoutineAction::create($actionId, null, $routineId, new RoutineActionName('行動'), null, null),
+            RoutineAction::create($actionId, null, $routineId, new RoutineActionName('行動'), null, null, new RoutineActionPosition(0)),
         ]);
         $accounts = $this->createMock(AccountRepositoryInterface::class);
         $accounts->expects(self::once())->method('findForUpdate')->with($accountId)->willReturn(null);
@@ -126,6 +127,7 @@ final class CreateRoutineExecutionTest extends TestCase
                         new RoutineActionName('実行した行動'),
                         null,
                         null,
+                        new RoutineActionPosition(0),
                     ),
                     $routineActionIdentifiers,
                 );

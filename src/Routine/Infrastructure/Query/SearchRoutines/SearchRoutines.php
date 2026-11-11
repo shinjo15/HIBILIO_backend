@@ -232,7 +232,7 @@ final class SearchRoutines implements SearchRoutinesInterface
         return DB::table('routine_actions')
             ->whereIn('routine_identifier', $routineIdentifiers)
             ->where('available', true)
-            ->orderBy('created_at')
+            ->orderBy('position')
             ->orderBy('routine_action_identifier')
             ->get(['routine_identifier', 'routine_action_identifier', 'action_name', 'action_minutes'])
             ->groupBy('routine_identifier')
