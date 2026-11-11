@@ -106,11 +106,15 @@ final class CreateRoutinePersistenceTest extends TestCase
             new RoutineActionIdentifier('75017745-e475-4337-b0f3-3fc3d670e5c7'),
         ]);
         $positions = [];
+        $videos = [];
         foreach ($restored as $action) {
             $positions[$action->routineActionIdentifier()->value()] = $action->position()->value();
+            $videos[$action->routineActionIdentifier()->value()] = $action->videoUrl()?->value();
         }
         self::assertSame(0, $positions['f6ca9f4c-169b-4b2d-a717-4a4f40d1490f']);
         self::assertSame(1, $positions['75017745-e475-4337-b0f3-3fc3d670e5c7']);
+        self::assertSame('https://youtu.be/dQw4w9WgXcQ?x=first', $videos['f6ca9f4c-169b-4b2d-a717-4a4f40d1490f']);
+        self::assertSame('https://youtu.be/dQw4w9WgXcQ?x=second', $videos['75017745-e475-4337-b0f3-3fc3d670e5c7']);
 
         $this->assertDatabaseHas('routines', [
             'routine_identifier' => '34b8d590-07cb-49ca-bfd9-cb9f40e26bd3',

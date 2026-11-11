@@ -90,7 +90,7 @@ final class CreateRoutineActionTest extends TestCase
             'routine_identifier' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
             'account_identifier' => '3b5581e9-16df-4879-b7d2-5d88dca6ab87',
             'routine_name' => '元ルーティン',
-            'video_url' => 'https://example.com/parent',
+            'video_url' => 'https://youtu.be/dQw4w9WgXcQ?source=parent',
             'available' => true,
             'created_at' => now(),
             'updated_at' => now(),

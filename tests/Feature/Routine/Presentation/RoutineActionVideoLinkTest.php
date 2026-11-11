@@ -67,16 +67,16 @@ final class RoutineActionVideoLinkTest extends TestCase
         $this->assertDatabaseCount('posts', 0);
     }
 
-    public function test_legacy_urls_remain_readable_in_details_and_action_restoration(): void
+    public function test_youtube_url_is_restored_by_action_repository(): void
     {
         $this->insertFixture();
         $this->getJson('/api/routines/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')->assertOk()
-            ->assertJsonPath('video_url', 'https://example.com/routine')
-            ->assertJsonPath('routine_actions.0.video_url', 'https://example.com/first');
+            ->assertJsonPath('video_url', 'https://youtu.be/dQw4w9WgXcQ?source=routine')
+            ->assertJsonPath('routine_actions.0.video_url', 'https://youtu.be/dQw4w9WgXcQ?source=first');
         $actions = $this->app->make(RoutineActionRepositoryInterface::class)->findByIdentifiers([
             new RoutineActionIdentifier('cccccccc-cccc-4ccc-8ccc-cccccccccccc'),
         ]);
-        self::assertSame('https://example.com/first', $actions[0]->videoUrl()?->value());
+        self::assertSame('https://youtu.be/dQw4w9WgXcQ?source=first', $actions[0]->videoUrl()?->value());
     }
 
     public function test_creation_stores_each_action_video_and_details_return_it(): void
@@ -89,18 +89,23 @@ final class RoutineActionVideoLinkTest extends TestCase
             'routine_actions' => [
                 ['routine_action_name' => 'first', 'video_url' => 'https://youtu.be/dQw4w9WgXcQ'],
                 ['routine_action_name' => 'second', 'video_url' => 'https://youtube.com/shorts/dQw4w9WgXcQ'],
-                ['routine_action_name' => 'legacy'],
+                ['routine_action_name' => 'without video'],
             ],
         ])->assertCreated();
         $this->assertDatabaseHas('routine_actions', ['action_name' => 'first', 'video_url' => 'https://youtu.be/dQw4w9WgXcQ']);
         $this->assertDatabaseHas('routine_actions', ['action_name' => 'second', 'video_url' => 'https://youtube.com/shorts/dQw4w9WgXcQ']);
-        $this->assertDatabaseHas('routine_actions', ['action_name' => 'legacy', 'video_url' => null]);
+        $this->assertDatabaseHas('routine_actions', ['action_name' => 'without video', 'video_url' => null]);
         $routine = DB::table('routines')->where('routine_name', 'routine')->value('routine_identifier');
         $response = $this->getJson('/api/routines/'.$routine)->assertOk()->assertJsonPath('video_url', 'https://youtube.com/watch?v=dQw4w9WgXcQ');
         $actions = collect($response->json('routine_actions'))->keyBy('action_name');
         self::assertSame('https://youtu.be/dQw4w9WgXcQ', $actions['first']['video_url']);
         self::assertSame('https://youtube.com/shorts/dQw4w9WgXcQ', $actions['second']['video_url']);
-        self::assertNull($actions['legacy']['video_url']);
+        self::assertNull($actions['without video']['video_url']);
+        $withoutVideoId = DB::table('routine_actions')->where('routine_identifier', $routine)->where('action_name', 'without video')->value('routine_action_identifier');
+        $restored = $this->app->make(RoutineActionRepositoryInterface::class)->findByIdentifiers([
+            new RoutineActionIdentifier($withoutVideoId),
+        ]);
+        self::assertNull($restored[0]->videoUrl());
     }
 
     public function test_creation_preserves_urls_for_mixed_compound_and_plain_action_keys(): void
@@ -144,11 +149,13 @@ final class RoutineActionVideoLinkTest extends TestCase
         $owner = '11111111-1111-4111-8111-111111111111';
         $this->withSession(['account_identifier' => $owner])->postJson('/api/routines', [
             'routine_name' => 'optional videos',
+            'video_url' => null,
             'routine_actions' => [
                 'x.*' => ['routine_action_name' => 'omitted'],
                 'plain' => ['routine_action_name' => 'explicit null', 'video_url' => null],
             ],
         ])->assertCreated();
+        $this->assertDatabaseHas('routines', ['routine_name' => 'optional videos', 'video_url' => null]);
         $this->assertDatabaseHas('routine_actions', ['action_name' => 'omitted', 'video_url' => null]);
         $this->assertDatabaseHas('routine_actions', ['action_name' => 'explicit null', 'video_url' => null]);
         $this->postJson('/api/routines', [
@@ -228,7 +235,7 @@ final class RoutineActionVideoLinkTest extends TestCase
             $this->withSession(['account_identifier' => '11111111-1111-4111-8111-111111111111'])->postJson('/api/routines', ['routine_name' => 'invalid', 'routine_actions' => [['routine_action_name' => 'action', 'video_url' => $invalid]]])->assertUnprocessable()->assertJsonValidationErrors(['routine_actions.0.video_url']);
         }
         $this->assertDatabaseMissing('routines', ['routine_name' => 'invalid']);
-        $this->assertDatabaseHas('routine_actions', ['action_name' => 'first', 'video_url' => 'https://example.com/first']);
+        $this->assertDatabaseHas('routine_actions', ['action_name' => 'first', 'video_url' => 'https://youtu.be/dQw4w9WgXcQ?source=first']);
     }
 
     public function test_non_array_actions_are_validation_errors(): void
@@ -247,7 +254,7 @@ final class RoutineActionVideoLinkTest extends TestCase
         ])->assertCreated();
         $this->assertDatabaseHas('routines', ['routine_name' => 'customized', 'video_url' => null]);
         $this->assertDatabaseHas('routine_actions', ['action_name' => 'customized action', 'video_url' => null]);
-        $this->assertDatabaseHas('routine_actions', ['action_name' => 'first', 'video_url' => 'https://example.com/first']);
+        $this->assertDatabaseHas('routine_actions', ['action_name' => 'first', 'video_url' => 'https://youtu.be/dQw4w9WgXcQ?source=first']);
     }
 
     public function test_creation_rolls_back_routine_and_actions_if_an_action_save_fails(): void
@@ -285,10 +292,10 @@ final class RoutineActionVideoLinkTest extends TestCase
         foreach (['11111111-1111-4111-8111-111111111111', '22222222-2222-4222-8222-222222222222'] as $owner) {
             DB::table('accounts')->insert(['account_identifier' => $owner, 'account_name' => $owner, 'email_address' => $owner.'@example.com', 'available' => true, 'status' => 'active', 'created_at' => now(), 'updated_at' => now()]);
         }
-        DB::table('routines')->insert(['routine_identifier' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'account_identifier' => '11111111-1111-4111-8111-111111111111', 'routine_name' => 'routine', 'video_url' => 'https://example.com/routine', 'available' => true, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('routines')->insert(['routine_identifier' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'account_identifier' => '11111111-1111-4111-8111-111111111111', 'routine_name' => 'routine', 'video_url' => 'https://youtu.be/dQw4w9WgXcQ?source=routine', 'available' => true, 'created_at' => now(), 'updated_at' => now()]);
         DB::table('routines')->insert(['routine_identifier' => 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'account_identifier' => '11111111-1111-4111-8111-111111111111', 'routine_name' => 'other routine', 'available' => true, 'created_at' => now(), 'updated_at' => now()]);
         foreach ([['cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'first', 0], ['dddddddd-dddd-4ddd-8ddd-dddddddddddd', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'second', 1], ['eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', 'other', 0]] as [$id, $routine, $name, $position]) {
-            DB::table('routine_actions')->insert(['routine_action_identifier' => $id, 'routine_identifier' => $routine, 'action_name' => $name, 'position' => $position, 'video_url' => 'https://example.com/'.$name, 'available' => true, 'created_at' => now(), 'updated_at' => now()]);
+            DB::table('routine_actions')->insert(['routine_action_identifier' => $id, 'routine_identifier' => $routine, 'action_name' => $name, 'position' => $position, 'video_url' => 'https://youtu.be/dQw4w9WgXcQ?source='.$name, 'available' => true, 'created_at' => now(), 'updated_at' => now()]);
         }
     }
 }

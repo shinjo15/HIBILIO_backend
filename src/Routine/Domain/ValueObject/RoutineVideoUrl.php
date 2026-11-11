@@ -8,9 +8,16 @@ use Src\Shared\Domain\ValueObject\Base\StringValueObject;
 
 final readonly class RoutineVideoUrl extends StringValueObject
 {
-    public function validateForRegistration(): void
+    protected function validate(string $value): void
     {
-        $parts = parse_url($this->value());
+        $parts = parse_url($value);
+        if (mb_strlen($value) > 2048 || ! mb_check_encoding($value, 'UTF-8')
+            || preg_match('/[\s\p{C}<>"{}|\\\\^`]|%(?![0-9a-fA-F]{2})/u', $value)
+            || $parts === false || ! isset($parts['host'], $parts['scheme'])
+            || ! in_array(strtolower($parts['scheme']), ['http', 'https'], true)) {
+            throw new \InvalidArgumentException('動画URLは2048文字以下のHTTPまたはHTTPS URLである必要があります。');
+        }
+
         $host = strtolower($parts['host']);
         $path = $parts['path'] ?? '';
         $videoId = null;
@@ -27,10 +34,10 @@ final readonly class RoutineVideoUrl extends StringValueObject
             } elseif ($path === '/watch') {
                 $ids = [];
                 foreach (explode('&', $parts['query'] ?? '') as $parameter) {
-                    [$key, $value] = array_pad(explode('=', $parameter, 2), 2, '');
+                    [$key, $parameterValue] = array_pad(explode('=', $parameter, 2), 2, '');
                     $key = urldecode($key);
                     if ($key === 'v' || str_starts_with($key, 'v[')) {
-                        $ids[] = $key === 'v' ? $value : '';
+                        $ids[] = $key === 'v' ? $parameterValue : '';
                     }
                 }
                 if (count($ids) === 1) {
@@ -41,17 +48,6 @@ final readonly class RoutineVideoUrl extends StringValueObject
 
         if ($videoId === null || ! preg_match('/^[A-Za-z0-9_-]{11}$/D', $videoId)) {
             throw new \InvalidArgumentException('YouTubeの動画URLを指定してください。');
-        }
-    }
-
-    protected function validate(string $value): void
-    {
-        $parts = parse_url($value);
-        if (mb_strlen($value) > 2048 || ! mb_check_encoding($value, 'UTF-8')
-            || preg_match('/[\s\p{C}<>"{}|\\\\^`]|%(?![0-9a-fA-F]{2})/u', $value)
-            || $parts === false || ! isset($parts['host'], $parts['scheme'])
-            || ! in_array(strtolower($parts['scheme']), ['http', 'https'], true)) {
-            throw new \InvalidArgumentException('動画URLは2048文字以下のHTTPまたはHTTPS URLである必要があります。');
         }
 
         $host = $parts['host'];

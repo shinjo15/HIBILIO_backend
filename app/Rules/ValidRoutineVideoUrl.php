@@ -13,7 +13,7 @@ final class ValidRoutineVideoUrl implements ValidationRule
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
         try {
-            (new RoutineVideoUrl($value))->validateForRegistration();
+            new RoutineVideoUrl($value);
         } catch (\InvalidArgumentException) {
             $fail('動画URLは2048文字以下の有効なYouTube動画URLである必要があります。');
         }

@@ -38,8 +38,6 @@ final class Routine
         ?RoutineTagIdentifiers $routineTagIdentifiers,
         ?RoutineVideoUrl $videoUrl = null,
     ): self {
-        $videoUrl?->validateForRegistration();
-
         return new self(
             routineIdentifier: $routineIdentifier,
             parentRoutineIdentifier: $parentRoutineIdentifier,

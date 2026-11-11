@@ -10,60 +10,37 @@ use Src\Routine\Domain\ValueObject\RoutineVideoUrl;
 
 final class RoutineVideoUrlTest extends TestCase
 {
-    public function test_registration_enforces_youtube_without_changing_restored_values(): void
+    public function test_constructor_rejects_non_youtube_url(): void
     {
-        $legacy = new RoutineVideoUrl('https://example.com/video');
-        self::assertSame('https://example.com/video', $legacy->value());
         $this->expectException(\InvalidArgumentException::class);
-        $legacy->validateForRegistration();
+        new RoutineVideoUrl('https://example.com/video');
     }
 
-    public function test_registration_preserves_length_boundary(): void
+    public function test_preserves_length_boundary(): void
     {
         $prefix = 'https://youtu.be/dQw4w9WgXcQ?x=';
         $url = $prefix.str_repeat('a', 2048 - strlen($prefix));
         $video = new RoutineVideoUrl($url);
-        $video->validateForRegistration();
         self::assertSame($url, $video->value());
         $this->expectException(\InvalidArgumentException::class);
         new RoutineVideoUrl($url.'a');
     }
 
-    public function test_accepts_http_urls_up_to_2048_characters(): void
+    #[DataProvider('validUrls')]
+    public function test_accepts_supported_youtube_urls(string $url): void
     {
-        $url = 'http://example.com/'.str_repeat('a', 2029);
-        self::assertSame(2048, strlen($url));
-        self::assertSame($url, (new RoutineVideoUrl($url))->value());
-        self::assertSame('https://localhost/video', (new RoutineVideoUrl('https://localhost/video'))->value());
-    }
-
-    public function test_preserves_unicode_urls(): void
-    {
-        foreach (['https://例え.テスト/動画?q=日本語', 'https://example.com/日本語'] as $url) {
-            self::assertSame($url, (new RoutineVideoUrl($url))->value());
-        }
-    }
-
-    public function test_accepts_valid_ip_addresses(): void
-    {
-        foreach (['https://127.0.0.1/video', 'https://255.255.255.255/video', 'https://[::1]/video'] as $url) {
-            self::assertSame($url, (new RoutineVideoUrl($url))->value());
-        }
-    }
-
-    #[DataProvider('validBrowserHosts')]
-    public function test_accepts_browser_valid_numeric_hosts(string $host): void
-    {
-        $url = 'http://'.$host.'/';
         self::assertSame($url, (new RoutineVideoUrl($url))->value());
     }
 
-    public static function validBrowserHosts(): array
+    public static function validUrls(): array
     {
-        return array_map(static fn (string $host): array => [$host], [
-            '127.1', '0177.0.0.1', '0x7f.1', '0X7F.1', '4294967295', '0xffffffff',
-            '1.16777215', '1.2.65535', '1.2.3.255', '127.0.0.1.', '0x', '123.example',
-            '1.2.3.0xg', '例え.テスト', '[::1]',
+        return array_map(static fn (string $url): array => [$url], [
+            'http://youtube.com/watch?v=dQw4w9WgXcQ&t=12',
+            'https://WWW.YOUTUBE.COM/watch?list=abc&v=dQw4w9WgXcQ',
+            'https://youtu.be/dQw4w9WgXcQ?title=日本語',
+            'https://m.youtube.com/shorts/dQw4w9WgXcQ',
+            'https://youtube.com/live/dQw4w9WgXcQ',
+            'https://www.youtube.com/embed/dQw4w9WgXcQ',
         ]);
     }
 
@@ -92,6 +69,13 @@ final class RoutineVideoUrlTest extends TestCase
 
     public static function invalidUrls(): array
     {
-        return array_map(static fn (string $value): array => [$value], ['', '0', ' ', 'javascript:alert(1)', 'ftp://example.com', 'https://127.0.0.999/', 'https://999.999.999.999/', 'https://example.com/" onclick="x', 'https://example.com/<script>', 'https://example.com/%zz', 'https://example.com/'.str_repeat('a', 2030)]);
+        return array_map(static fn (string $value): array => [$value], [
+            '', '0', ' ', 'javascript:alert(1)', 'ftp://youtu.be/dQw4w9WgXcQ',
+            'https://127.0.0.999/', 'https://youtube.com.evil.test/watch?v=dQw4w9WgXcQ',
+            'https://user@youtube.com/watch?v=dQw4w9WgXcQ', 'https://youtube.com:443/watch?v=dQw4w9WgXcQ',
+            'https://youtube.com/watch?v=dQw4w9WgXcQ&v=bad', 'https://youtube.com/watch?v=dQw4w9WgXcQ&v%5B%5D=bad',
+            'https://youtu.be/dQw4w9WgXcQ?x=%zz', 'https://youtu.be/dQw4w9WgXcQ?x=<script>',
+            'https://youtube.com/shorts/dQw4w9WgXcQ/extra', 'https://youtube.com/watch?v=short',
+        ]);
     }
 }
