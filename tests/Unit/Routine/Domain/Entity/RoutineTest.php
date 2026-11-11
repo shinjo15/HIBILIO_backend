@@ -11,6 +11,7 @@ use Src\Routine\Domain\ValueObject\RoutineExecutionMinutes;
 use Src\Routine\Domain\ValueObject\RoutineMemo;
 use Src\Routine\Domain\ValueObject\RoutineName;
 use Src\Routine\Domain\ValueObject\RoutineTagIdentifiers;
+use Src\Routine\Domain\ValueObject\RoutineVideoUrl;
 use Src\Shared\Domain\ValueObject\Base\IntegerValueObject;
 use Src\Shared\Domain\ValueObject\Base\StringValueObject;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
@@ -20,6 +21,17 @@ use Src\Shared\Domain\ValueObject\Identifier\TagIdentifier;
 
 final class RoutineTest extends TestCase
 {
+    public function test_create_rejects_legacy_video_url(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        Routine::create(
+            new RoutineIdentifier('34b8d590-07cb-49ca-bfd9-cb9f40e26bd3'), null, new RoutineName('routine'),
+            new RoutineActionIdentifiers([new RoutineActionIdentifier('f6ca9f4c-169b-4b2d-a717-4a4f40d1490f')]),
+            null, new AccountIdentifier('3b5581e9-16df-4879-b7d2-5d88dca6ab87'), null, null,
+            new RoutineVideoUrl('https://example.com/video'),
+        );
+    }
+
     public function test_retains_the_values_of_a_created_routine(): void
     {
         $routineIdentifier = new RoutineIdentifier('34b8d590-07cb-49ca-bfd9-cb9f40e26bd3');

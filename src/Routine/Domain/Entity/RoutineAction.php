@@ -35,6 +35,30 @@ final class RoutineAction
         RoutineActionPosition $position,
         ?RoutineVideoUrl $videoUrl = null,
     ): self {
+        $videoUrl?->validateForRegistration();
+
+        return self::restore(
+            $routineActionIdentifier,
+            $parentRoutineActionIdentifier,
+            $routineIdentifier,
+            $routineActionName,
+            $routineActionMemo,
+            $routineActionMinutes,
+            $position,
+            $videoUrl,
+        );
+    }
+
+    public static function restore(
+        RoutineActionIdentifier $routineActionIdentifier,
+        ?RoutineActionIdentifier $parentRoutineActionIdentifier,
+        RoutineIdentifier $routineIdentifier,
+        RoutineActionName $routineActionName,
+        ?RoutineActionMemo $routineActionMemo,
+        ?RoutineActionMinutes $routineActionMinutes,
+        RoutineActionPosition $position,
+        ?RoutineVideoUrl $videoUrl = null,
+    ): self {
         return new self(
             routineActionIdentifier: $routineActionIdentifier,
             parentRoutineActionIdentifier: $parentRoutineActionIdentifier,

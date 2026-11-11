@@ -15,6 +15,19 @@ final class CreateRoutineActionTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_non_youtube_video_is_rejected_without_creating_records(): void
+    {
+        $this->insertActiveAccount();
+        $this->withSession(['account_identifier' => '3b5581e9-16df-4879-b7d2-5d88dca6ab87'])->postJson('/api/routines', [
+            'routine_name' => 'routine',
+            'video_url' => 'https://example.com/video',
+            'routine_actions' => [['routine_action_name' => 'action']],
+        ])->assertUnprocessable()->assertJsonValidationErrors(['video_url']);
+        $this->assertDatabaseCount('routines', 0);
+        $this->assertDatabaseCount('routine_actions', 0);
+        $this->assertDatabaseCount('posts', 0);
+    }
+
     public function test_creates_a_routine_for_the_account_identifier_in_the_session(): void
     {
         $this->insertActiveAccount();
@@ -28,7 +41,7 @@ final class CreateRoutineActionTest extends TestCase
         ])->postJson('/api/routines', [
             'account_identifier' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
             'routine_name' => '朝の集中ルーティン',
-            'video_url' => 'https://example.com/video',
+            'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
             'routine_memo' => '仕事前に集中力を高める',
             'routine_execution_minutes' => 40,
             'tag_identifiers' => [
@@ -50,7 +63,7 @@ final class CreateRoutineActionTest extends TestCase
         $response->assertCreated();
         $this->assertDatabaseHas('routines', [
             'routine_name' => '朝の集中ルーティン',
-            'video_url' => 'https://example.com/video',
+            'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
             'account_identifier' => '3b5581e9-16df-4879-b7d2-5d88dca6ab87',
         ]);
         $this->assertDatabaseMissing('routines', [
@@ -115,16 +128,17 @@ final class CreateRoutineActionTest extends TestCase
         $this->assertDatabaseCount('posts', 0);
     }
 
-    public function test_creation_preserves_browser_valid_numeric_hosts(): void
+    public function test_creation_preserves_supported_youtube_urls(): void
     {
         $this->insertActiveAccount();
-        foreach (['http://127.1/video', 'https://0x7f.1/video', 'https://0177.0.0.1/video', 'http://[::1]/video', 'https://例え.テスト/動画'] as $url) {
+        foreach (['http://youtube.com/watch?v=dQw4w9WgXcQ&t=12', 'https://youtu.be/dQw4w9WgXcQ?si=abc', 'https://m.youtube.com/shorts/dQw4w9WgXcQ', 'https://youtube.com/live/dQw4w9WgXcQ?feature=share', 'https://www.youtube.com/embed/dQw4w9WgXcQ'] as $url) {
             $this->withSession(['account_identifier' => '3b5581e9-16df-4879-b7d2-5d88dca6ab87'])->postJson('/api/routines', [
                 'routine_name' => 'routine',
-                'routine_actions' => [['routine_action_name' => 'action']],
+                'routine_actions' => [['routine_action_name' => 'action', 'video_url' => $url]],
                 'video_url' => $url,
             ])->assertCreated();
             $this->assertDatabaseHas('routines', ['video_url' => $url]);
+            $this->assertDatabaseHas('routine_actions', ['video_url' => $url]);
         }
     }
 
@@ -141,9 +155,9 @@ final class CreateRoutineActionTest extends TestCase
             'routine_name' => ' routine ',
             'routine_memo' => '',
             'routine_actions' => [['routine_action_name' => ' action ']],
-            'video_url' => 'https://例え.テスト/動画',
+            'video_url' => 'https://youtu.be/dQw4w9WgXcQ?title=日本語',
         ])->assertCreated();
-        $this->assertDatabaseHas('routines', ['routine_name' => 'routine', 'routine_memo' => null, 'video_url' => 'https://例え.テスト/動画']);
+        $this->assertDatabaseHas('routines', ['routine_name' => 'routine', 'routine_memo' => null, 'video_url' => 'https://youtu.be/dQw4w9WgXcQ?title=日本語']);
     }
 
     public function test_unrelated_routes_keep_default_video_field_normalization(): void

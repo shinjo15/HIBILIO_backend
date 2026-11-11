@@ -29,7 +29,7 @@ final class RoutineActionRepository implements RoutineActionRepositoryInterface
                 $routineActionIdentifiers,
             ))
             ->get()
-            ->map(static fn (RoutineActionModel $routineAction): RoutineAction => RoutineAction::create(
+            ->map(static fn (RoutineActionModel $routineAction): RoutineAction => RoutineAction::restore(
                 new RoutineActionIdentifier($routineAction->routine_action_identifier),
                 $routineAction->parent_routine_action_identifier === null
                     ? null

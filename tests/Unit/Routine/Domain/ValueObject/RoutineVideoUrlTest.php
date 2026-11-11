@@ -10,6 +10,25 @@ use Src\Routine\Domain\ValueObject\RoutineVideoUrl;
 
 final class RoutineVideoUrlTest extends TestCase
 {
+    public function test_registration_enforces_youtube_without_changing_restored_values(): void
+    {
+        $legacy = new RoutineVideoUrl('https://example.com/video');
+        self::assertSame('https://example.com/video', $legacy->value());
+        $this->expectException(\InvalidArgumentException::class);
+        $legacy->validateForRegistration();
+    }
+
+    public function test_registration_preserves_length_boundary(): void
+    {
+        $prefix = 'https://youtu.be/dQw4w9WgXcQ?x=';
+        $url = $prefix.str_repeat('a', 2048 - strlen($prefix));
+        $video = new RoutineVideoUrl($url);
+        $video->validateForRegistration();
+        self::assertSame($url, $video->value());
+        $this->expectException(\InvalidArgumentException::class);
+        new RoutineVideoUrl($url.'a');
+    }
+
     public function test_accepts_http_urls_up_to_2048_characters(): void
     {
         $url = 'http://example.com/'.str_repeat('a', 2029);
