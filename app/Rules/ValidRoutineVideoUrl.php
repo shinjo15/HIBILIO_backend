@@ -6,6 +6,7 @@ namespace App\Rules;
 
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Src\Routine\Domain\Exception\InvalidYouTubeVideoUrlException;
 use Src\Routine\Domain\ValueObject\RoutineVideoUrl;
 
 final class ValidRoutineVideoUrl implements ValidationRule
@@ -14,8 +15,10 @@ final class ValidRoutineVideoUrl implements ValidationRule
     {
         try {
             new RoutineVideoUrl($value);
+        } catch (InvalidYouTubeVideoUrlException $exception) {
+            $fail($exception->getMessage());
         } catch (\InvalidArgumentException) {
-            $fail('動画URLは2048文字以下の有効なHTTPまたはHTTPS URLである必要があります。');
+            $fail('動画URLは2048文字以下の有効なYouTube動画URLである必要があります。');
         }
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Src\Routine\Domain\ValueObject;
 
+use Src\Routine\Domain\Exception\InvalidYouTubeVideoUrlException;
 use Src\Shared\Domain\ValueObject\Base\StringValueObject;
 
 final readonly class RoutineVideoUrl extends StringValueObject
@@ -16,6 +17,38 @@ final readonly class RoutineVideoUrl extends StringValueObject
             || $parts === false || ! isset($parts['host'], $parts['scheme'])
             || ! in_array(strtolower($parts['scheme']), ['http', 'https'], true)) {
             throw new \InvalidArgumentException('動画URLは2048文字以下のHTTPまたはHTTPS URLである必要があります。');
+        }
+
+        $host = strtolower($parts['host']);
+        $path = $parts['path'] ?? '';
+        $videoId = null;
+
+        if (isset($parts['user']) || isset($parts['pass']) || isset($parts['port'])) {
+            throw new InvalidYouTubeVideoUrlException;
+        }
+
+        if ($host === 'youtu.be' && preg_match('~^/([A-Za-z0-9_-]{11})$~D', $path, $matches)) {
+            $videoId = $matches[1];
+        } elseif (in_array($host, ['youtube.com', 'www.youtube.com', 'm.youtube.com'], true)) {
+            if (preg_match('~^/(?:shorts|live|embed)/([A-Za-z0-9_-]{11})$~D', $path, $matches)) {
+                $videoId = $matches[1];
+            } elseif ($path === '/watch') {
+                $ids = [];
+                foreach (explode('&', $parts['query'] ?? '') as $parameter) {
+                    [$key, $parameterValue] = array_pad(explode('=', $parameter, 2), 2, '');
+                    $key = urldecode($key);
+                    if ($key === 'v' || str_starts_with($key, 'v[')) {
+                        $ids[] = $key === 'v' ? $parameterValue : '';
+                    }
+                }
+                if (count($ids) === 1) {
+                    $videoId = $ids[0];
+                }
+            }
+        }
+
+        if ($videoId === null || ! preg_match('/^[A-Za-z0-9_-]{11}$/D', $videoId)) {
+            throw new InvalidYouTubeVideoUrlException;
         }
 
         $host = $parts['host'];
