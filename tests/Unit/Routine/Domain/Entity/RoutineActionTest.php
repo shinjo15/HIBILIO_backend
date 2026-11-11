@@ -9,6 +9,7 @@ use Src\Routine\Domain\Entity\RoutineAction;
 use Src\Routine\Domain\ValueObject\RoutineActionMemo;
 use Src\Routine\Domain\ValueObject\RoutineActionMinutes;
 use Src\Routine\Domain\ValueObject\RoutineActionName;
+use Src\Routine\Domain\ValueObject\RoutineActionPosition;
 use Src\Shared\Domain\ValueObject\Identifier\RoutineActionIdentifier;
 use Src\Shared\Domain\ValueObject\Identifier\RoutineIdentifier;
 
@@ -30,6 +31,7 @@ final class RoutineActionTest extends TestCase
             routineActionName: $routineActionName,
             routineActionMemo: $routineActionMemo,
             routineActionMinutes: $routineActionMinutes,
+            position: new RoutineActionPosition(2),
         );
 
         $this->assertSame($routineActionIdentifier, $routineAction->routineActionIdentifier());
@@ -38,5 +40,6 @@ final class RoutineActionTest extends TestCase
         $this->assertSame($routineActionName, $routineAction->routineActionName());
         $this->assertSame($routineActionMemo, $routineAction->routineActionMemo());
         $this->assertSame($routineActionMinutes, $routineAction->routineActionMinutes());
+        $this->assertSame(2, $routineAction->position()->value());
     }
 }

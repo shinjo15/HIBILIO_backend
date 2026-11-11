@@ -10,6 +10,7 @@ use Src\Routine\Domain\Factory\RoutineFactoryInterface;
 use Src\Routine\Domain\Repository\RoutineActionRepositoryInterface;
 use Src\Routine\Domain\Repository\RoutineRepositoryInterface;
 use Src\Routine\Domain\ValueObject\RoutineActionIdentifiers;
+use Src\Routine\Domain\ValueObject\RoutineActionPosition;
 use Src\Shared\Application\Service\UuidServiceInterface;
 use Src\Shared\Application\Transaction\TransactionManagerInterface;
 use Src\Shared\Domain\Factory\PostFactoryInterface;
@@ -81,6 +82,7 @@ final readonly class CreateRoutine implements CreateRoutineInterface
                 $routineActionInput->routineActionName(),
                 $routineActionInput->routineActionMemo(),
                 $routineActionInput->routineActionMinutes(),
+                new RoutineActionPosition(count($routineActions)),
                 $routineActionInput->videoUrl(),
             );
         }

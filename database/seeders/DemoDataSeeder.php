@@ -135,18 +135,18 @@ final class DemoDataSeeder extends Seeder
     private function seedRoutineActions(mixed $timestamp): void
     {
         DB::table('routine_actions')->upsert([
-            $this->routineAction('40000000-0000-4000-8000-000000000001', '30000000-0000-4000-8000-000000000001', '水を飲む', 2, $timestamp),
-            $this->routineAction('40000000-0000-4000-8000-000000000002', '30000000-0000-4000-8000-000000000001', '今日の予定を書く', 8, $timestamp),
-            $this->routineAction('40000000-0000-4000-8000-000000000003', '30000000-0000-4000-8000-000000000001', '読書する', 25, $timestamp),
-            $this->routineAction('40000000-0000-4000-8000-000000000004', '30000000-0000-4000-8000-000000000002', '深呼吸する', 5, $timestamp),
-            $this->routineAction('40000000-0000-4000-8000-000000000005', '30000000-0000-4000-8000-000000000002', '散歩する', 10, $timestamp),
-            $this->routineAction('40000000-0000-4000-8000-000000000006', '30000000-0000-4000-8000-000000000003', '肩を回す', 10, $timestamp),
-            $this->routineAction('40000000-0000-4000-8000-000000000007', '30000000-0000-4000-8000-000000000003', '前屈する', 10, $timestamp),
-            $this->routineAction('40000000-0000-4000-8000-000000000008', '30000000-0000-4000-8000-000000000004', '朝日を浴びる', 10, $timestamp),
-        ], ['routine_action_identifier'], ['parent_routine_action_identifier', 'routine_identifier', 'action_name', 'action_memo', 'action_minutes', 'available', 'updated_at']);
+            $this->routineAction('40000000-0000-4000-8000-000000000001', '30000000-0000-4000-8000-000000000001', '水を飲む', 2, $timestamp, 0),
+            $this->routineAction('40000000-0000-4000-8000-000000000002', '30000000-0000-4000-8000-000000000001', '今日の予定を書く', 8, $timestamp, 1),
+            $this->routineAction('40000000-0000-4000-8000-000000000003', '30000000-0000-4000-8000-000000000001', '読書する', 25, $timestamp, 2),
+            $this->routineAction('40000000-0000-4000-8000-000000000004', '30000000-0000-4000-8000-000000000002', '深呼吸する', 5, $timestamp, 0),
+            $this->routineAction('40000000-0000-4000-8000-000000000005', '30000000-0000-4000-8000-000000000002', '散歩する', 10, $timestamp, 1),
+            $this->routineAction('40000000-0000-4000-8000-000000000006', '30000000-0000-4000-8000-000000000003', '肩を回す', 10, $timestamp, 0),
+            $this->routineAction('40000000-0000-4000-8000-000000000007', '30000000-0000-4000-8000-000000000003', '前屈する', 10, $timestamp, 1),
+            $this->routineAction('40000000-0000-4000-8000-000000000008', '30000000-0000-4000-8000-000000000004', '朝日を浴びる', 10, $timestamp, 0),
+        ], ['routine_action_identifier'], ['parent_routine_action_identifier', 'routine_identifier', 'action_name', 'action_memo', 'action_minutes', 'position', 'available', 'updated_at']);
 
         $actions = [
-            $this->routineAction($this->identifier('40000000', 11), '30000000-0000-4000-8000-000000000004', '軽くストレッチする', 10, $timestamp),
+            $this->routineAction($this->identifier('40000000', 11), '30000000-0000-4000-8000-000000000004', '軽くストレッチする', 10, $timestamp, 1),
         ];
 
         for ($number = 5; $number <= 500; $number++) {
@@ -157,12 +157,13 @@ final class DemoDataSeeder extends Seeder
                     $action['name'],
                     $action['minutes'],
                     $timestamp,
+                    $position,
                 );
-                $this->upsertChunk('routine_actions', $actions, ['routine_action_identifier'], ['parent_routine_action_identifier', 'routine_identifier', 'action_name', 'action_memo', 'action_minutes', 'available', 'updated_at']);
+                $this->upsertChunk('routine_actions', $actions, ['routine_action_identifier'], ['parent_routine_action_identifier', 'routine_identifier', 'action_name', 'action_memo', 'action_minutes', 'position', 'available', 'updated_at']);
             }
         }
 
-        $this->upsertChunk('routine_actions', $actions, ['routine_action_identifier'], ['parent_routine_action_identifier', 'routine_identifier', 'action_name', 'action_memo', 'action_minutes', 'available', 'updated_at'], true);
+        $this->upsertChunk('routine_actions', $actions, ['routine_action_identifier'], ['parent_routine_action_identifier', 'routine_identifier', 'action_name', 'action_memo', 'action_minutes', 'position', 'available', 'updated_at'], true);
     }
 
     private function seedRoutineTags(mixed $timestamp): void
@@ -511,7 +512,7 @@ final class DemoDataSeeder extends Seeder
     }
 
     /** @return array<string, mixed> */
-    private function routineAction(string $identifier, string $routineIdentifier, string $name, int $minutes, mixed $timestamp): array
+    private function routineAction(string $identifier, string $routineIdentifier, string $name, int $minutes, mixed $timestamp, int $position): array
     {
         return [
             'routine_action_identifier' => $identifier,
@@ -520,6 +521,7 @@ final class DemoDataSeeder extends Seeder
             'action_name' => $name,
             'action_memo' => null,
             'action_minutes' => $minutes,
+            'position' => $position,
             'available' => true,
             'created_at' => $timestamp,
             'updated_at' => $timestamp,

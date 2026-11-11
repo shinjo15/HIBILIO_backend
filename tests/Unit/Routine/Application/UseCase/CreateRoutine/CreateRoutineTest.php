@@ -22,6 +22,7 @@ use Src\Routine\Domain\ValueObject\RoutineActionIdentifiers;
 use Src\Routine\Domain\ValueObject\RoutineActionMemo;
 use Src\Routine\Domain\ValueObject\RoutineActionMinutes;
 use Src\Routine\Domain\ValueObject\RoutineActionName;
+use Src\Routine\Domain\ValueObject\RoutineActionPosition;
 use Src\Routine\Domain\ValueObject\RoutineExecutionMinutes;
 use Src\Routine\Domain\ValueObject\RoutineMemo;
 use Src\Routine\Domain\ValueObject\RoutineName;
@@ -174,6 +175,7 @@ final class CreateRoutineTest extends TestCase
                     RoutineActionName $routineActionName,
                     ?RoutineActionMemo $routineActionMemo,
                     ?RoutineActionMinutes $routineActionMinutes,
+                    RoutineActionPosition $position,
                     ?RoutineVideoUrl $videoUrl = null,
                 ): RoutineAction {
                     $this->creationOrder[] = 'action';
@@ -185,6 +187,7 @@ final class CreateRoutineTest extends TestCase
                         $routineActionName,
                         $routineActionMemo,
                         $routineActionMinutes,
+                        $position,
                         $videoUrl,
                     );
                 }

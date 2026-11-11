@@ -8,6 +8,7 @@ use Src\Routine\Domain\Entity\RoutineAction;
 use Src\Routine\Domain\ValueObject\RoutineActionMemo;
 use Src\Routine\Domain\ValueObject\RoutineActionMinutes;
 use Src\Routine\Domain\ValueObject\RoutineActionName;
+use Src\Routine\Domain\ValueObject\RoutineActionPosition;
 use Src\Routine\Domain\ValueObject\RoutineVideoUrl;
 use Src\Shared\Domain\ValueObject\Identifier\RoutineActionIdentifier;
 use Src\Shared\Domain\ValueObject\Identifier\RoutineIdentifier;
@@ -21,6 +22,7 @@ interface RoutineActionFactoryInterface
         RoutineActionName $routineActionName,
         ?RoutineActionMemo $routineActionMemo,
         ?RoutineActionMinutes $routineActionMinutes,
+        RoutineActionPosition $position,
         ?RoutineVideoUrl $videoUrl = null,
     ): RoutineAction;
 }

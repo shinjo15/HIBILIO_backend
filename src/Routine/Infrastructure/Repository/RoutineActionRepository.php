@@ -10,6 +10,7 @@ use Src\Routine\Domain\Repository\RoutineActionRepositoryInterface;
 use Src\Routine\Domain\ValueObject\RoutineActionMemo;
 use Src\Routine\Domain\ValueObject\RoutineActionMinutes;
 use Src\Routine\Domain\ValueObject\RoutineActionName;
+use Src\Routine\Domain\ValueObject\RoutineActionPosition;
 use Src\Routine\Domain\ValueObject\RoutineVideoUrl;
 use Src\Shared\Domain\ValueObject\Identifier\RoutineActionIdentifier;
 use Src\Shared\Domain\ValueObject\Identifier\RoutineIdentifier;
@@ -41,6 +42,7 @@ final class RoutineActionRepository implements RoutineActionRepositoryInterface
                 $routineAction->action_minutes === null
                     ? null
                     : new RoutineActionMinutes($routineAction->action_minutes),
+                new RoutineActionPosition((int) ($routineAction->position ?? 0)),
                 $routineAction->video_url === null ? null : new RoutineVideoUrl($routineAction->video_url),
             ))
             ->all();
@@ -55,6 +57,7 @@ final class RoutineActionRepository implements RoutineActionRepositoryInterface
             'action_name' => $routineAction->routineActionName()->value(),
             'action_memo' => $routineAction->routineActionMemo()?->value(),
             'action_minutes' => $routineAction->routineActionMinutes()?->value(),
+            'position' => $routineAction->position()->value(),
             'video_url' => $routineAction->videoUrl()?->value(),
             'available' => true,
         ]);

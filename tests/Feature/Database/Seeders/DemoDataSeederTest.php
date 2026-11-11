@@ -26,6 +26,10 @@ final class DemoDataSeederTest extends TestCase
         $this->assertSame(40, DB::table('tags')->count());
         $this->assertSame(500, DB::table('routines')->count());
         $this->assertSame(1_497, DB::table('routine_actions')->count());
+        $this->assertSame(0, DB::table('routine_actions')->whereNull('position')->count());
+        $this->assertSame([0, 1, 2], DB::table('routine_actions')
+            ->where('routine_identifier', '30000000-0000-4000-8000-000000000001')
+            ->orderBy('position')->pluck('position')->all());
         $this->assertSame(700, DB::table('routine_executions')->count());
         $this->assertSame(1_400, DB::table('routine_execution_actions')->count());
         $this->assertSame(500, DB::table('posts')->where('post_category', 'routine')->count());
