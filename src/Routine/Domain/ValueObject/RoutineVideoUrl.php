@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Src\Routine\Domain\ValueObject;
 
+use Src\Routine\Domain\Exception\InvalidYouTubeVideoUrlException;
 use Src\Shared\Domain\ValueObject\Base\StringValueObject;
 
 final readonly class RoutineVideoUrl extends StringValueObject
@@ -23,7 +24,7 @@ final readonly class RoutineVideoUrl extends StringValueObject
         $videoId = null;
 
         if (isset($parts['user']) || isset($parts['pass']) || isset($parts['port'])) {
-            throw new \InvalidArgumentException('YouTubeの動画URLを指定してください。');
+            throw new InvalidYouTubeVideoUrlException;
         }
 
         if ($host === 'youtu.be' && preg_match('~^/([A-Za-z0-9_-]{11})$~D', $path, $matches)) {
@@ -47,7 +48,7 @@ final readonly class RoutineVideoUrl extends StringValueObject
         }
 
         if ($videoId === null || ! preg_match('/^[A-Za-z0-9_-]{11}$/D', $videoId)) {
-            throw new \InvalidArgumentException('YouTubeの動画URLを指定してください。');
+            throw new InvalidYouTubeVideoUrlException;
         }
 
         $host = $parts['host'];

@@ -17,6 +17,37 @@ final class RoutineActionVideoLinkTest extends TestCase
     use InteractsWithAccountImageUrlService;
     use RefreshDatabase;
 
+    public function test_invalid_action_youtube_url_returns_field_message(): void
+    {
+        $this->insertFixture();
+        $this->withSession(['account_identifier' => '11111111-1111-4111-8111-111111111111'])
+            ->postJson('/api/routines', [
+                'routine_name' => 'invalid',
+                'routine_actions' => [['routine_action_name' => 'action', 'video_url' => 'https://example.com/video']],
+            ])->assertUnprocessable()->assertExactJson([
+                'message' => 'YouTubeの動画URLを指定してください。',
+                'errors' => ['routine_actions.0.video_url' => ['YouTubeの動画URLを指定してください。']],
+            ]);
+        $this->assertDatabaseMissing('routines', ['routine_name' => 'invalid']);
+    }
+
+    public function test_general_url_errors_keep_existing_message_for_both_fields(): void
+    {
+        $this->insertFixture();
+        foreach (['ftp://youtu.be/dQw4w9WgXcQ', 'https://youtu.be/dQw4w9WgXcQ?x='.str_repeat('a', 2048)] as $url) {
+            $response = $this->withSession(['account_identifier' => '11111111-1111-4111-8111-111111111111'])
+                ->postJson('/api/routines', [
+                    'routine_name' => 'invalid',
+                    'video_url' => $url,
+                    'routine_actions' => [['routine_action_name' => 'action', 'video_url' => $url]],
+                ])->assertUnprocessable();
+            $message = '動画URLは2048文字以下の有効なYouTube動画URLである必要があります。';
+            self::assertSame([$message], $response->json('errors.video_url'));
+            self::assertSame([$message], $response->json()['errors']['routine_actions.0.video_url']);
+        }
+        $this->assertDatabaseMissing('routines', ['routine_name' => 'invalid']);
+    }
+
     public function test_customization_validates_both_video_fields_and_preserves_original_urls(): void
     {
         $this->insertFixture();

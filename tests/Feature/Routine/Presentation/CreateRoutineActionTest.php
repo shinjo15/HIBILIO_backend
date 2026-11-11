@@ -22,7 +22,10 @@ final class CreateRoutineActionTest extends TestCase
             'routine_name' => 'routine',
             'video_url' => 'https://example.com/video',
             'routine_actions' => [['routine_action_name' => 'action']],
-        ])->assertUnprocessable()->assertJsonValidationErrors(['video_url']);
+        ])->assertUnprocessable()->assertExactJson([
+            'message' => 'YouTubeの動画URLを指定してください。',
+            'errors' => ['video_url' => ['YouTubeの動画URLを指定してください。']],
+        ]);
         $this->assertDatabaseCount('routines', 0);
         $this->assertDatabaseCount('routine_actions', 0);
         $this->assertDatabaseCount('posts', 0);

@@ -6,14 +6,33 @@ namespace Tests\Unit\Routine\Domain\ValueObject;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Src\Routine\Domain\Exception\InvalidYouTubeVideoUrlException;
 use Src\Routine\Domain\ValueObject\RoutineVideoUrl;
 
 final class RoutineVideoUrlTest extends TestCase
 {
     public function test_constructor_rejects_non_youtube_url(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidYouTubeVideoUrlException::class);
+        $this->expectExceptionMessage('YouTubeの動画URLを指定してください。');
         new RoutineVideoUrl('https://example.com/video');
+    }
+
+    #[DataProvider('invalidYouTubeUrls')]
+    public function test_rejects_invalid_youtube_video_shapes_with_specific_exception(string $url): void
+    {
+        $this->expectException(InvalidYouTubeVideoUrlException::class);
+        new RoutineVideoUrl($url);
+    }
+
+    public static function invalidYouTubeUrls(): array
+    {
+        return array_map(static fn (string $url): array => [$url], [
+            'https://user@youtube.com/watch?v=dQw4w9WgXcQ',
+            'https://youtube.com:443/watch?v=dQw4w9WgXcQ',
+            'https://youtube.com/watch?v=short',
+            'https://youtube.com/watch?v=dQw4w9WgXcQ&v=bad',
+        ]);
     }
 
     public function test_preserves_length_boundary(): void
@@ -24,6 +43,11 @@ final class RoutineVideoUrlTest extends TestCase
         self::assertSame($url, $video->value());
         $this->expectException(\InvalidArgumentException::class);
         new RoutineVideoUrl($url.'a');
+    }
+
+    public function test_specific_exception_preserves_invalid_argument_compatibility(): void
+    {
+        self::assertInstanceOf(\InvalidArgumentException::class, new InvalidYouTubeVideoUrlException);
     }
 
     #[DataProvider('validUrls')]
