@@ -20,21 +20,36 @@ final class GetRoutineExecutionDetailsActionTest extends TestCase
         $executorIdentifier = '22222222-2222-4222-8222-222222222222';
         $routineIdentifier = '33333333-3333-4333-8333-333333333333';
         $executionIdentifier = '44444444-4444-4444-8444-444444444444';
-        $firstActionIdentifier = '55555555-5555-4555-8555-555555555555';
-        $secondActionIdentifier = '66666666-6666-4666-8666-666666666666';
+        $firstActionIdentifier = '66666666-6666-4666-8666-666666666666';
+        $secondActionIdentifier = '55555555-5555-4555-8555-555555555555';
         $tagIdentifier = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 
         $this->account($authorIdentifier, '作成者');
         $this->account($executorIdentifier, '実行者');
         $this->routine($routineIdentifier, $authorIdentifier, '朝の集中', '仕事前のルーティン');
         $this->routineAction($firstActionIdentifier, $routineIdentifier, '準備', '机を整える', 5, '2026-09-01 08:00:00');
-        $this->routineAction($secondActionIdentifier, $routineIdentifier, '作業', null, 25, '2026-09-01 08:01:00');
+        $this->routineAction($secondActionIdentifier, $routineIdentifier, '作業', null, 25, '2026-09-01 08:00:00');
+        DB::table('routine_actions')->where('routine_action_identifier', $firstActionIdentifier)->update(['position' => 0]);
+        DB::table('routine_actions')->where('routine_action_identifier', $secondActionIdentifier)->update(['position' => 1]);
         $this->tag($tagIdentifier, '朝活');
         $this->routineTag($routineIdentifier, $tagIdentifier);
         $this->routineExecution($executionIdentifier, $routineIdentifier, $executorIdentifier, '2026-09-02 09:00:00', '集中できた');
-        $this->routineExecutionAction($executionIdentifier, $firstActionIdentifier);
         $this->routineExecutionAction($executionIdentifier, $secondActionIdentifier);
+        $this->routineExecutionAction($executionIdentifier, $firstActionIdentifier);
+        DB::table('routine_execution_actions')->where('routine_action_identifier', $secondActionIdentifier)->update(['created_at' => '2026-09-02 08:00:00']);
+        DB::table('routine_execution_actions')->where('routine_action_identifier', $firstActionIdentifier)->update(['created_at' => '2026-09-02 09:00:00']);
         $this->executionPost('77777777-7777-4777-8777-777777777777', $routineIdentifier, $executionIdentifier, '2026-09-02 10:00:00', 3);
+
+        $this->getJson("/api/routines/{$routineIdentifier}")->assertOk()
+            ->assertJsonPath('routine_actions.0.routine_action_identifier', $firstActionIdentifier)
+            ->assertJsonPath('routine_actions.1.routine_action_identifier', $secondActionIdentifier);
+
+        foreach (['/api/my/routines/recent-executions', '/api/my/routines/most-executed'] as $url) {
+            $this->withSession(['account_identifier' => $executorIdentifier])->getJson($url)->assertOk()
+                ->assertJsonPath('items.0.routine_actions.0.routine_action_identifier', $firstActionIdentifier)
+                ->assertJsonPath('items.0.routine_actions.1.routine_action_identifier', $secondActionIdentifier);
+        }
+        $this->flushSession();
 
         $this->getJson("/api/routine-executions/{$executionIdentifier}")
             ->assertOk()

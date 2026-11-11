@@ -178,6 +178,9 @@ final class GetFollowingPosts implements GetFollowingPostsInterface
         return DB::table('routine_actions')
             ->whereIn('routine_identifier', $routineIdentifiers)
             ->where('available', true)
+            ->orderByRaw('case when position is null then 1 else 0 end')
+            ->orderBy('position')
+            ->orderByRaw('case when created_at is null then 1 else 0 end')
             ->orderBy('created_at')
             ->orderBy('routine_action_identifier')
             ->get([

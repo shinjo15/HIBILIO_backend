@@ -69,6 +69,9 @@ final class GetRoutineDetails implements GetRoutineDetailsInterface
         $routineActions = DB::table('routine_actions')
             ->where('routine_identifier', $input->routineIdentifier())
             ->where('available', true)
+            ->orderByRaw('case when position is null then 1 else 0 end')
+            ->orderBy('position')
+            ->orderByRaw('case when created_at is null then 1 else 0 end')
             ->orderBy('created_at')
             ->orderBy('routine_action_identifier')
             ->get([

@@ -153,7 +153,7 @@ final class GetAccountRoutinePosts implements GetAccountRoutinePostsInterface
         }
 
         return DB::table('routine_actions')->whereIn('routine_identifier', $routineIdentifiers)->where('available', true)
-            ->orderBy('created_at')->orderBy('routine_action_identifier')
+            ->orderByRaw('case when position is null then 1 else 0 end')->orderBy('position')->orderByRaw('case when created_at is null then 1 else 0 end')->orderBy('created_at')->orderBy('routine_action_identifier')
             ->get(['routine_identifier', 'routine_action_identifier', 'action_name', 'action_minutes'])
             ->groupBy('routine_identifier')->map(static fn ($actions): array => $actions->map(static fn (object $action): array => ['routineActionIdentifier' => (string) $action->routine_action_identifier, 'actionName' => (string) $action->action_name, 'actionMinutes' => $action->action_minutes === null ? null : (int) $action->action_minutes])->values()->all())->all();
     }

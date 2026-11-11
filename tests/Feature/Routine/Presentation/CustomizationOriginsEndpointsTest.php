@@ -105,6 +105,35 @@ final class CustomizationOriginsEndpointsTest extends TestCase
         ];
     }
 
+    public static function orderedActionListEndpoints(): array
+    {
+        $endpoints = self::allActionEndpoints();
+        unset($endpoints['customized']);
+        $endpoints['account routines'] = ['/api/accounts/'.self::AUTHOR.'/routines', 'items', self::VIEWER];
+        $endpoints['my posts'] = ['/api/my/posts', 'items', self::AUTHOR];
+
+        return $endpoints;
+    }
+
+    #[DataProvider('orderedActionListEndpoints')]
+    public function test_action_lists_follow_the_saved_routine_order(string $url, ?string $collection, string $viewer): void
+    {
+        foreach ([['66666666-6666-4666-8666-666666666666', 'first', 0], ['55555555-5555-4555-8555-555555555555', 'second', 1]] as [$id, $name, $position]) {
+            DB::table('routine_actions')->insert([
+                'routine_action_identifier' => $id,
+                'routine_identifier' => self::CHILD,
+                'action_name' => $name,
+                'position' => $position,
+                'available' => true,
+                'created_at' => '2026-01-01 00:00:00',
+            ]);
+        }
+        $response = $this->withSession(['account_identifier' => $viewer])->getJson($url)->assertOk();
+        $prefix = $collection === null ? 'routine_actions' : $collection.'.0.routine_actions';
+        $response->assertJsonPath($prefix.'.0.action_name', 'first')
+            ->assertJsonPath($prefix.'.1.action_name', 'second');
+    }
+
     #[DataProvider('allActionEndpoints')]
     public function test_each_action_returns_exact_origin_fields_with_icon(string $url, ?string $collection, string $viewer): void
     {
