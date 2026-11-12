@@ -8,51 +8,159 @@ use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Src\RoutineExecution\Domain\Repository\AccountRepositoryInterface;
 use Src\RoutineExecution\Domain\Repository\RoutineExecutionDraftRepositoryInterface;
+use Src\RoutineExecution\Infrastructure\Repository\AccountRepository;
 use Src\RoutineExecution\Infrastructure\Repository\RoutineExecutionDraftRepository;
-use Src\Shared\Application\Transaction\TransactionManagerInterface;
 use Tests\TestCase;
 
 final class CreateRoutineExecutionDraftActionTest extends TestCase
 {
     use RefreshDatabase;
 
-    #[DataProvider('accountChangesAfterAuthentication')]
-    public function test_account_invalidated_after_authentication_cannot_create_draft(array $changes): void
+    public function test_private_routine_without_follow_is_forbidden_without_creating_a_draft(): void
     {
-        $account = '11111111-1111-4111-8111-111111111111';
-        $author = '44444444-4444-4444-8444-444444444444';
+        $viewer = '11111111-1111-4111-8111-111111111111';
+        $owner = '44444444-4444-4444-8444-444444444444';
         $routine = '22222222-2222-4222-8222-222222222222';
-        DB::table('accounts')->insert(['account_identifier' => $account, 'account_name' => 'User', 'email_address' => 'user@example.com']);
-        DB::table('accounts')->insert(['account_identifier' => $author, 'account_name' => 'Author', 'email_address' => 'author@example.com']);
-        DB::table('routines')->insert(['routine_identifier' => $routine, 'routine_name' => 'Routine', 'account_identifier' => $author]);
-        $this->app->instance(TransactionManagerInterface::class, new class($account, $changes) implements TransactionManagerInterface
-        {
-            public function __construct(private string $account, private array $changes) {}
+        DB::table('accounts')->insert([
+            ['account_identifier' => $viewer, 'account_name' => 'Viewer', 'email_address' => 'viewer@example.com', 'visibility' => 'public'],
+            ['account_identifier' => $owner, 'account_name' => 'Owner', 'email_address' => 'owner@example.com', 'visibility' => 'private'],
+        ]);
+        DB::table('routines')->insert(['routine_identifier' => $routine, 'routine_name' => 'Routine', 'account_identifier' => $owner]);
 
-            public function transaction(callable $callback): mixed
-            {
-                if ($this->changes === []) {
-                    DB::table('accounts')->where('account_identifier', $this->account)->delete();
-                } else {
-                    DB::table('accounts')->where('account_identifier', $this->account)->update($this->changes);
-                }
-
-                return DB::transaction($callback);
-            }
-        });
-
-        $this->withSession(['account_identifier' => $account])->postJson('/api/routine-execution-drafts', ['routine_identifier' => $routine])->assertUnauthorized();
+        $this->withSession(['account_identifier' => $viewer])->postJson('/api/routine-execution-drafts', ['routine_identifier' => $routine])->assertForbidden();
+        DB::table('follows')->insert(['following_account_identifier' => $owner, 'followed_account_identifier' => $viewer]);
+        $this->withSession(['account_identifier' => $viewer])->postJson('/api/routine-execution-drafts', ['routine_identifier' => $routine])->assertForbidden();
         $this->assertDatabaseCount('routine_execution_drafts', 0);
     }
 
-    public static function accountChangesAfterAuthentication(): array
+    #[DataProvider('inaccessibleRoutineCases')]
+    public function test_inaccessible_or_missing_routine_does_not_change_existing_data(string $case, int $status): void
+    {
+        $viewer = '11111111-1111-4111-8111-111111111111';
+        $owner = '44444444-4444-4444-8444-444444444444';
+        $routine = '22222222-2222-4222-8222-222222222222';
+        DB::table('accounts')->insert([
+            ['account_identifier' => $viewer, 'account_name' => 'Viewer', 'email_address' => 'viewer@example.com'],
+            ['account_identifier' => $owner, 'account_name' => 'Owner', 'email_address' => 'owner@example.com'],
+        ]);
+        DB::table('routines')->insert(['routine_identifier' => $routine, 'routine_name' => 'Routine', 'account_identifier' => $owner]);
+        $this->withSession(['account_identifier' => $viewer])->postJson('/api/routine-execution-drafts', ['routine_identifier' => $routine])->assertCreated();
+
+        if ($case === 'viewer_blocks_owner' || $case === 'owner_blocks_viewer') {
+            DB::table('blocks')->insert([
+                'blocking_account_identifier' => $case === 'viewer_blocks_owner' ? $viewer : $owner,
+                'blocked_account_identifier' => $case === 'viewer_blocks_owner' ? $owner : $viewer,
+            ]);
+        } elseif ($case === 'private') {
+            DB::table('accounts')->where('account_identifier', $owner)->update(['visibility' => 'private']);
+        } elseif ($case === 'unavailable_routine') {
+            DB::table('routines')->where('routine_identifier', $routine)->update(['available' => false]);
+        } elseif ($case === 'unavailable_owner') {
+            DB::table('accounts')->where('account_identifier', $owner)->update(['available' => false]);
+        } elseif ($case === 'inactive_owner') {
+            DB::table('accounts')->where('account_identifier', $owner)->update(['status' => 'temporarily_banned']);
+        } elseif ($case === 'missing') {
+            $routine = '33333333-3333-4333-8333-333333333333';
+        }
+
+        $before = DB::table('routine_execution_drafts')->get()->all();
+        $this->withSession(['account_identifier' => $viewer])->postJson('/api/routine-execution-drafts', ['routine_identifier' => $routine])->assertStatus($status);
+        self::assertEquals($before, DB::table('routine_execution_drafts')->get()->all());
+        $this->assertDatabaseCount('routine_execution_draft_actions', 0);
+        $this->assertDatabaseCount('routine_executions', 0);
+        $this->assertDatabaseCount('routine_execution_actions', 0);
+        $this->assertDatabaseCount('posts', 0);
+        $this->assertDatabaseHas('accounts', ['account_identifier' => $viewer, 'experience' => 0]);
+    }
+
+    public static function inaccessibleRoutineCases(): array
     {
         return [
+            'viewer blocks owner' => ['viewer_blocks_owner', 403],
+            'owner blocks viewer' => ['owner_blocks_viewer', 403],
+            'private' => ['private', 403],
+            'unavailable routine' => ['unavailable_routine', 403],
+            'unavailable owner' => ['unavailable_owner', 403],
+            'inactive owner' => ['inactive_owner', 403],
+            'missing' => ['missing', 404],
+        ];
+    }
+
+    public function test_private_routine_is_executable_by_owner_and_follower(): void
+    {
+        $owner = '11111111-1111-4111-8111-111111111111';
+        $follower = '44444444-4444-4444-8444-444444444444';
+        $routine = '22222222-2222-4222-8222-222222222222';
+        DB::table('accounts')->insert([
+            ['account_identifier' => $owner, 'account_name' => 'Owner', 'email_address' => 'owner@example.com', 'visibility' => 'private'],
+            ['account_identifier' => $follower, 'account_name' => 'Follower', 'email_address' => 'follower@example.com', 'visibility' => 'public'],
+        ]);
+        DB::table('routines')->insert(['routine_identifier' => $routine, 'routine_name' => 'Routine', 'account_identifier' => $owner]);
+        DB::table('follows')->insert(['following_account_identifier' => $follower, 'followed_account_identifier' => $owner]);
+
+        $this->withSession(['account_identifier' => $owner])->postJson('/api/routine-execution-drafts', ['routine_identifier' => $routine])->assertCreated();
+        $this->withSession(['account_identifier' => $follower])->postJson('/api/routine-execution-drafts', ['routine_identifier' => $routine])->assertCreated();
+        DB::table('follows')->where('following_account_identifier', $follower)->delete();
+        $this->withSession(['account_identifier' => $follower])->postJson('/api/routine-execution-drafts', ['routine_identifier' => $routine])->assertForbidden();
+        $this->assertDatabaseCount('routine_execution_drafts', 2);
+    }
+
+    public function test_unauthenticated_or_inactive_account_cannot_create_a_draft(): void
+    {
+        $viewer = '11111111-1111-4111-8111-111111111111';
+        $owner = '44444444-4444-4444-8444-444444444444';
+        $routine = '22222222-2222-4222-8222-222222222222';
+        DB::table('accounts')->insert([
+            ['account_identifier' => $viewer, 'account_name' => 'Viewer', 'email_address' => 'viewer@example.com', 'status' => 'temporarily_banned'],
+            ['account_identifier' => $owner, 'account_name' => 'Owner', 'email_address' => 'owner@example.com', 'status' => 'active'],
+        ]);
+        DB::table('routines')->insert(['routine_identifier' => $routine, 'routine_name' => 'Routine', 'account_identifier' => $owner]);
+
+        $this->postJson('/api/routine-execution-drafts', ['routine_identifier' => $routine])->assertUnauthorized();
+        $this->withSession(['account_identifier' => $viewer])->postJson('/api/routine-execution-drafts', ['routine_identifier' => $routine])->assertUnauthorized();
+        $this->assertDatabaseCount('routine_execution_drafts', 0);
+        $this->assertDatabaseCount('routine_executions', 0);
+        $this->assertDatabaseHas('accounts', ['account_identifier' => $viewer, 'experience' => 0]);
+    }
+
+    #[DataProvider('accountEligibilityChanges')]
+    public function test_account_becoming_ineligible_after_authentication_cannot_create_a_draft(?array $change): void
+    {
+        $viewer = '11111111-1111-4111-8111-111111111111';
+        $owner = '44444444-4444-4444-8444-444444444444';
+        $routine = '22222222-2222-4222-8222-222222222222';
+        DB::table('accounts')->insert([
+            ['account_identifier' => $viewer, 'account_name' => 'Viewer', 'email_address' => 'viewer@example.com'],
+            ['account_identifier' => $owner, 'account_name' => 'Owner', 'email_address' => 'owner@example.com'],
+        ]);
+        DB::table('routines')->insert(['routine_identifier' => $routine, 'routine_name' => 'Routine', 'account_identifier' => $owner]);
+
+        $repository = \Mockery::mock(AccountRepositoryInterface::class);
+        $repository->shouldReceive('findForUpdate')->once()->andReturnUsing(function ($identifier) use ($viewer, $change) {
+            if ($change === null) {
+                DB::table('accounts')->where('account_identifier', $viewer)->delete();
+            } else {
+                DB::table('accounts')->where('account_identifier', $viewer)->update($change);
+            }
+
+            return $this->app->make(AccountRepository::class)->findForUpdate($identifier);
+        });
+        $this->app->instance(AccountRepositoryInterface::class, $repository);
+
+        $this->withSession(['account_identifier' => $viewer])->postJson('/api/routine-execution-drafts', ['routine_identifier' => $routine])->assertUnauthorized();
+        $this->assertDatabaseCount('routine_execution_drafts', 0);
+        $this->assertDatabaseCount('routine_executions', 0);
+    }
+
+    public static function accountEligibilityChanges(): array
+    {
+        return [
+            'stopped' => [['status' => 'temporarily_banned']],
+            'permanently stopped' => [['status' => 'permanently_banned']],
             'unavailable' => [['available' => false]],
-            'temporarily banned' => [['status' => 'temporarily_banned']],
-            'permanently banned' => [['status' => 'permanently_banned']],
-            'deleted' => [[]],
+            'deleted' => [null],
         ];
     }
 
@@ -102,65 +210,6 @@ final class CreateRoutineExecutionDraftActionTest extends TestCase
         $this->assertDatabaseCount('routine_execution_drafts', 3);
         $this->assertDatabaseHas('routine_execution_drafts', ['executor_account_identifier' => $a, 'routine_identifier' => $r]);
         $this->assertDatabaseHas('routine_execution_drafts', ['executor_account_identifier' => $b, 'routine_identifier' => $r]);
-    }
-
-    public function test_private_blocked_unavailable_and_missing_routines_cannot_be_executed(): void
-    {
-        $viewer = '11111111-1111-4111-8111-111111111111';
-        $author = '44444444-4444-4444-8444-444444444444';
-        $routine = '22222222-2222-4222-8222-222222222222';
-        DB::table('accounts')->insert([
-            ['account_identifier' => $viewer, 'account_name' => 'Viewer', 'email_address' => 'viewer@example.com'],
-            ['account_identifier' => $author, 'account_name' => 'Author', 'email_address' => 'author@example.com'],
-        ]);
-        DB::table('routines')->insert(['routine_identifier' => $routine, 'routine_name' => 'Routine', 'account_identifier' => $author]);
-        $post = fn (string $id) => $this->withSession(['account_identifier' => $viewer])->postJson('/api/routine-execution-drafts', ['routine_identifier' => $id]);
-        $post('33333333-3333-4333-8333-333333333333')->assertNotFound();
-        DB::table('routines')->insert(['routine_identifier' => '33333333-3333-4333-8333-333333333333', 'routine_name' => 'Orphan', 'account_identifier' => '55555555-5555-4555-8555-555555555555']);
-        $post('33333333-3333-4333-8333-333333333333')->assertForbidden();
-        DB::table('routines')->where('routine_identifier', $routine)->update(['available' => false]);
-        $post($routine)->assertForbidden();
-        DB::table('routines')->where('routine_identifier', $routine)->update(['available' => true]);
-        DB::table('accounts')->where('account_identifier', $author)->update(['visibility' => 'private']);
-        $post($routine)->assertForbidden();
-        DB::table('follows')->insert(['following_account_identifier' => $author, 'followed_account_identifier' => $viewer]);
-        $post($routine)->assertForbidden();
-        DB::table('follows')->insert(['following_account_identifier' => $viewer, 'followed_account_identifier' => $author]);
-        DB::table('blocks')->insert(['blocking_account_identifier' => $author, 'blocked_account_identifier' => $viewer]);
-        $post($routine)->assertForbidden();
-        DB::table('blocks')->delete();
-        DB::table('blocks')->insert(['blocking_account_identifier' => $viewer, 'blocked_account_identifier' => $author]);
-        $post($routine)->assertForbidden();
-        DB::table('blocks')->delete();
-        DB::table('accounts')->where('account_identifier', $author)->update(['available' => false]);
-        $post($routine)->assertForbidden();
-        DB::table('accounts')->where('account_identifier', $author)->update(['available' => true, 'status' => 'temporarily_banned']);
-        $post($routine)->assertForbidden();
-        DB::table('accounts')->where('account_identifier', $author)->update(['status' => 'active']);
-        $this->withSession(['account_identifier' => $author])->postJson('/api/routine-execution-drafts', ['routine_identifier' => $routine])->assertCreated();
-        $post($routine)->assertCreated();
-        $this->assertDatabaseCount('routine_execution_drafts', 2);
-    }
-
-    public function test_visibility_is_evaluated_for_each_requesting_account(): void
-    {
-        $author = '11111111-1111-4111-8111-111111111111';
-        $follower = '22222222-2222-4222-8222-222222222222';
-        $stranger = '33333333-3333-4333-8333-333333333333';
-        $routine = '44444444-4444-4444-8444-444444444444';
-        DB::table('accounts')->insert([
-            ['account_identifier' => $author, 'account_name' => 'Author', 'email_address' => 'author@example.com', 'visibility' => 'private'],
-            ['account_identifier' => $follower, 'account_name' => 'Follower', 'email_address' => 'follower@example.com', 'visibility' => 'public'],
-            ['account_identifier' => $stranger, 'account_name' => 'Stranger', 'email_address' => 'stranger@example.com', 'visibility' => 'public'],
-        ]);
-        DB::table('routines')->insert(['routine_identifier' => $routine, 'routine_name' => 'Routine', 'account_identifier' => $author]);
-        DB::table('follows')->insert(['following_account_identifier' => $follower, 'followed_account_identifier' => $author]);
-
-        $this->withSession(['account_identifier' => $stranger])->postJson('/api/routine-execution-drafts', ['routine_identifier' => $routine])->assertForbidden();
-        $this->withSession(['account_identifier' => $follower])->postJson('/api/routine-execution-drafts', ['routine_identifier' => $routine])->assertCreated();
-        $this->withSession(['account_identifier' => $stranger])->postJson('/api/routine-execution-drafts', ['routine_identifier' => $routine])->assertForbidden();
-        $this->assertDatabaseCount('routine_execution_drafts', 1);
-        $this->assertDatabaseHas('routine_execution_drafts', ['executor_account_identifier' => $follower, 'routine_identifier' => $routine]);
     }
 
     public function test_database_enforces_unique_account_and_routine(): void

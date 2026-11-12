@@ -7,10 +7,16 @@ namespace Src\Routine\Infrastructure\Repository;
 use App\Models\RoutineModel;
 use Src\Routine\Domain\Entity\Routine;
 use Src\Routine\Domain\Repository\RoutineRepositoryInterface;
+use Src\Shared\Domain\ValueObject\Identifier\RoutineIdentifier;
 use Src\Shared\Domain\ValueObject\Identifier\TagIdentifier;
 
 final class RoutineRepository implements RoutineRepositoryInterface
 {
+    public function exists(RoutineIdentifier $routineIdentifier): bool
+    {
+        return RoutineModel::query()->whereKey($routineIdentifier->value())->exists();
+    }
+
     public function save(Routine $routine): void
     {
         $routineModel = RoutineModel::query()->create([

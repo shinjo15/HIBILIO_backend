@@ -47,6 +47,11 @@ final class CreateRoutineTest extends TestCase
         {
             public ?Routine $savedRoutine = null;
 
+            public function exists(RoutineIdentifier $routineIdentifier): bool
+            {
+                return $this->savedRoutine?->routineIdentifier()->value() === $routineIdentifier->value();
+            }
+
             public function save(Routine $routine): void
             {
                 $this->savedRoutine = $routine;

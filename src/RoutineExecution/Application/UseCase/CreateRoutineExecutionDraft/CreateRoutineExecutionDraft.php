@@ -4,44 +4,49 @@ declare(strict_types=1);
 
 namespace Src\RoutineExecution\Application\UseCase\CreateRoutineExecutionDraft;
 
-use Src\RoutineExecution\Domain\Exception\AccountNotAuthenticatedException;
+use Src\Routine\Application\Usecase\Query\GetRoutineDetails\GetRoutineDetailsInput;
+use Src\Routine\Application\Usecase\Query\GetRoutineDetails\GetRoutineDetailsInterface;
+use Src\Routine\Domain\Repository\RoutineRepositoryInterface;
 use Src\RoutineExecution\Domain\Exception\RoutineNotExecutableException;
 use Src\RoutineExecution\Domain\Exception\RoutineNotFoundForDraftException;
 use Src\RoutineExecution\Domain\Factory\RoutineExecutionFactoryInterface;
 use Src\RoutineExecution\Domain\Repository\AccountRepositoryInterface;
-use Src\RoutineExecution\Domain\Repository\ExecutableRoutineRepositoryInterface;
 use Src\RoutineExecution\Domain\Repository\RoutineExecutionDraftRepositoryInterface;
+use Src\Shared\Application\Service\AuthServiceInterface;
 use Src\Shared\Application\Transaction\TransactionManagerInterface;
-use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
-use Src\Shared\Domain\ValueObject\Identifier\RoutineIdentifier;
 
-final readonly class CreateRoutineExecutionDraft
+final readonly class CreateRoutineExecutionDraft implements CreateRoutineExecutionDraftInterface
 {
     public function __construct(
         private TransactionManagerInterface $transactionManager,
         private AccountRepositoryInterface $accounts,
-        private ExecutableRoutineRepositoryInterface $routines,
+        private AuthServiceInterface $authService,
+        private RoutineRepositoryInterface $routines,
+        private GetRoutineDetailsInterface $routineDetails,
         private RoutineExecutionDraftRepositoryInterface $drafts,
         private RoutineExecutionFactoryInterface $factory,
     ) {}
 
-    public function execute(AccountIdentifier $account, RoutineIdentifier $routine): bool
+    public function execute(CreateRoutineExecutionDraftInputPort $input): CreateRoutineExecutionDraftOutputPort
     {
-        return $this->transactionManager->transaction(function () use ($account, $routine): bool {
-            $lockedAccount = $this->accounts->findForUpdate($account);
-            if ($lockedAccount === null || ! $lockedAccount->canAuthenticate()) {
-                throw new AccountNotAuthenticatedException;
+        return $this->transactionManager->transaction(function () use ($input): CreateRoutineExecutionDraftOutputPort {
+            $this->accounts->findForUpdate($input->executorAccountIdentifier()) ?? throw new AccountAuthenticationException;
+            if ($this->authService->accountIdentifier() !== $input->executorAccountIdentifier()->value()) {
+                throw new AccountAuthenticationException;
             }
-            $executableRoutine = $this->routines->find($routine, $account) ?? throw new RoutineNotFoundForDraftException;
-            if (! $executableRoutine->canBeExecuted()) {
+            if (! $this->routines->exists($input->routineIdentifier())) {
+                throw new RoutineNotFoundForDraftException;
+            }
+            $details = $this->routineDetails->execute(new GetRoutineDetailsInput($input->routineIdentifier()->value(), $input->executorAccountIdentifier()->value()));
+            if ($details->routineDetails() === null) {
                 throw new RoutineNotExecutableException;
             }
-            if ($this->drafts->exists($account, $routine)) {
-                return false;
+            if ($this->drafts->exists($input->executorAccountIdentifier(), $input->routineIdentifier())) {
+                return new CreateRoutineExecutionDraftOutput(false);
             }
-            $this->drafts->save($this->factory->create($account, $routine, null));
+            $this->drafts->save($this->factory->create($input->executorAccountIdentifier(), $input->routineIdentifier(), null));
 
-            return true;
+            return new CreateRoutineExecutionDraftOutput(true);
         });
     }
 }

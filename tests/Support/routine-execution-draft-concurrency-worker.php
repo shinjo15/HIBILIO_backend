@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\DB;
 use Src\RoutineExecution\Application\UseCase\CreateRoutineExecutionDraft\CreateRoutineExecutionDraft;
+use Src\RoutineExecution\Application\UseCase\CreateRoutineExecutionDraft\CreateRoutineExecutionDraftInput;
 use Src\RoutineExecution\Domain\Entity\RoutineExecution;
 use Src\RoutineExecution\Domain\Repository\RoutineExecutionDraftRepositoryInterface;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
@@ -15,6 +16,9 @@ require __DIR__.'/postgres-bootstrap.php';
 $app = require dirname(__DIR__, 2).'/bootstrap/app.php';
 $app->make(Kernel::class)->bootstrap();
 PostgresDatabaseGuard::assertConnection($app);
+$session = $app['session']->driver();
+$session->put('account_identifier', '11111111-1111-4111-8111-111111111111');
+$app['request']->setLaravelSession($session);
 $mode = $argv[1] ?? '';
 if (! in_array($mode, ['hold', 'rollback', 'contend'], true)) {
     throw new InvalidArgumentException('Invalid worker mode');
@@ -47,11 +51,11 @@ $app->instance(RoutineExecutionDraftRepositoryInterface::class, new class($repos
 fwrite(STDOUT, 'PID '.DB::selectOne('select pg_backend_pid() as pid')->pid."\n");
 fflush(STDOUT);
 try {
-    $created = $app->make(CreateRoutineExecutionDraft::class)->execute(
+    $output = $app->make(CreateRoutineExecutionDraft::class)->execute(new CreateRoutineExecutionDraftInput(
         new AccountIdentifier('11111111-1111-4111-8111-111111111111'),
         new RoutineIdentifier('22222222-2222-4222-8222-222222222222'),
-    );
-    fwrite(STDOUT, $created ? "CREATED\n" : "NOOP\n");
+    ));
+    fwrite(STDOUT, $output->created() ? "CREATED\n" : "NOOP\n");
 } catch (Throwable $exception) {
     if ($mode !== 'rollback' || $exception::class !== RuntimeException::class || $exception->getMessage() !== 'injected rollback') {
         throw $exception;
