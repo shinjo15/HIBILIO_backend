@@ -30,7 +30,7 @@ final readonly class CreateRoutineExecutionDraft implements CreateRoutineExecuti
     public function execute(CreateRoutineExecutionDraftInputPort $input): CreateRoutineExecutionDraftOutputPort
     {
         return $this->transactionManager->transaction(function () use ($input): CreateRoutineExecutionDraftOutputPort {
-            $this->accounts->findForUpdate($input->executorAccountIdentifier()) ?? throw new AccountNotFoundException;
+            $this->accounts->findWithLock($input->executorAccountIdentifier()) ?? throw new AccountNotFoundException;
             if (! $this->routines->exists($input->routineIdentifier())) {
                 throw new RoutineNotFoundForDraftException;
             }

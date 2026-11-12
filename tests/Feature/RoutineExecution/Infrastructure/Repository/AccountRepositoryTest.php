@@ -32,7 +32,7 @@ final class AccountRepositoryTest extends TestCase
         $repository = $this->app->make(AccountRepositoryInterface::class);
         DB::table('accounts')->where('account_identifier', $id->value())->update(['updated_at' => '2020-01-01 00:00:00']);
         DB::transaction(function () use ($repository, $id): void {
-            $account = $repository->findForUpdate($id);
+            $account = $repository->findWithLock($id);
             self::assertNotNull($account);
             $account->recordRoutineExecution();
             DB::table('accounts')->where('account_identifier', $id->value())->update(['account_name' => 'Updated']);
@@ -42,7 +42,7 @@ final class AccountRepositoryTest extends TestCase
         $stale->changeUiMode(AccountUiMode::DARK);
         $profile->save($stale);
         $this->assertDatabaseHas('accounts', ['account_identifier' => $id->value(), 'experience' => 100]);
-        self::assertNull($repository->findForUpdate(new AccountIdentifier('75017745-e475-4337-b0f3-3fc3d670e5c7')));
+        self::assertNull($repository->findWithLock(new AccountIdentifier('75017745-e475-4337-b0f3-3fc3d670e5c7')));
         $this->assertDatabaseCount('accounts', 1);
     }
 

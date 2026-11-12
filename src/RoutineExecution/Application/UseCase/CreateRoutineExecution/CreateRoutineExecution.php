@@ -33,7 +33,7 @@ final readonly class CreateRoutineExecution implements CreateRoutineExecutionInt
     {
         $this->transactionManager->transaction(function () use ($input): void {
             $this->validateRoutineActions($input);
-            $account = $this->accountRepository->findForUpdate($input->executorAccountIdentifier()) ?? throw new AccountNotFoundException;
+            $account = $this->accountRepository->findWithLock($input->executorAccountIdentifier()) ?? throw new AccountNotFoundException;
             $routineExecution = $this->routineExecutionFactory->create(
                 $input->executorAccountIdentifier(),
                 $input->routineIdentifier(),

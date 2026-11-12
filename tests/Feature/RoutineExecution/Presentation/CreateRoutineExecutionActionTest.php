@@ -30,7 +30,7 @@ final class CreateRoutineExecutionActionTest extends TestCase
         DB::table('routine_actions')->insert(['routine_action_identifier' => $action, 'routine_identifier' => $routine, 'action_name' => 'Action', 'position' => 0]);
 
         $repository = \Mockery::mock(AccountRepositoryInterface::class);
-        $repository->shouldReceive('findForUpdate')->once()->andReturnUsing(fn ($id) => $this->app->make(AccountRepository::class)->findForUpdate($id));
+        $repository->shouldReceive('findWithLock')->once()->andReturnUsing(fn ($id) => $this->app->make(AccountRepository::class)->findWithLock($id));
         $repository->shouldReceive('save')->once()->andReturnUsing(fn () => DB::statement('insert into nonexistent_experience_test_table (id) values (1)'));
         $this->app->instance(AccountRepositoryInterface::class, $repository);
 
@@ -104,7 +104,7 @@ final class CreateRoutineExecutionActionTest extends TestCase
     public function test_failure_to_save_experience_rolls_back_execution_and_post(): void
     {
         $repository = \Mockery::mock(AccountRepositoryInterface::class);
-        $repository->shouldReceive('findForUpdate')->once()->andReturnUsing(fn ($id) => $this->app->make(AccountRepository::class)->findForUpdate($id));
+        $repository->shouldReceive('findWithLock')->once()->andReturnUsing(fn ($id) => $this->app->make(AccountRepository::class)->findWithLock($id));
         $repository->shouldReceive('save')->once()->andThrow(new \Exception('experience failure'));
         $this->app->instance(AccountRepositoryInterface::class, $repository);
         $this->assertInjectedFailureRollsBack('experience failure');

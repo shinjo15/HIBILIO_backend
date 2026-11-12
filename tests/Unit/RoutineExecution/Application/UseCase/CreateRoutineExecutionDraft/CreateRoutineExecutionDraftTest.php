@@ -31,7 +31,7 @@ final class CreateRoutineExecutionDraftTest extends TestCase
         $accountId = new AccountIdentifier('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
         $routineId = new RoutineIdentifier('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
         $accounts = $this->createMock(AccountRepositoryInterface::class);
-        $accounts->expects(self::once())->method('findForUpdate')->with($accountId)->willReturn(new Account($accountId, 0));
+        $accounts->expects(self::once())->method('findWithLock')->with($accountId)->willReturn(new Account($accountId, 0));
         $accounts->expects(self::never())->method('save');
 
         $routines = $this->createMock(RoutineRepositoryInterface::class);
@@ -66,7 +66,7 @@ final class CreateRoutineExecutionDraftTest extends TestCase
         $accountId = new AccountIdentifier('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
         $routineId = new RoutineIdentifier('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
         $accounts = $this->createMock(AccountRepositoryInterface::class);
-        $accounts->expects(self::once())->method('findForUpdate')->with($accountId)->willReturn(null);
+        $accounts->expects(self::once())->method('findWithLock')->with($accountId)->willReturn(null);
         $routines = $this->createMock(RoutineRepositoryInterface::class);
         $routines->expects(self::never())->method('exists');
         $drafts = $this->createMock(RoutineExecutionDraftRepositoryInterface::class);

@@ -138,14 +138,14 @@ final class CreateRoutineExecutionDraftActionTest extends TestCase
         DB::table('routines')->insert(['routine_identifier' => $routine, 'routine_name' => 'Routine', 'account_identifier' => $owner]);
 
         $repository = \Mockery::mock(AccountRepositoryInterface::class);
-        $repository->shouldReceive('findForUpdate')->once()->andReturnUsing(function ($identifier) use ($viewer, $change) {
+        $repository->shouldReceive('findWithLock')->once()->andReturnUsing(function ($identifier) use ($viewer, $change) {
             if ($change === null) {
                 DB::table('accounts')->where('account_identifier', $viewer)->delete();
             } else {
                 DB::table('accounts')->where('account_identifier', $viewer)->update($change);
             }
 
-            return $this->app->make(AccountRepository::class)->findForUpdate($identifier);
+            return $this->app->make(AccountRepository::class)->findWithLock($identifier);
         });
         $this->app->instance(AccountRepositoryInterface::class, $repository);
 

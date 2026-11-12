@@ -48,7 +48,7 @@ final class CreateRoutineExecutionTest extends TestCase
             RoutineAction::create($actionId, null, $routineId, new RoutineActionName('行動'), null, null, new RoutineActionPosition(0)),
         ]);
         $accounts = $this->createMock(AccountRepositoryInterface::class);
-        $accounts->expects(self::once())->method('findForUpdate')->with($accountId)->willReturn(null);
+        $accounts->expects(self::once())->method('findWithLock')->with($accountId)->willReturn(null);
         $accounts->expects(self::never())->method('save');
         $executions = $this->createMock(RoutineExecutionRepositoryInterface::class);
         $executions->expects(self::never())->method('save');
@@ -159,7 +159,7 @@ final class CreateRoutineExecutionTest extends TestCase
 
         $account = new Account(new AccountIdentifier('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'), 0);
         $accountRepository = $this->createMock(AccountRepositoryInterface::class);
-        $accountRepository->expects(self::once())->method('findForUpdate')->willReturn($account);
+        $accountRepository->expects(self::once())->method('findWithLock')->willReturn($account);
         $accountRepository->expects(self::once())->method('save')->with($account);
         $useCase = new CreateRoutineExecution(
             transactionManager: $transactionManager,

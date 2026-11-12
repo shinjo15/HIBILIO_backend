@@ -10,7 +10,7 @@ use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 interface AccountRepositoryInterface
 {
     /** Must be called within the transaction that saves experience. */
-    public function findForUpdate(AccountIdentifier $accountIdentifier): ?Account;
+    public function findWithLock(AccountIdentifier $accountIdentifier): ?Account;
 
     /** Persist experience from an account locked in the same transaction. */
     public function save(Account $account): void;

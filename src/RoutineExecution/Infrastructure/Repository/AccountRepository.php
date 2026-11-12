@@ -12,7 +12,7 @@ use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
 final readonly class AccountRepository implements AccountRepositoryInterface
 {
-    public function findForUpdate(AccountIdentifier $accountIdentifier): ?Account
+    public function findWithLock(AccountIdentifier $accountIdentifier): ?Account
     {
         $model = AccountModel::query()->where('account_identifier', $accountIdentifier->value())->lockForUpdate()->first();
 

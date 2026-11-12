@@ -27,9 +27,9 @@ $app->instance(AccountRepositoryInterface::class, new class($repository, $mode) 
 {
     public function __construct(private AccountRepositoryInterface $inner, private string $mode) {}
 
-    public function findForUpdate(AccountIdentifier $id): ?Account
+    public function findWithLock(AccountIdentifier $id): ?Account
     {
-        $account = $this->inner->findForUpdate($id);
+        $account = $this->inner->findWithLock($id);
         if ($this->mode !== 'contend') {
             fwrite(STDOUT, "LOCKED\n");
             fflush(STDOUT);
