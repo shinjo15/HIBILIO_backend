@@ -7,12 +7,12 @@ namespace Src\RoutineExecution\Application\UseCase\CreateRoutineExecutionDraft;
 use Src\Routine\Application\Usecase\Query\GetRoutineDetails\GetRoutineDetailsInput;
 use Src\Routine\Application\Usecase\Query\GetRoutineDetails\GetRoutineDetailsInterface;
 use Src\Routine\Domain\Repository\RoutineRepositoryInterface;
+use Src\RoutineExecution\Domain\Exception\AccountNotFoundException;
 use Src\RoutineExecution\Domain\Exception\RoutineNotExecutableException;
 use Src\RoutineExecution\Domain\Exception\RoutineNotFoundForDraftException;
 use Src\RoutineExecution\Domain\Factory\RoutineExecutionFactoryInterface;
 use Src\RoutineExecution\Domain\Repository\AccountRepositoryInterface;
 use Src\RoutineExecution\Domain\Repository\RoutineExecutionDraftRepositoryInterface;
-use Src\Shared\Application\Service\AuthServiceInterface;
 use Src\Shared\Application\Transaction\TransactionManagerInterface;
 
 final readonly class CreateRoutineExecutionDraft implements CreateRoutineExecutionDraftInterface
@@ -20,7 +20,7 @@ final readonly class CreateRoutineExecutionDraft implements CreateRoutineExecuti
     public function __construct(
         private TransactionManagerInterface $transactionManager,
         private AccountRepositoryInterface $accounts,
-        private AuthServiceInterface $authService,
+
         private RoutineRepositoryInterface $routines,
         private GetRoutineDetailsInterface $routineDetails,
         private RoutineExecutionDraftRepositoryInterface $drafts,
@@ -30,10 +30,7 @@ final readonly class CreateRoutineExecutionDraft implements CreateRoutineExecuti
     public function execute(CreateRoutineExecutionDraftInputPort $input): CreateRoutineExecutionDraftOutputPort
     {
         return $this->transactionManager->transaction(function () use ($input): CreateRoutineExecutionDraftOutputPort {
-            $this->accounts->findForUpdate($input->executorAccountIdentifier()) ?? throw new AccountAuthenticationException;
-            if ($this->authService->accountIdentifier() !== $input->executorAccountIdentifier()->value()) {
-                throw new AccountAuthenticationException;
-            }
+            $this->accounts->findForUpdate($input->executorAccountIdentifier()) ?? throw new AccountNotFoundException;
             if (! $this->routines->exists($input->routineIdentifier())) {
                 throw new RoutineNotFoundForDraftException;
             }

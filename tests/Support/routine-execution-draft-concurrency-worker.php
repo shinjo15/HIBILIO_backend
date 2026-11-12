@@ -16,9 +16,7 @@ require __DIR__.'/postgres-bootstrap.php';
 $app = require dirname(__DIR__, 2).'/bootstrap/app.php';
 $app->make(Kernel::class)->bootstrap();
 PostgresDatabaseGuard::assertConnection($app);
-$session = $app['session']->driver();
-$session->put('account_identifier', '11111111-1111-4111-8111-111111111111');
-$app['request']->setLaravelSession($session);
+
 $mode = $argv[1] ?? '';
 if (! in_array($mode, ['hold', 'rollback', 'contend'], true)) {
     throw new InvalidArgumentException('Invalid worker mode');

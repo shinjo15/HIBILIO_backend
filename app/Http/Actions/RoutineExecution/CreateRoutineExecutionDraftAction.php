@@ -6,7 +6,6 @@ namespace App\Http\Actions\RoutineExecution;
 
 use App\Http\Requests\RoutineExecution\CreateRoutineExecutionDraftRequest;
 use Illuminate\Http\Response;
-use Src\RoutineExecution\Application\UseCase\CreateRoutineExecutionDraft\AccountAuthenticationException;
 use Src\RoutineExecution\Application\UseCase\CreateRoutineExecutionDraft\CreateRoutineExecutionDraftInterface;
 use Src\RoutineExecution\Domain\Exception\RoutineNotExecutableException;
 use Src\RoutineExecution\Domain\Exception\RoutineNotFoundForDraftException;
@@ -24,8 +23,6 @@ final readonly class CreateRoutineExecutionDraftAction
         }
         try {
             $output = $this->createDraft->execute($request->toInput($account));
-        } catch (AccountAuthenticationException) {
-            return new Response('', 401);
         } catch (RoutineNotFoundForDraftException) {
             return new Response('', 404);
         } catch (RoutineNotExecutableException) {

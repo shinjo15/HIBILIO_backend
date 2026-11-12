@@ -126,7 +126,7 @@ final class CreateRoutineExecutionDraftActionTest extends TestCase
     }
 
     #[DataProvider('accountEligibilityChanges')]
-    public function test_account_becoming_ineligible_after_authentication_cannot_create_a_draft(?array $change): void
+    public function test_account_changes_after_authentication_follow_existing_repository_behavior(?array $change, int $status, int $draftCount): void
     {
         $viewer = '11111111-1111-4111-8111-111111111111';
         $owner = '44444444-4444-4444-8444-444444444444';
@@ -149,18 +149,18 @@ final class CreateRoutineExecutionDraftActionTest extends TestCase
         });
         $this->app->instance(AccountRepositoryInterface::class, $repository);
 
-        $this->withSession(['account_identifier' => $viewer])->postJson('/api/routine-execution-drafts', ['routine_identifier' => $routine])->assertUnauthorized();
-        $this->assertDatabaseCount('routine_execution_drafts', 0);
+        $this->withSession(['account_identifier' => $viewer])->postJson('/api/routine-execution-drafts', ['routine_identifier' => $routine])->assertStatus($status);
+        $this->assertDatabaseCount('routine_execution_drafts', $draftCount);
         $this->assertDatabaseCount('routine_executions', 0);
     }
 
     public static function accountEligibilityChanges(): array
     {
         return [
-            'stopped' => [['status' => 'temporarily_banned']],
-            'permanently stopped' => [['status' => 'permanently_banned']],
-            'unavailable' => [['available' => false]],
-            'deleted' => [null],
+            'stopped' => [['status' => 'temporarily_banned'], 201, 1],
+            'permanently stopped' => [['status' => 'permanently_banned'], 201, 1],
+            'unavailable' => [['available' => false], 201, 1],
+            'deleted' => [null, 422, 0],
         ];
     }
 

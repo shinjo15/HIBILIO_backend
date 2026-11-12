@@ -13,11 +13,11 @@ use Src\RoutineExecution\Application\UseCase\CreateRoutineExecutionDraft\CreateR
 use Src\RoutineExecution\Application\UseCase\CreateRoutineExecutionDraft\CreateRoutineExecutionDraftInput;
 use Src\RoutineExecution\Domain\Entity\Account;
 use Src\RoutineExecution\Domain\Entity\RoutineExecution;
+use Src\RoutineExecution\Domain\Exception\AccountNotFoundException;
 use Src\RoutineExecution\Domain\Factory\RoutineExecutionFactoryInterface;
 use Src\RoutineExecution\Domain\Repository\AccountRepositoryInterface;
 use Src\RoutineExecution\Domain\Repository\RoutineExecutionDraftRepositoryInterface;
 use Src\RoutineExecution\Domain\ValueObject\ExecutedAt;
-use Src\Shared\Application\Service\AuthServiceInterface;
 use Src\Shared\Application\Transaction\TransactionManagerInterface;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Src\Shared\Domain\ValueObject\Identifier\RoutineExecutionIdentifier;
@@ -33,8 +33,7 @@ final class CreateRoutineExecutionDraftTest extends TestCase
         $accounts = $this->createMock(AccountRepositoryInterface::class);
         $accounts->expects(self::once())->method('findForUpdate')->with($accountId)->willReturn(new Account($accountId, 0));
         $accounts->expects(self::never())->method('save');
-        $auth = $this->createMock(AuthServiceInterface::class);
-        $auth->expects(self::once())->method('accountIdentifier')->willReturn($accountId->value());
+
         $routines = $this->createMock(RoutineRepositoryInterface::class);
         $routines->expects(self::once())->method('exists')->with($routineId)->willReturn(true);
         $details = $this->createMock(GetRoutineDetailsInterface::class);
@@ -57,9 +56,32 @@ final class CreateRoutineExecutionDraftTest extends TestCase
                 return $callback();
             }
         };
-        $useCase = new CreateRoutineExecutionDraft($transaction, $accounts, $auth, $routines, $details, $drafts, $factory);
+        $useCase = new CreateRoutineExecutionDraft($transaction, $accounts, $routines, $details, $drafts, $factory);
 
         self::assertSame(! $exists, $useCase->execute(new CreateRoutineExecutionDraftInput($accountId, $routineId))->created());
+    }
+
+    public function test_missing_account_throws_before_creating_a_draft(): void
+    {
+        $accountId = new AccountIdentifier('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+        $routineId = new RoutineIdentifier('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
+        $accounts = $this->createMock(AccountRepositoryInterface::class);
+        $accounts->expects(self::once())->method('findForUpdate')->with($accountId)->willReturn(null);
+        $routines = $this->createMock(RoutineRepositoryInterface::class);
+        $routines->expects(self::never())->method('exists');
+        $drafts = $this->createMock(RoutineExecutionDraftRepositoryInterface::class);
+        $drafts->expects(self::never())->method('save');
+        $transaction = new class implements TransactionManagerInterface
+        {
+            public function transaction(callable $callback): mixed
+            {
+                return $callback();
+            }
+        };
+        $useCase = new CreateRoutineExecutionDraft($transaction, $accounts, $routines, $this->createStub(GetRoutineDetailsInterface::class), $drafts, $this->createStub(RoutineExecutionFactoryInterface::class));
+
+        $this->expectException(AccountNotFoundException::class);
+        $useCase->execute(new CreateRoutineExecutionDraftInput($accountId, $routineId));
     }
 
     public static function draftStates(): array
