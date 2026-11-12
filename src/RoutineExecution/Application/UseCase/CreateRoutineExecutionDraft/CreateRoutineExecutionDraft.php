@@ -6,7 +6,6 @@ namespace Src\RoutineExecution\Application\UseCase\CreateRoutineExecutionDraft;
 
 use Src\Routine\Domain\Repository\RoutineActionRepositoryInterface;
 use Src\Routine\Domain\Repository\RoutineRepositoryInterface;
-use Src\RoutineExecution\Domain\Entity\RoutineExecutionDraft;
 use Src\RoutineExecution\Domain\Exception\RoutineNotFoundException;
 use Src\RoutineExecution\Domain\Repository\RoutineExecutionDraftRepositoryInterface;
 use Src\Shared\Application\Transaction\TransactionManagerInterface;
@@ -26,7 +25,7 @@ final readonly class CreateRoutineExecutionDraft implements CreateRoutineExecuti
             $routine = $this->routineRepository->findByIdentifier($input->routineIdentifier())
                 ?? throw new RoutineNotFoundException;
             $actions = $this->actionRepository->findByIdentifiers($routine->routineActionIdentifiers()->values());
-            $this->draftRepository->save(new RoutineExecutionDraft($input->draftCreatorAccountIdentifier(), $routine, $actions));
+            $this->draftRepository->save($input->draftCreatorAccountIdentifier(), $routine, $actions);
         });
     }
 }
