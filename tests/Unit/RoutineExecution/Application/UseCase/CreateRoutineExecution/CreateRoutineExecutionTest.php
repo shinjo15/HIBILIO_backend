@@ -6,6 +6,7 @@ namespace Tests\Unit\RoutineExecution\Application\UseCase\CreateRoutineExecution
 
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
+use Src\Account\Domain\ValueObject\AccountStatus;
 use Src\Post\Domain\Entity\Post;
 use Src\Post\Domain\ValueObject\PostCategory;
 use Src\Post\Domain\ValueObject\PostLikeCount;
@@ -157,7 +158,7 @@ final class CreateRoutineExecutionTest extends TestCase
             public function save(Post $post): void {}
         };
 
-        $account = new Account(new AccountIdentifier('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'), 0);
+        $account = new Account(new AccountIdentifier('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'), 0, AccountStatus::ACTIVE, true);
         $accountRepository = $this->createMock(AccountRepositoryInterface::class);
         $accountRepository->expects(self::once())->method('findForUpdate')->willReturn($account);
         $accountRepository->expects(self::once())->method('save')->with($account);
