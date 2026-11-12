@@ -8,10 +8,28 @@ use Illuminate\Support\Facades\DB;
 use Src\Routine\Domain\Entity\Routine;
 use Src\Routine\Domain\Entity\RoutineAction;
 use Src\RoutineExecution\Domain\Repository\RoutineExecutionDraftRepositoryInterface;
+use Src\RoutineExecution\Domain\ValueObject\RoutineExecutionMemo;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
+use Src\Shared\Domain\ValueObject\Identifier\RoutineIdentifier;
 
 final class RoutineExecutionDraftRepository implements RoutineExecutionDraftRepositoryInterface
 {
+    public function updateMemo(AccountIdentifier $creator, RoutineIdentifier $routine, ?RoutineExecutionMemo $memo): bool
+    {
+        $query = fn () => DB::table('routine_execution_drafts')
+            ->where('draft_creator_account_identifier', $creator->value())
+            ->where('routine_identifier', $routine->value());
+
+        $update = fn () => $query()->update(['routine_execution_memo' => $memo?->value(), 'updated_at' => now()]);
+
+        if (in_array(DB::connection()->getDriverName(), ['mysql', 'mariadb'], true)) {
+            // MySQL can report zero for an unchanged row; use a current read inside the update transaction.
+            return DB::transaction(fn () => $update() > 0 || $query()->lockForUpdate()->first() !== null);
+        }
+
+        return $update() > 0;
+    }
+
     /** @param list<RoutineAction> $actions */
     public function save(AccountIdentifier $draftCreatorAccountIdentifier, Routine $routine, array $actions): void
     {
