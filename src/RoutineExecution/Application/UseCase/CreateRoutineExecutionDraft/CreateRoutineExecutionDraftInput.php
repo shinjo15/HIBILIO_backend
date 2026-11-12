@@ -9,15 +9,15 @@ use Src\Shared\Domain\ValueObject\Identifier\RoutineIdentifier;
 
 final readonly class CreateRoutineExecutionDraftInput implements CreateRoutineExecutionDraftInputPort
 {
-    public function __construct(private RoutineIdentifier $routineIdentifier, private AccountIdentifier $ownerAccountIdentifier) {}
+    public function __construct(private RoutineIdentifier $routineIdentifier, private AccountIdentifier $draftCreatorAccountIdentifier) {}
 
     public function routineIdentifier(): RoutineIdentifier
     {
         return $this->routineIdentifier;
     }
 
-    public function ownerAccountIdentifier(): AccountIdentifier
+    public function draftCreatorAccountIdentifier(): AccountIdentifier
     {
-        return $this->ownerAccountIdentifier;
+        return $this->draftCreatorAccountIdentifier;
     }
 }

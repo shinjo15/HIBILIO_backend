@@ -20,7 +20,7 @@ final class CreateRoutineExecutionDraftTest extends TestCase
     public function test_missing_routine_does_not_save_draft(): void
     {
         $routineId = new RoutineIdentifier('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
-        $ownerId = new AccountIdentifier('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
+        $draftCreatorAccountIdentifier = new AccountIdentifier('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb');
         $routines = $this->createMock(RoutineRepositoryInterface::class);
         $routines->expects(self::once())->method('findByIdentifier')->with($routineId)->willReturn(null);
         $drafts = $this->createMock(RoutineExecutionDraftRepositoryInterface::class);
@@ -37,6 +37,6 @@ final class CreateRoutineExecutionDraftTest extends TestCase
         $useCase = new CreateRoutineExecutionDraft($transactions, $drafts, $routines, $actions);
 
         $this->expectException(RoutineNotFoundException::class);
-        $useCase->execute(new CreateRoutineExecutionDraftInput($routineId, $ownerId));
+        $useCase->execute(new CreateRoutineExecutionDraftInput($routineId, $draftCreatorAccountIdentifier));
     }
 }

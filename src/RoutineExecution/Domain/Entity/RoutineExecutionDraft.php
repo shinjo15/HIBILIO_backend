@@ -12,7 +12,7 @@ final readonly class RoutineExecutionDraft
 {
     /** @param list<RoutineAction> $actions */
     public function __construct(
-        public AccountIdentifier $owner,
+        public AccountIdentifier $draftCreatorAccountIdentifier,
         public Routine $routine,
         public array $actions,
     ) {}

@@ -11,5 +11,5 @@ interface CreateRoutineExecutionDraftInputPort
 {
     public function routineIdentifier(): RoutineIdentifier;
 
-    public function ownerAccountIdentifier(): AccountIdentifier;
+    public function draftCreatorAccountIdentifier(): AccountIdentifier;
 }

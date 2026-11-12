@@ -17,7 +17,7 @@ final class CreateRoutineExecutionDraftPersistenceTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_snapshots_all_fields_and_keeps_each_owners_copy_after_source_changes(): void
+    public function test_snapshots_all_fields_and_keeps_each_creators_copy_after_source_changes(): void
     {
         $author = '11111111-1111-4111-8111-111111111111';
         $owner = '22222222-2222-4222-8222-222222222222';
@@ -47,25 +47,32 @@ final class CreateRoutineExecutionDraftPersistenceTest extends TestCase
         DB::table('routine_tags')->where('routine_identifier', $routine)->delete();
         $create($other);
 
-        $this->assertDatabaseHas('routine_execution_drafts', ['owner_account_identifier' => $owner, 'routine_identifier' => $routine, 'parent_routine_identifier' => $parent, 'account_identifier' => $author, 'routine_name' => 'original', 'routine_memo' => 'memo', 'routine_execution_minutes' => 20, 'video_url' => 'https://youtu.be/dQw4w9WgXcQ', 'available' => false, 'source_created_at' => '2020-01-01 01:02:03', 'source_updated_at' => '2020-02-02 02:03:04']);
-        $this->assertDatabaseHas('routine_execution_drafts', ['owner_account_identifier' => $other, 'routine_identifier' => $routine, 'routine_name' => 'changed']);
-        $this->assertDatabaseHas('routine_execution_draft_actions', ['owner_account_identifier' => $owner, 'routine_identifier' => $routine, 'routine_action_identifier' => $first, 'parent_routine_action_identifier' => null, 'action_name' => 'first', 'action_memo' => 'first memo', 'action_minutes' => 5, 'position' => 0, 'video_url' => 'https://youtu.be/dQw4w9WgXcQ']);
-        $this->assertDatabaseHas('routine_execution_draft_actions', ['owner_account_identifier' => $owner, 'routine_identifier' => $routine, 'routine_action_identifier' => $second, 'parent_routine_action_identifier' => $first, 'action_name' => 'second', 'action_memo' => 'second memo', 'action_minutes' => 6, 'position' => 1, 'video_url' => 'https://youtu.be/dQw4w9WgXcQ?x=2', 'available' => false, 'source_created_at' => '2020-01-02 03:04:05', 'source_updated_at' => '2020-02-03 04:05:06']);
-        $this->assertDatabaseHas('routine_execution_draft_actions', ['owner_account_identifier' => $other, 'routine_identifier' => $routine, 'routine_action_identifier' => $second, 'action_name' => 'changed action', 'position' => 4]);
-        $this->assertDatabaseHas('routine_execution_draft_tags', ['owner_account_identifier' => $owner, 'routine_identifier' => $routine, 'tag_identifier' => $tag]);
-        $this->assertDatabaseHas('routine_execution_draft_tags', ['owner_account_identifier' => $owner, 'routine_identifier' => $routine, 'tag_identifier' => $otherTag]);
+        $this->assertDatabaseHas('routine_execution_drafts', ['draft_creator_account_identifier' => $owner, 'routine_identifier' => $routine, 'parent_routine_identifier' => $parent, 'account_identifier' => $author, 'routine_name' => 'original', 'routine_memo' => 'memo', 'routine_execution_minutes' => 20, 'video_url' => 'https://youtu.be/dQw4w9WgXcQ', 'available' => false, 'source_created_at' => '2020-01-01 01:02:03', 'source_updated_at' => '2020-02-02 02:03:04']);
+        $this->assertDatabaseHas('routine_execution_drafts', ['draft_creator_account_identifier' => $other, 'routine_identifier' => $routine, 'routine_name' => 'changed']);
+        $this->assertDatabaseHas('routine_execution_draft_actions', ['draft_creator_account_identifier' => $owner, 'routine_identifier' => $routine, 'routine_action_identifier' => $first, 'parent_routine_action_identifier' => null, 'action_name' => 'first', 'action_memo' => 'first memo', 'action_minutes' => 5, 'position' => 0, 'video_url' => 'https://youtu.be/dQw4w9WgXcQ']);
+        $this->assertDatabaseHas('routine_execution_draft_actions', ['draft_creator_account_identifier' => $owner, 'routine_identifier' => $routine, 'routine_action_identifier' => $second, 'parent_routine_action_identifier' => $first, 'action_name' => 'second', 'action_memo' => 'second memo', 'action_minutes' => 6, 'position' => 1, 'video_url' => 'https://youtu.be/dQw4w9WgXcQ?x=2', 'available' => false, 'source_created_at' => '2020-01-02 03:04:05', 'source_updated_at' => '2020-02-03 04:05:06']);
+        $this->assertDatabaseHas('routine_execution_draft_actions', ['draft_creator_account_identifier' => $other, 'routine_identifier' => $routine, 'routine_action_identifier' => $second, 'action_name' => 'changed action', 'position' => 4]);
+        $this->assertDatabaseHas('routine_execution_draft_tags', ['draft_creator_account_identifier' => $owner, 'routine_identifier' => $routine, 'tag_identifier' => $tag]);
+        $this->assertDatabaseHas('routine_execution_draft_tags', ['draft_creator_account_identifier' => $owner, 'routine_identifier' => $routine, 'tag_identifier' => $otherTag]);
         $this->assertDatabaseCount('routine_execution_draft_tags', 2);
         DB::table('routines')->where('routine_identifier', $routine)->delete();
         DB::table('tags')->where('tag_identifier', $tag)->delete();
-        $this->assertDatabaseHas('routine_execution_drafts', ['owner_account_identifier' => $owner, 'routine_identifier' => $routine, 'routine_name' => 'original']);
+        $this->assertDatabaseHas('routine_execution_drafts', ['draft_creator_account_identifier' => $owner, 'routine_identifier' => $routine, 'routine_name' => 'original']);
         $this->assertDatabaseCount('routine_execution_draft_actions', 4);
-        $this->assertDatabaseHas('routine_execution_draft_actions', ['owner_account_identifier' => $owner, 'routine_identifier' => $routine, 'routine_action_identifier' => $second, 'parent_routine_action_identifier' => $first, 'position' => 1]);
-        $this->assertDatabaseHas('routine_execution_draft_tags', ['owner_account_identifier' => $owner, 'routine_identifier' => $routine, 'tag_identifier' => $tag]);
+        $this->assertDatabaseHas('routine_execution_draft_actions', ['draft_creator_account_identifier' => $owner, 'routine_identifier' => $routine, 'routine_action_identifier' => $second, 'parent_routine_action_identifier' => $first, 'position' => 1]);
+        $this->assertDatabaseHas('routine_execution_draft_tags', ['draft_creator_account_identifier' => $owner, 'routine_identifier' => $routine, 'tag_identifier' => $tag]);
         $this->assertDatabaseCount('posts', 0);
         $this->assertDatabaseCount('routine_executions', 0);
         $this->assertDatabaseCount('routine_execution_actions', 0);
         $this->assertDatabaseHas('accounts', ['account_identifier' => $owner, 'experience' => 0]);
         $this->assertDatabaseHas('accounts', ['account_identifier' => $other, 'experience' => 0]);
+
+        DB::table('accounts')->where('account_identifier', $owner)->delete();
+        $this->assertDatabaseMissing('routine_execution_drafts', ['draft_creator_account_identifier' => $owner, 'routine_identifier' => $routine]);
+        $this->assertDatabaseMissing('routine_execution_draft_actions', ['draft_creator_account_identifier' => $owner, 'routine_identifier' => $routine]);
+        $this->assertDatabaseMissing('routine_execution_draft_tags', ['draft_creator_account_identifier' => $owner, 'routine_identifier' => $routine]);
+        $this->assertDatabaseHas('routine_execution_drafts', ['draft_creator_account_identifier' => $other, 'routine_identifier' => $routine]);
+        $this->assertDatabaseHas('routine_execution_draft_actions', ['draft_creator_account_identifier' => $other, 'routine_identifier' => $routine]);
     }
 
     public function test_failed_action_insert_rolls_back_the_entire_draft(): void

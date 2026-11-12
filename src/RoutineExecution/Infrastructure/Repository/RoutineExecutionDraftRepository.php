@@ -13,7 +13,7 @@ final class RoutineExecutionDraftRepository implements RoutineExecutionDraftRepo
     public function save(RoutineExecutionDraft $draft): void
     {
         $routine = $draft->routine;
-        $key = ['owner_account_identifier' => $draft->owner->value(), 'routine_identifier' => $routine->routineIdentifier()->value()];
+        $key = ['draft_creator_account_identifier' => $draft->draftCreatorAccountIdentifier->value(), 'routine_identifier' => $routine->routineIdentifier()->value()];
         $metadata = DB::table('routines')->where('routine_identifier', $routine->routineIdentifier()->value())->first(['available', 'created_at', 'updated_at']);
         $actionMetadata = DB::table('routine_actions')->where('routine_identifier', $routine->routineIdentifier()->value())
             ->get(['routine_action_identifier', 'available', 'created_at', 'updated_at'])->keyBy('routine_action_identifier');

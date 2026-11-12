@@ -26,7 +26,7 @@ final readonly class CreateRoutineExecutionDraft implements CreateRoutineExecuti
             $routine = $this->routineRepository->findByIdentifier($input->routineIdentifier())
                 ?? throw new RoutineNotFoundException;
             $actions = $this->actionRepository->findByIdentifiers($routine->routineActionIdentifiers()->values());
-            $this->draftRepository->save(new RoutineExecutionDraft($input->ownerAccountIdentifier(), $routine, $actions));
+            $this->draftRepository->save(new RoutineExecutionDraft($input->draftCreatorAccountIdentifier(), $routine, $actions));
         });
     }
 }
