@@ -47,11 +47,6 @@ final class CreateRoutineTest extends TestCase
         {
             public ?Routine $savedRoutine = null;
 
-            public function findByIdentifier(RoutineIdentifier $identifier): ?Routine
-            {
-                return null;
-            }
-
             public function save(Routine $routine): void
             {
                 $this->savedRoutine = $routine;
