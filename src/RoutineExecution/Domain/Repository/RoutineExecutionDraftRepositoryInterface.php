@@ -15,4 +15,6 @@ interface RoutineExecutionDraftRepositoryInterface
     public function save(RoutineExecutionDraft $routineExecutionDraft): void;
 
     public function updateMemo(RoutineExecutionDraft $routineExecutionDraft): void;
+
+    public function updateActions(RoutineExecutionDraft $routineExecutionDraft): void;
 }

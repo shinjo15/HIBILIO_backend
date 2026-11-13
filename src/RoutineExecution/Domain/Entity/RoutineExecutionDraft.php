@@ -12,6 +12,9 @@ use Src\Shared\Domain\ValueObject\Identifier\RoutineIdentifier;
 
 final class RoutineExecutionDraft
 {
+    /** @var list<RoutineExecutionAction> */
+    private array $actions = [];
+
     public function __construct(
         private readonly RoutineExecutionIdentifier $routineExecutionIdentifier,
         private readonly AccountIdentifier $executorAccountIdentifier,
@@ -48,5 +51,22 @@ final class RoutineExecutionDraft
     public function changeMemo(?RoutineExecutionMemo $memo): void
     {
         $this->routineExecutionMemo = $memo;
+    }
+
+    /** @param list<RoutineExecutionAction> $actions */
+    public function changeActions(array $actions): void
+    {
+        foreach ($actions as $action) {
+            if ($action->routineExecutionIdentifier()->value() !== $this->routineExecutionIdentifier->value()) {
+                throw new \InvalidArgumentException('実行記録が一致しません。');
+            }
+        }
+        $this->actions = $actions;
+    }
+
+    /** @return list<RoutineExecutionAction> */
+    public function actions(): array
+    {
+        return $this->actions;
     }
 }
