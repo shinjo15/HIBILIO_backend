@@ -33,6 +33,7 @@ final class RoutineExecutionDraftRepository implements RoutineExecutionDraftRepo
             new ExecutedAt($model->executed_at->toDateTimeImmutable()),
             $model->routine_execution_memo === null ? null : new RoutineExecutionMemo($model->routine_execution_memo),
         );
+
     }
 
     public function save(RoutineExecutionDraft $routineExecutionDraft): void
