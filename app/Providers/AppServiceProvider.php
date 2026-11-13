@@ -202,12 +202,14 @@ use Src\RoutineExecution\Application\Usecase\Query\GetMyRoutineExecutionHistory\
 use Src\RoutineExecution\Application\Usecase\Query\GetRecentExecutedRoutines\GetRecentExecutedRoutinesInterface;
 use Src\RoutineExecution\Application\Usecase\Query\GetRoutineExecutionDetails\GetRoutineExecutionDetailsInterface;
 use Src\RoutineExecution\Domain\Factory\RoutineExecutionActionFactoryInterface;
+use Src\RoutineExecution\Domain\Factory\RoutineExecutionDraftFactoryInterface;
 use Src\RoutineExecution\Domain\Factory\RoutineExecutionFactoryInterface;
 use Src\RoutineExecution\Domain\Repository\AccountRepositoryInterface as RoutineExecutionAccountRepositoryInterface;
 use Src\RoutineExecution\Domain\Repository\RoutineExecutionActionRepositoryInterface;
 use Src\RoutineExecution\Domain\Repository\RoutineExecutionDraftRepositoryInterface;
 use Src\RoutineExecution\Domain\Repository\RoutineExecutionRepositoryInterface;
 use Src\RoutineExecution\Infrastructure\Factory\RoutineExecutionActionFactory;
+use Src\RoutineExecution\Infrastructure\Factory\RoutineExecutionDraftFactory;
 use Src\RoutineExecution\Infrastructure\Factory\RoutineExecutionFactory;
 use Src\RoutineExecution\Infrastructure\Query\GetAccountRoutineExecutions\GetAccountRoutineExecutions;
 use Src\RoutineExecution\Infrastructure\Query\GetMostExecutedRoutines\GetMostExecutedRoutines;
@@ -381,6 +383,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(GetRoutineExecutionPostsInterface::class, GetRoutineExecutionPosts::class);
         $this->app->bind(SearchRoutinesInterface::class, SearchRoutines::class);
         $this->app->bind(RoutineExecutionFactoryInterface::class, RoutineExecutionFactory::class);
+        $this->app->bind(RoutineExecutionDraftFactoryInterface::class, RoutineExecutionDraftFactory::class);
         $this->app->bind(RoutineExecutionAccountRepositoryInterface::class, RoutineExecutionAccountRepository::class);
         $this->app->bind(RoutineExecutionActionFactoryInterface::class, RoutineExecutionActionFactory::class);
         $this->app->bind(RoutineExecutionRepositoryInterface::class, RoutineExecutionRepository::class);

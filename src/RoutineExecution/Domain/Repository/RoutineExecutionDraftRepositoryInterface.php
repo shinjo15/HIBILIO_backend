@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Src\RoutineExecution\Domain\Repository;
 
-use Src\RoutineExecution\Domain\Entity\RoutineExecution;
+use Src\RoutineExecution\Domain\Entity\RoutineExecutionDraft;
 
 interface RoutineExecutionDraftRepositoryInterface
 {
-    public function save(RoutineExecution $routineExecution): void;
+    public function save(RoutineExecutionDraft $routineExecutionDraft): void;
 }
