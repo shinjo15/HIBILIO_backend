@@ -18,6 +18,7 @@ final readonly class UpdateRoutineExecutionDraftMemo implements UpdateRoutineExe
             throw new RoutineExecutionDraftNotFoundException;
         }
 
-        $this->repository->updateMemo($draft->withMemo($input->memo()));
+        $draft->changeMemo($input->memo());
+        $this->repository->updateMemo($draft);
     }
 }

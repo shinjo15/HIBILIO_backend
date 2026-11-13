@@ -71,7 +71,8 @@ final class UpdateRoutineExecutionDraftMemoActionTest extends TestCase
         DB::table('routine_execution_drafts')->where('routine_execution_identifier', self::DRAFT)->delete();
 
         try {
-            $repository->updateMemo($draft->withMemo(new RoutineExecutionMemo('変更')));
+            $draft->changeMemo(new RoutineExecutionMemo('変更'));
+            $repository->updateMemo($draft);
             self::fail('A deleted draft must not be recreated.');
         } catch (RoutineExecutionDraftNotFoundException) {
             $this->assertDatabaseMissing('routine_execution_drafts', ['routine_execution_identifier' => self::DRAFT]);
@@ -97,7 +98,8 @@ final class UpdateRoutineExecutionDraftMemoActionTest extends TestCase
         DB::table('routine_execution_drafts')->insert(['routine_execution_identifier' => $replacement, 'executor_account_identifier' => self::ACCOUNT, 'routine_identifier' => self::ROUTINE, 'executed_at' => '2026-03-01 12:00:00', 'routine_execution_memo' => '新規']);
 
         try {
-            $repository->updateMemo($draft->withMemo(new RoutineExecutionMemo('古い変更')));
+            $draft->changeMemo(new RoutineExecutionMemo('古い変更'));
+            $repository->updateMemo($draft);
             self::fail('The original draft no longer exists.');
         } catch (RoutineExecutionDraftNotFoundException) {
             $this->assertDatabaseMissing('routine_execution_drafts', ['routine_execution_identifier' => self::DRAFT]);
@@ -111,7 +113,8 @@ final class UpdateRoutineExecutionDraftMemoActionTest extends TestCase
         $draft = $repository->find(new AccountIdentifier(self::ACCOUNT), new RoutineIdentifier(self::ROUTINE));
         self::assertNotNull($draft);
         DB::table('routine_execution_drafts')->where('routine_execution_identifier', self::DRAFT)->update(['executed_at' => '2026-04-01 12:00:00', 'updated_at' => '2026-04-02 12:00:00']);
-        $repository->updateMemo($draft->withMemo(new RoutineExecutionMemo('変更')));
+        $draft->changeMemo(new RoutineExecutionMemo('変更'));
+        $repository->updateMemo($draft);
         $this->assertDatabaseHas('routine_execution_drafts', ['routine_execution_identifier' => self::DRAFT, 'executed_at' => '2026-04-01 12:00:00', 'updated_at' => '2026-04-02 12:00:00', 'routine_execution_memo' => '変更']);
     }
 

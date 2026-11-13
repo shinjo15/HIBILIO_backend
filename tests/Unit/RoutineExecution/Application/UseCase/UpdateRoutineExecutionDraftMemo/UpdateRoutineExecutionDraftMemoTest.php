@@ -29,21 +29,20 @@ final class UpdateRoutineExecutionDraftMemoTest extends TestCase
         $memo = new RoutineExecutionMemo('新');
         $repository = $this->createMock(RoutineExecutionDraftRepositoryInterface::class);
         $repository->expects(self::exactly(2))->method('find')->with($account, $routine)->willReturn($draft);
-        $saved = [];
-        $repository->expects(self::exactly(2))->method('updateMemo')->willReturnCallback(function (RoutineExecutionDraft $entity) use (&$saved): void {
-            $saved[] = $entity;
-        });
-        $useCase = new UpdateRoutineExecutionDraftMemo($repository);
-        $useCase->execute(new UpdateRoutineExecutionDraftMemoInput($account, $routine, $memo));
-        $useCase->execute(new UpdateRoutineExecutionDraftMemoInput($account, $routine, null));
-        self::assertSame($memo, $saved[0]->routineExecutionMemo());
-        self::assertNull($saved[1]->routineExecutionMemo());
-        foreach ($saved as $entity) {
+        $savedMemos = [];
+        $repository->expects(self::exactly(2))->method('updateMemo')->willReturnCallback(function (RoutineExecutionDraft $entity) use (&$savedMemos, $draft, $id, $account, $routine, $time): void {
+            self::assertSame($draft, $entity);
+            $savedMemos[] = $entity->routineExecutionMemo();
             self::assertSame($id, $entity->routineExecutionIdentifier());
             self::assertSame($account, $entity->executorAccountIdentifier());
             self::assertSame($routine, $entity->routineIdentifier());
             self::assertSame($time, $entity->executedAt());
-        }
+        });
+        $useCase = new UpdateRoutineExecutionDraftMemo($repository);
+        $useCase->execute(new UpdateRoutineExecutionDraftMemoInput($account, $routine, $memo));
+        $useCase->execute(new UpdateRoutineExecutionDraftMemoInput($account, $routine, null));
+        self::assertSame($memo, $savedMemos[0]);
+        self::assertNull($savedMemos[1]);
     }
 
     public function test_missing_draft_throws_without_saving(): void

@@ -10,13 +10,13 @@ use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Src\Shared\Domain\ValueObject\Identifier\RoutineExecutionIdentifier;
 use Src\Shared\Domain\ValueObject\Identifier\RoutineIdentifier;
 
-final readonly class RoutineExecutionDraft
+final class RoutineExecutionDraft
 {
     public function __construct(
-        private RoutineExecutionIdentifier $routineExecutionIdentifier,
-        private AccountIdentifier $executorAccountIdentifier,
-        private RoutineIdentifier $routineIdentifier,
-        private ExecutedAt $executedAt,
+        private readonly RoutineExecutionIdentifier $routineExecutionIdentifier,
+        private readonly AccountIdentifier $executorAccountIdentifier,
+        private readonly RoutineIdentifier $routineIdentifier,
+        private readonly ExecutedAt $executedAt,
         private ?RoutineExecutionMemo $routineExecutionMemo,
     ) {}
 
@@ -45,8 +45,8 @@ final readonly class RoutineExecutionDraft
         return $this->routineExecutionMemo;
     }
 
-    public function withMemo(?RoutineExecutionMemo $memo): self
+    public function changeMemo(?RoutineExecutionMemo $memo): void
     {
-        return new self($this->routineExecutionIdentifier, $this->executorAccountIdentifier, $this->routineIdentifier, $this->executedAt, $memo);
+        $this->routineExecutionMemo = $memo;
     }
 }
