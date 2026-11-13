@@ -9,9 +9,19 @@ use Src\RoutineExecution\Domain\Entity\RoutineExecutionAction;
 use Src\RoutineExecution\Domain\Entity\RoutineExecutionDraft;
 use Src\RoutineExecution\Domain\Exception\RoutineExecutionDraftNotFoundException;
 use Src\RoutineExecution\Domain\Repository\RoutineExecutionActionDraftRepositoryInterface;
+use Src\Shared\Domain\ValueObject\Identifier\RoutineActionIdentifier;
 
 final class RoutineExecutionActionDraftRepository implements RoutineExecutionActionDraftRepositoryInterface
 {
+    public function findByDraft(RoutineExecutionDraft $draft): array
+    {
+        return DB::table('routine_execution_action_drafts')
+            ->where('routine_execution_identifier', $draft->routineExecutionIdentifier()->value())
+            ->pluck('routine_action_identifier')
+            ->map(fn (string $id) => new RoutineExecutionAction($draft->routineExecutionIdentifier(), new RoutineActionIdentifier($id)))
+            ->all();
+    }
+
     public function save(RoutineExecutionAction $action, RoutineExecutionDraft $draft): void
     {
         $this->change($action, $draft, true);

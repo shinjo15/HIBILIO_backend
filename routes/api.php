@@ -50,6 +50,7 @@ use App\Http\Actions\Routine\GetCustomizedRoutinesAction;
 use App\Http\Actions\Routine\GetRoutineDetailsAction;
 use App\Http\Actions\Routine\GetRoutineExecutionPostsAction;
 use App\Http\Actions\Routine\SearchRoutinesAction;
+use App\Http\Actions\RoutineExecution\CompleteRoutineExecutionDraftAction;
 use App\Http\Actions\RoutineExecution\CreateRoutineExecutionAction;
 use App\Http\Actions\RoutineExecution\CreateRoutineExecutionDraftAction;
 use App\Http\Actions\RoutineExecution\GetAccountRoutineExecutionsAction;
@@ -114,6 +115,7 @@ Route::middleware('web')->group(static function (): void {
     Route::get('/routines/{routine_identifier}/execution-posts', GetRoutineExecutionPostsAction::class);
     Route::patch('/routines/{routine_identifier}/execution-draft/memo', UpdateRoutineExecutionDraftMemoAction::class);
     Route::patch('/routines/{routine_identifier}/execution-draft/actions', UpdateRoutineExecutionDraftActionsAction::class);
+    Route::post('/routines/{routine_identifier}/execution-draft/complete', CompleteRoutineExecutionDraftAction::class);
     Route::get('/routines/{routine_identifier}', GetRoutineDetailsAction::class);
     Route::post('/routine-executions', CreateRoutineExecutionAction::class);
     Route::post('/routine-execution-drafts', CreateRoutineExecutionDraftAction::class);

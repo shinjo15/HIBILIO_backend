@@ -38,6 +38,11 @@ final class RoutineExecutionDraftRepository implements RoutineExecutionDraftRepo
 
     }
 
+    public function delete(RoutineExecutionDraft $routineExecutionDraft): void
+    {
+        RoutineExecutionDraftModel::query()->where('routine_execution_identifier', $routineExecutionDraft->routineExecutionIdentifier()->value())->delete();
+    }
+
     public function save(RoutineExecutionDraft $routineExecutionDraft): void
     {
         try {

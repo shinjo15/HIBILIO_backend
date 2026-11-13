@@ -9,6 +9,8 @@ use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
 interface AccountRepositoryInterface
 {
+    public function find(AccountIdentifier $accountIdentifier): ?Account;
+
     /** Must be called within the transaction that saves experience. */
     public function findForUpdate(AccountIdentifier $accountIdentifier): ?Account;
 

@@ -27,6 +27,11 @@ $app->instance(AccountRepositoryInterface::class, new class($repository, $mode) 
 {
     public function __construct(private AccountRepositoryInterface $inner, private string $mode) {}
 
+    public function find(AccountIdentifier $id): ?Account
+    {
+        return $this->inner->find($id);
+    }
+
     public function findForUpdate(AccountIdentifier $id): ?Account
     {
         $account = $this->inner->findForUpdate($id);
