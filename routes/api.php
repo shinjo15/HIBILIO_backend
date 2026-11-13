@@ -55,6 +55,7 @@ use App\Http\Actions\RoutineExecution\CreateRoutineExecutionAction;
 use App\Http\Actions\RoutineExecution\CreateRoutineExecutionDraftAction;
 use App\Http\Actions\RoutineExecution\GetAccountRoutineExecutionsAction;
 use App\Http\Actions\RoutineExecution\GetMostExecutedRoutinesAction;
+use App\Http\Actions\RoutineExecution\GetMyRoutineExecutionDraftsAction;
 use App\Http\Actions\RoutineExecution\GetMyRoutineExecutionHistoryAction;
 use App\Http\Actions\RoutineExecution\GetMyRoutineExecutionsAction;
 use App\Http\Actions\RoutineExecution\GetRecentExecutedRoutinesAction;
@@ -97,6 +98,7 @@ Route::middleware('web')->group(static function (): void {
     Route::get('/my/routines/most-executed', GetMostExecutedRoutinesAction::class);
     Route::get('/my/posts', GetMyPostsAction::class);
     Route::get('/my/routine-executions', GetMyRoutineExecutionsAction::class);
+    Route::get('/my/routine-execution-drafts', GetMyRoutineExecutionDraftsAction::class);
     Route::get('/my/routine-executions/history', GetMyRoutineExecutionHistoryAction::class);
     Route::get('/my/notifications', GetMyNotificationsAction::class);
     Route::get('/my/notifications/unread-count', GetMyUnreadNotificationCountAction::class);
