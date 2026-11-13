@@ -17,6 +17,5 @@ interface RoutineExecutionDraftRepositoryInterface
 
     public function updateMemo(RoutineExecutionDraft $routineExecutionDraft): void;
 
-    /** 指定した行動のみをEntityの現在の状態に更新する。 */
     public function updateAction(RoutineExecutionDraft $routineExecutionDraft, RoutineActionIdentifier $actionIdentifier): void;
 }
