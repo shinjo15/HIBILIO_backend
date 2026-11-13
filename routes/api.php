@@ -51,6 +51,7 @@ use App\Http\Actions\Routine\GetRoutineDetailsAction;
 use App\Http\Actions\Routine\GetRoutineExecutionPostsAction;
 use App\Http\Actions\Routine\SearchRoutinesAction;
 use App\Http\Actions\RoutineExecution\CreateRoutineExecutionAction;
+use App\Http\Actions\RoutineExecution\CreateRoutineExecutionDraftAction;
 use App\Http\Actions\RoutineExecution\GetAccountRoutineExecutionsAction;
 use App\Http\Actions\RoutineExecution\GetMostExecutedRoutinesAction;
 use App\Http\Actions\RoutineExecution\GetMyRoutineExecutionHistoryAction;
@@ -115,6 +116,7 @@ Route::middleware('web')->group(static function (): void {
     Route::patch('/routines/{routine_identifier}/execution-draft/actions', UpdateRoutineExecutionDraftActionsAction::class);
     Route::get('/routines/{routine_identifier}', GetRoutineDetailsAction::class);
     Route::post('/routine-executions', CreateRoutineExecutionAction::class);
+    Route::post('/routine-execution-drafts', CreateRoutineExecutionDraftAction::class);
     Route::get('/routine-executions/{routine_execution_identifier}', GetRoutineExecutionDetailsAction::class)->whereUuid('routine_execution_identifier');
     Route::get('/tags', GetTagsAction::class);
     Route::get('/tags/pickup', GetPickupTagsAction::class);

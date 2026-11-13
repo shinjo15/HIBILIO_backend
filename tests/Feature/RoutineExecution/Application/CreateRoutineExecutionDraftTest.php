@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\Feature\RoutineExecution\Application;
 
-use Illuminate\Database\QueryException;
-use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Src\Routine\Domain\Exception\RoutineNotFoundException;
 use Src\RoutineExecution\Application\UseCase\CreateRoutineExecutionDraft\CreateRoutineExecutionDraftInput;
 use Src\RoutineExecution\Application\UseCase\CreateRoutineExecutionDraft\CreateRoutineExecutionDraftInterface;
+use Src\RoutineExecution\Domain\Exception\RoutineExecutionDraftAlreadyExistsException;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Src\Shared\Domain\ValueObject\Identifier\RoutineIdentifier;
 use Tests\TestCase;
@@ -73,7 +73,7 @@ final class CreateRoutineExecutionDraftTest extends TestCase
         $this->assertDatabaseCount('routine_execution_drafts', 3);
     }
 
-    public function test_duplicate_insert_raises_a_unique_constraint_error_without_changing_the_existing_draft(): void
+    public function test_duplicate_insert_raises_a_domain_error_without_changing_the_existing_draft(): void
     {
         DB::table('accounts')->insert(['account_identifier' => self::ACCOUNT, 'account_name' => 'User', 'email_address' => 'user@example.com']);
         DB::table('routines')->insert(['routine_identifier' => self::ROUTINE, 'routine_name' => 'Routine', 'account_identifier' => self::ACCOUNT]);
@@ -86,13 +86,13 @@ final class CreateRoutineExecutionDraftTest extends TestCase
         try {
             $useCase->execute($input);
             self::fail('Duplicate draft must not be inserted.');
-        } catch (UniqueConstraintViolationException) {
+        } catch (RoutineExecutionDraftAlreadyExistsException) {
             $this->assertDatabaseCount('routine_execution_drafts', 1);
             self::assertEquals($original, DB::table('routine_execution_drafts')->first());
         }
     }
 
-    public function test_missing_routine_raises_a_foreign_key_error(): void
+    public function test_missing_routine_raises_a_not_found_error(): void
     {
         DB::table('accounts')->insert(['account_identifier' => self::ACCOUNT, 'account_name' => 'User', 'email_address' => 'user@example.com']);
         try {
@@ -100,8 +100,8 @@ final class CreateRoutineExecutionDraftTest extends TestCase
                 new CreateRoutineExecutionDraftInput(new AccountIdentifier(self::ACCOUNT), new RoutineIdentifier(self::ROUTINE)),
             );
             self::fail('A draft cannot reference a missing routine.');
-        } catch (QueryException $exception) {
-            self::assertNotInstanceOf(UniqueConstraintViolationException::class, $exception);
+        } catch (RoutineNotFoundException $exception) {
+            self::assertInstanceOf(RoutineNotFoundException::class, $exception);
             $this->assertDatabaseCount('routine_execution_drafts', 0);
         }
     }

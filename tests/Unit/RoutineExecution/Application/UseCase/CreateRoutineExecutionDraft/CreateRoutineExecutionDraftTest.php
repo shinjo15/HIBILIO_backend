@@ -6,6 +6,7 @@ namespace Tests\Unit\RoutineExecution\Application\UseCase\CreateRoutineExecution
 
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
+use Src\Routine\Application\Usecase\Query\IsRoutineVisible\IsRoutineVisibleInterface;
 use Src\RoutineExecution\Application\UseCase\CreateRoutineExecutionDraft\CreateRoutineExecutionDraft;
 use Src\RoutineExecution\Application\UseCase\CreateRoutineExecutionDraft\CreateRoutineExecutionDraftInput;
 use Src\RoutineExecution\Domain\Entity\RoutineExecutionDraft;
@@ -34,7 +35,9 @@ final class CreateRoutineExecutionDraftTest extends TestCase
         $repository = $this->createMock(RoutineExecutionDraftRepositoryInterface::class);
         $repository->expects(self::once())->method('save')->with(self::identicalTo($draft));
 
-        $useCase = new CreateRoutineExecutionDraft($factory, $repository);
+        $visibility = $this->createMock(IsRoutineVisibleInterface::class);
+        $visibility->expects(self::once())->method('execute')->with($routine->value(), $account->value())->willReturn(true);
+        $useCase = new CreateRoutineExecutionDraft($factory, $repository, $visibility);
 
         self::assertNull($useCase->execute(new CreateRoutineExecutionDraftInput($account, $routine)));
     }

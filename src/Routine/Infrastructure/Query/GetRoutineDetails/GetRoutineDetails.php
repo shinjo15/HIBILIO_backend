@@ -10,6 +10,7 @@ use Src\Routine\Application\Usecase\Query\GetRoutineDetails\GetRoutineDetailsInp
 use Src\Routine\Application\Usecase\Query\GetRoutineDetails\GetRoutineDetailsInterface;
 use Src\Routine\Application\Usecase\Query\GetRoutineDetails\GetRoutineDetailsOutput;
 use Src\Routine\Application\Usecase\Query\GetRoutineDetails\GetRoutineDetailsOutputPort;
+use Src\Routine\Infrastructure\Query\VisibleRoutineQuery;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Src\Shared\Infrastructure\Query\Account\PrivateAccountVisibility;
 use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
@@ -20,12 +21,7 @@ final class GetRoutineDetails implements GetRoutineDetailsInterface
 
     public function execute(GetRoutineDetailsInputPort $input): GetRoutineDetailsOutputPort
     {
-        $query = DB::table('routines')
-            ->join('accounts', 'routines.account_identifier', '=', 'accounts.account_identifier')
-            ->where('routines.routine_identifier', $input->routineIdentifier())
-            ->where('routines.available', true)
-            ->where('accounts.available', true)
-            ->where('accounts.status', 'active')
+        $query = VisibleRoutineQuery::for($input->routineIdentifier(), $input->viewerAccountIdentifier())
             ->select([
                 'routines.account_identifier',
                 'accounts.account_name',
@@ -43,11 +39,6 @@ final class GetRoutineDetails implements GetRoutineDetailsInterface
         } else {
             $query->selectSub($this->liked($input->viewerAccountIdentifier()), 'liked');
         }
-
-        if ($input->viewerAccountIdentifier() !== null) {
-            BlockVisibility::exclude($query, $input->viewerAccountIdentifier(), 'accounts.account_identifier');
-        }
-        PrivateAccountVisibility::exclude($query, $input->viewerAccountIdentifier(), 'accounts.account_identifier', 'accounts.visibility');
 
         $parents = DB::table('routines as parent_routines')
             ->join('accounts as parent_accounts', 'parent_routines.account_identifier', '=', 'parent_accounts.account_identifier')

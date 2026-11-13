@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Src\RoutineExecution\Infrastructure\Repository;
 
 use App\Models\RoutineExecutionDraftModel;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Src\RoutineExecution\Domain\Entity\RoutineExecutionDraft;
+use Src\RoutineExecution\Domain\Exception\RoutineExecutionDraftAlreadyExistsException;
 use Src\RoutineExecution\Domain\Exception\RoutineExecutionDraftNotFoundException;
 use Src\RoutineExecution\Domain\Repository\RoutineExecutionDraftRepositoryInterface;
 use Src\RoutineExecution\Domain\ValueObject\ExecutedAt;
@@ -38,13 +40,20 @@ final class RoutineExecutionDraftRepository implements RoutineExecutionDraftRepo
 
     public function save(RoutineExecutionDraft $routineExecutionDraft): void
     {
-        RoutineExecutionDraftModel::query()->create([
-            'routine_execution_identifier' => $routineExecutionDraft->routineExecutionIdentifier()->value(),
-            'executor_account_identifier' => $routineExecutionDraft->executorAccountIdentifier()->value(),
-            'routine_identifier' => $routineExecutionDraft->routineIdentifier()->value(),
-            'executed_at' => $routineExecutionDraft->executedAt()->value(),
-            'routine_execution_memo' => $routineExecutionDraft->routineExecutionMemo()?->value(),
-        ]);
+        try {
+            RoutineExecutionDraftModel::query()->create([
+                'routine_execution_identifier' => $routineExecutionDraft->routineExecutionIdentifier()->value(),
+                'executor_account_identifier' => $routineExecutionDraft->executorAccountIdentifier()->value(),
+                'routine_identifier' => $routineExecutionDraft->routineIdentifier()->value(),
+                'executed_at' => $routineExecutionDraft->executedAt()->value(),
+                'routine_execution_memo' => $routineExecutionDraft->routineExecutionMemo()?->value(),
+            ]);
+        } catch (UniqueConstraintViolationException $exception) {
+            if ($exception->index === 'execution_drafts_account_routine_unique' || ($exception->index === null && $exception->columns === ['executor_account_identifier', 'routine_identifier'])) {
+                throw new RoutineExecutionDraftAlreadyExistsException(previous: $exception);
+            }
+            throw $exception;
+        }
     }
 
     public function updateMemo(RoutineExecutionDraft $routineExecutionDraft): void
