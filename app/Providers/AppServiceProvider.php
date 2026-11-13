@@ -200,6 +200,7 @@ use Src\RoutineExecution\Application\UseCase\CreateRoutineExecutionDraft\CreateR
 use Src\RoutineExecution\Application\UseCase\CreateRoutineExecutionDraft\CreateRoutineExecutionDraftInterface;
 use Src\RoutineExecution\Application\Usecase\Query\GetAccountRoutineExecutions\GetAccountRoutineExecutionsInterface;
 use Src\RoutineExecution\Application\Usecase\Query\GetMostExecutedRoutines\GetMostExecutedRoutinesInterface;
+use Src\RoutineExecution\Application\Usecase\Query\GetMyRoutineExecutionDrafts\GetMyRoutineExecutionDraftsInterface;
 use Src\RoutineExecution\Application\Usecase\Query\GetMyRoutineExecutionHistory\GetMyRoutineExecutionHistoryInterface;
 use Src\RoutineExecution\Application\Usecase\Query\GetRecentExecutedRoutines\GetRecentExecutedRoutinesInterface;
 use Src\RoutineExecution\Application\Usecase\Query\GetRoutineExecutionDetails\GetRoutineExecutionDetailsInterface;
@@ -220,6 +221,7 @@ use Src\RoutineExecution\Infrastructure\Factory\RoutineExecutionDraftFactory;
 use Src\RoutineExecution\Infrastructure\Factory\RoutineExecutionFactory;
 use Src\RoutineExecution\Infrastructure\Query\GetAccountRoutineExecutions\GetAccountRoutineExecutions;
 use Src\RoutineExecution\Infrastructure\Query\GetMostExecutedRoutines\GetMostExecutedRoutines;
+use Src\RoutineExecution\Infrastructure\Query\GetMyRoutineExecutionDrafts\GetMyRoutineExecutionDrafts;
 use Src\RoutineExecution\Infrastructure\Query\GetMyRoutineExecutionHistory\GetMyRoutineExecutionHistory;
 use Src\RoutineExecution\Infrastructure\Query\GetRecentExecutedRoutines\GetRecentExecutedRoutines;
 use Src\RoutineExecution\Infrastructure\Query\GetRoutineExecutionDetails\GetRoutineExecutionDetails;
@@ -405,6 +407,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(CreateRoutineExecutionInterface::class, CreateRoutineExecution::class);
         $this->app->bind(GetAccountRoutineExecutionsInterface::class, GetAccountRoutineExecutions::class);
         $this->app->bind(GetMyRoutineExecutionHistoryInterface::class, GetMyRoutineExecutionHistory::class);
+        $this->app->bind(GetMyRoutineExecutionDraftsInterface::class, GetMyRoutineExecutionDrafts::class);
         $this->app->bind(GetRoutineExecutionDetailsInterface::class, GetRoutineExecutionDetails::class);
         $this->app->bind(ReportFactoryInterface::class, ReportFactory::class);
         $this->app->bind(ReportAccountRepositoryInterface::class, ReportAccountRepository::class);
