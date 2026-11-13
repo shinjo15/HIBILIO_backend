@@ -192,6 +192,8 @@ use Src\Routine\Infrastructure\Query\GetRoutineExecutionPosts\GetRoutineExecutio
 use Src\Routine\Infrastructure\Query\SearchRoutines\SearchRoutines;
 use Src\Routine\Infrastructure\Repository\RoutineActionRepository;
 use Src\Routine\Infrastructure\Repository\RoutineRepository;
+use Src\RoutineExecution\Application\UseCase\CompleteRoutineExecutionDraft\CompleteRoutineExecutionDraft;
+use Src\RoutineExecution\Application\UseCase\CompleteRoutineExecutionDraft\CompleteRoutineExecutionDraftInterface;
 use Src\RoutineExecution\Application\UseCase\CreateRoutineExecution\CreateRoutineExecution;
 use Src\RoutineExecution\Application\UseCase\CreateRoutineExecution\CreateRoutineExecutionInterface;
 use Src\RoutineExecution\Application\UseCase\CreateRoutineExecutionDraft\CreateRoutineExecutionDraft;
@@ -394,6 +396,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(RoutineExecutionActionFactoryInterface::class, RoutineExecutionActionFactory::class);
         $this->app->bind(RoutineExecutionRepositoryInterface::class, RoutineExecutionRepository::class);
         $this->app->bind(RoutineExecutionDraftRepositoryInterface::class, RoutineExecutionDraftRepository::class);
+        $this->app->bind(CompleteRoutineExecutionDraftInterface::class, CompleteRoutineExecutionDraft::class);
         $this->app->bind(CreateRoutineExecutionDraftInterface::class, CreateRoutineExecutionDraft::class);
         $this->app->bind(UpdateRoutineExecutionDraftMemoInterface::class, UpdateRoutineExecutionDraftMemo::class);
         $this->app->bind(UpdateRoutineExecutionDraftActionsInterface::class, UpdateRoutineExecutionDraftActions::class);

@@ -9,6 +9,9 @@ use Src\RoutineExecution\Domain\Entity\RoutineExecutionDraft;
 
 interface RoutineExecutionActionDraftRepositoryInterface
 {
+    /** @return list<RoutineExecutionAction> */
+    public function findByDraft(RoutineExecutionDraft $draft): array;
+
     public function save(RoutineExecutionAction $action, RoutineExecutionDraft $draft): void;
 
     public function delete(RoutineExecutionAction $action, RoutineExecutionDraft $draft): void;

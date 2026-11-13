@@ -12,6 +12,8 @@ interface RoutineExecutionDraftRepositoryInterface
 {
     public function find(AccountIdentifier $executorAccountIdentifier, RoutineIdentifier $routineIdentifier): ?RoutineExecutionDraft;
 
+    public function delete(RoutineExecutionDraft $routineExecutionDraft): void;
+
     public function save(RoutineExecutionDraft $routineExecutionDraft): void;
 
     public function updateMemo(RoutineExecutionDraft $routineExecutionDraft): void;
