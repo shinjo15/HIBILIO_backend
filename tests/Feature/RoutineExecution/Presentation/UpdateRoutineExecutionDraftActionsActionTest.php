@@ -9,9 +9,11 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Src\RoutineExecution\Domain\Entity\RoutineExecutionAction;
 use Src\RoutineExecution\Domain\Exception\RoutineExecutionDraftNotFoundException;
+use Src\RoutineExecution\Domain\Repository\RoutineExecutionActionDraftRepositoryInterface;
 use Src\RoutineExecution\Domain\Repository\RoutineExecutionDraftRepositoryInterface;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Src\Shared\Domain\ValueObject\Identifier\RoutineActionIdentifier;
+use Src\Shared\Domain\ValueObject\Identifier\RoutineExecutionIdentifier;
 use Src\Shared\Domain\ValueObject\Identifier\RoutineIdentifier;
 use Tests\TestCase;
 
@@ -146,32 +148,47 @@ final class UpdateRoutineExecutionDraftActionsActionTest extends TestCase
         self::assertSame(2, DB::table('routine_execution_action_drafts')->where('routine_execution_identifier', self::DRAFT)->count());
     }
 
-    public function test_repository_restores_actions_and_does_not_update_a_deleted_draft(): void
+    public function test_repository_does_not_update_a_deleted_draft(): void
     {
         $repository = $this->app->make(RoutineExecutionDraftRepositoryInterface::class);
         $draft = $repository->find(new AccountIdentifier(self::ACCOUNT), new RoutineIdentifier(self::ROUTINE));
         self::assertNotNull($draft);
-        self::assertSame(self::A, $draft->actions()[0]->routineActionIdentifier()->value());
+        $action = new RoutineExecutionAction($draft->routineExecutionIdentifier(), new RoutineActionIdentifier(self::A));
         DB::table('routine_execution_drafts')->where('routine_execution_identifier', self::DRAFT)->delete();
         $this->expectException(RoutineExecutionDraftNotFoundException::class);
-        $repository->updateAction($draft, new RoutineActionIdentifier(self::A));
+        $this->app->make(RoutineExecutionActionDraftRepositoryInterface::class)->save($action, $draft);
     }
 
-    public function test_repository_saves_only_the_selected_action_from_entity_state(): void
+    public function test_repository_saves_and_deletes_only_the_selected_action(): void
     {
         $repository = $this->app->make(RoutineExecutionDraftRepositoryInterface::class);
         $draft = $repository->find(new AccountIdentifier(self::ACCOUNT), new RoutineIdentifier(self::ROUTINE));
         self::assertNotNull($draft);
-        $a = new RoutineActionIdentifier(self::A);
-        $b = new RoutineActionIdentifier(self::B);
-        $draft->changeAction(new RoutineExecutionAction($draft->routineExecutionIdentifier(), $a), false);
-        $draft->changeAction(new RoutineExecutionAction($draft->routineExecutionIdentifier(), $b), true);
+        $a = new RoutineExecutionAction($draft->routineExecutionIdentifier(), new RoutineActionIdentifier(self::A));
+        $b = new RoutineExecutionAction($draft->routineExecutionIdentifier(), new RoutineActionIdentifier(self::B));
+        $actions = $this->app->make(RoutineExecutionActionDraftRepositoryInterface::class);
 
-        $repository->updateAction($draft, $a);
+        $actions->delete($a, $draft);
         $this->assertDatabaseMissing('routine_execution_action_drafts', ['routine_execution_identifier' => self::DRAFT, 'routine_action_identifier' => self::A]);
         $this->assertDatabaseMissing('routine_execution_action_drafts', ['routine_execution_identifier' => self::DRAFT, 'routine_action_identifier' => self::B]);
-        $repository->updateAction($draft, $b);
+        $actions->save($b, $draft);
         $this->assertDatabaseHas('routine_execution_action_drafts', ['routine_execution_identifier' => self::DRAFT, 'routine_action_identifier' => self::B]);
+    }
+
+    public function test_repository_rejects_an_action_from_another_draft(): void
+    {
+        $draft = $this->app->make(RoutineExecutionDraftRepositoryInterface::class)
+            ->find(new AccountIdentifier(self::ACCOUNT), new RoutineIdentifier(self::ROUTINE));
+        self::assertNotNull($draft);
+        $action = new RoutineExecutionAction(new RoutineExecutionIdentifier(self::OTHER_DRAFT), new RoutineActionIdentifier(self::A));
+
+        try {
+            $this->app->make(RoutineExecutionActionDraftRepositoryInterface::class)->delete($action, $draft);
+            self::fail('Expected an identifier mismatch.');
+        } catch (\InvalidArgumentException) {
+            $this->assertDatabaseHas('routine_execution_action_drafts', ['routine_execution_identifier' => self::OTHER_DRAFT, 'routine_action_identifier' => self::A]);
+            $this->assertDatabaseHas('routine_execution_action_drafts', ['routine_execution_identifier' => self::DRAFT, 'routine_action_identifier' => self::A]);
+        }
     }
 
     public function test_stale_entity_save_preserves_unrelated_action_row(): void
@@ -185,9 +202,8 @@ final class UpdateRoutineExecutionDraftActionsActionTest extends TestCase
             'created_at' => '2020-01-01 00:00:00',
             'updated_at' => '2020-01-01 00:00:00',
         ]);
-        $a = new RoutineActionIdentifier(self::A);
-        $draft->changeAction(new RoutineExecutionAction($draft->routineExecutionIdentifier(), $a), false);
-        $repository->updateAction($draft, $a);
+        $a = new RoutineExecutionAction($draft->routineExecutionIdentifier(), new RoutineActionIdentifier(self::A));
+        $this->app->make(RoutineExecutionActionDraftRepositoryInterface::class)->delete($a, $draft);
 
         $this->assertDatabaseMissing('routine_execution_action_drafts', ['routine_execution_identifier' => self::DRAFT, 'routine_action_identifier' => self::A]);
         $this->assertDatabaseHas('routine_execution_action_drafts', ['routine_execution_identifier' => self::DRAFT, 'routine_action_identifier' => self::B, 'created_at' => '2020-01-01 00:00:00', 'updated_at' => '2020-01-01 00:00:00']);

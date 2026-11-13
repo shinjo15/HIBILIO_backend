@@ -7,12 +7,14 @@ namespace Src\RoutineExecution\Application\UseCase\UpdateRoutineExecutionDraftAc
 use Src\Routine\Domain\Repository\RoutineActionRepositoryInterface;
 use Src\RoutineExecution\Domain\Exception\RoutineExecutionDraftNotFoundException;
 use Src\RoutineExecution\Domain\Factory\RoutineExecutionActionFactoryInterface;
+use Src\RoutineExecution\Domain\Repository\RoutineExecutionActionDraftRepositoryInterface;
 use Src\RoutineExecution\Domain\Repository\RoutineExecutionDraftRepositoryInterface;
 
 final readonly class UpdateRoutineExecutionDraftActions implements UpdateRoutineExecutionDraftActionsInterface
 {
     public function __construct(
         private RoutineExecutionDraftRepositoryInterface $repository,
+        private RoutineExecutionActionDraftRepositoryInterface $actionDraftRepository,
         private RoutineActionRepositoryInterface $routineActionRepository,
         private RoutineExecutionActionFactoryInterface $factory,
     ) {}
@@ -33,7 +35,10 @@ final readonly class UpdateRoutineExecutionDraftActions implements UpdateRoutine
         }
 
         $action = $this->factory->create($draft->routineExecutionIdentifier(), $identifier);
-        $draft->changeAction($action, $input->isExecuted());
-        $this->repository->updateAction($draft, $identifier);
+        if ($input->isExecuted()) {
+            $this->actionDraftRepository->save($action, $draft);
+        } else {
+            $this->actionDraftRepository->delete($action, $draft);
+        }
     }
 }

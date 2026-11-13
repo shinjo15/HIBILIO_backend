@@ -6,7 +6,6 @@ namespace Src\RoutineExecution\Domain\Repository;
 
 use Src\RoutineExecution\Domain\Entity\RoutineExecutionDraft;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
-use Src\Shared\Domain\ValueObject\Identifier\RoutineActionIdentifier;
 use Src\Shared\Domain\ValueObject\Identifier\RoutineIdentifier;
 
 interface RoutineExecutionDraftRepositoryInterface
@@ -16,6 +15,4 @@ interface RoutineExecutionDraftRepositoryInterface
     public function save(RoutineExecutionDraft $routineExecutionDraft): void;
 
     public function updateMemo(RoutineExecutionDraft $routineExecutionDraft): void;
-
-    public function updateAction(RoutineExecutionDraft $routineExecutionDraft, RoutineActionIdentifier $actionIdentifier): void;
 }
