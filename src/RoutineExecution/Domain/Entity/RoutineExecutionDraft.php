@@ -44,4 +44,9 @@ final readonly class RoutineExecutionDraft
     {
         return $this->routineExecutionMemo;
     }
+
+    public function withMemo(?RoutineExecutionMemo $memo): self
+    {
+        return new self($this->routineExecutionIdentifier, $this->executorAccountIdentifier, $this->routineIdentifier, $this->executedAt, $memo);
+    }
 }

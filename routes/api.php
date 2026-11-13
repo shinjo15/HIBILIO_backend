@@ -57,6 +57,7 @@ use App\Http\Actions\RoutineExecution\GetMyRoutineExecutionHistoryAction;
 use App\Http\Actions\RoutineExecution\GetMyRoutineExecutionsAction;
 use App\Http\Actions\RoutineExecution\GetRecentExecutedRoutinesAction;
 use App\Http\Actions\RoutineExecution\GetRoutineExecutionDetailsAction;
+use App\Http\Actions\RoutineExecution\UpdateRoutineExecutionDraftMemoAction;
 use App\Http\Actions\Support\GetMySupportsAction;
 use App\Http\Actions\Tag\GetPickupTagsAction;
 use App\Http\Actions\Tag\GetPopularTagsAction;
@@ -109,6 +110,7 @@ Route::middleware('web')->group(static function (): void {
     Route::get('/routines/search', SearchRoutinesAction::class);
     Route::get('/routines/{routine_identifier}/customized', GetCustomizedRoutinesAction::class);
     Route::get('/routines/{routine_identifier}/execution-posts', GetRoutineExecutionPostsAction::class);
+    Route::patch('/routines/{routine_identifier}/execution-draft/memo', UpdateRoutineExecutionDraftMemoAction::class);
     Route::get('/routines/{routine_identifier}', GetRoutineDetailsAction::class);
     Route::post('/routine-executions', CreateRoutineExecutionAction::class);
     Route::get('/routine-executions/{routine_execution_identifier}', GetRoutineExecutionDetailsAction::class)->whereUuid('routine_execution_identifier');
