@@ -14,6 +14,7 @@ interface UpdateRoutineExecutionDraftActionsInputPort
 
     public function routineIdentifier(): RoutineIdentifier;
 
-    /** @return list<RoutineActionIdentifier> */
-    public function executedRoutineActionIdentifiers(): array;
+    public function routineActionIdentifier(): RoutineActionIdentifier;
+
+    public function isExecuted(): bool;
 }

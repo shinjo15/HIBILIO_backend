@@ -7,6 +7,7 @@ namespace Src\RoutineExecution\Domain\Entity;
 use Src\RoutineExecution\Domain\ValueObject\ExecutedAt;
 use Src\RoutineExecution\Domain\ValueObject\RoutineExecutionMemo;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
+use Src\Shared\Domain\ValueObject\Identifier\RoutineActionIdentifier;
 use Src\Shared\Domain\ValueObject\Identifier\RoutineExecutionIdentifier;
 use Src\Shared\Domain\ValueObject\Identifier\RoutineIdentifier;
 
@@ -68,5 +69,27 @@ final class RoutineExecutionDraft
     public function actions(): array
     {
         return $this->actions;
+    }
+
+    public function changeAction(RoutineExecutionAction $action, bool $executed): void
+    {
+        if ($action->routineExecutionIdentifier()->value() !== $this->routineExecutionIdentifier->value()) {
+            throw new \InvalidArgumentException('実行記録が一致しません。');
+        }
+        $this->actions = array_values(array_filter($this->actions, static fn (RoutineExecutionAction $existing): bool => $existing->routineActionIdentifier()->value() !== $action->routineActionIdentifier()->value()));
+        if ($executed) {
+            $this->actions[] = $action;
+        }
+    }
+
+    public function hasAction(RoutineActionIdentifier $identifier): bool
+    {
+        foreach ($this->actions as $action) {
+            if ($action->routineActionIdentifier()->value() === $identifier->value()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

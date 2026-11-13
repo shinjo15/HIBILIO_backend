@@ -19,19 +19,10 @@ final class UpdateRoutineExecutionDraftActionsRequest extends FormRequest
 
     public function rules(): array
     {
-        $json = $this->isJson() ? json_decode($this->getContent()) : null;
-
         return [
             'routine_identifier' => ['required', 'uuid'],
-            'executed_routine_action_identifiers' => [
-                'present', 'array', 'list',
-                static function (string $attribute, mixed $value, \Closure $fail) use ($json): void {
-                    if (is_object($json) && isset($json->{$attribute}) && is_object($json->{$attribute})) {
-                        $fail(__('validation.array', ['attribute' => $attribute]));
-                    }
-                },
-            ],
-            'executed_routine_action_identifiers.*' => ['required', 'uuid', 'distinct:ignore_case'],
+            'routine_action_identifier' => ['required', 'uuid'],
+            'is_executed' => ['required', 'boolean'],
         ];
     }
 
@@ -47,7 +38,8 @@ final class UpdateRoutineExecutionDraftActionsRequest extends FormRequest
         return new UpdateRoutineExecutionDraftActionsInput(
             new AccountIdentifier($accountIdentifier),
             new RoutineIdentifier($validated['routine_identifier']),
-            array_map(static fn (string $identifier): RoutineActionIdentifier => new RoutineActionIdentifier($identifier), $validated['executed_routine_action_identifiers']),
+            new RoutineActionIdentifier($validated['routine_action_identifier']),
+            $this->boolean('is_executed'),
         );
     }
 }

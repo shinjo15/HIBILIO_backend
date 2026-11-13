@@ -21,9 +21,9 @@ final readonly class UpdateRoutineExecutionDraftActions implements UpdateRoutine
     {
         $draft = $this->repository->find($input->executorAccountIdentifier(), $input->routineIdentifier())
             ?? throw new RoutineExecutionDraftNotFoundException;
-        $identifiers = $input->executedRoutineActionIdentifiers();
-        $routineActions = $this->routineActionRepository->findByIdentifiers($identifiers);
-        if (count($routineActions) !== count($identifiers)) {
+        $identifier = $input->routineActionIdentifier();
+        $routineActions = $this->routineActionRepository->findByIdentifiers([$identifier]);
+        if (count($routineActions) !== 1) {
             throw new \DomainException('指定したルーティン行動が見つかりません。');
         }
         foreach ($routineActions as $action) {
@@ -32,11 +32,8 @@ final readonly class UpdateRoutineExecutionDraftActions implements UpdateRoutine
             }
         }
 
-        $actions = [];
-        foreach ($identifiers as $identifier) {
-            $actions[] = $this->factory->create($draft->routineExecutionIdentifier(), $identifier);
-        }
-        $draft->changeActions($actions);
-        $this->repository->updateActions($draft);
+        $action = $this->factory->create($draft->routineExecutionIdentifier(), $identifier);
+        $draft->changeAction($action, $input->isExecuted());
+        $this->repository->updateAction($draft, $identifier);
     }
 }

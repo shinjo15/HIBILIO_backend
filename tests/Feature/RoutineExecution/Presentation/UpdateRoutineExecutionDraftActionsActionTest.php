@@ -7,9 +7,11 @@ namespace Tests\Feature\RoutineExecution\Presentation;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Src\RoutineExecution\Domain\Entity\RoutineExecutionAction;
 use Src\RoutineExecution\Domain\Exception\RoutineExecutionDraftNotFoundException;
 use Src\RoutineExecution\Domain\Repository\RoutineExecutionDraftRepositoryInterface;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
+use Src\Shared\Domain\ValueObject\Identifier\RoutineActionIdentifier;
 use Src\Shared\Domain\ValueObject\Identifier\RoutineIdentifier;
 use Tests\TestCase;
 
@@ -71,20 +73,21 @@ final class UpdateRoutineExecutionDraftActionsActionTest extends TestCase
         ]);
     }
 
-    public function test_replaces_the_draft_actions(): void
+    public function test_checking_an_action_preserves_existing_actions(): void
     {
-        $this->withSession(['account_identifier' => self::ACCOUNT])->patchJson('/api/routines/'.self::ROUTINE.'/execution-draft/actions', ['executed_routine_action_identifiers' => [self::B]])->assertNoContent();
-        $this->assertDatabaseMissing('routine_execution_action_drafts', ['routine_execution_identifier' => self::DRAFT, 'routine_action_identifier' => self::A]);
+        $this->withSession(['account_identifier' => self::ACCOUNT])->patchJson('/api/routines/'.self::ROUTINE.'/execution-draft/actions', ['routine_action_identifier' => self::B, 'is_executed' => true])->assertNoContent();
+        $this->assertDatabaseHas('routine_execution_action_drafts', ['routine_execution_identifier' => self::DRAFT, 'routine_action_identifier' => self::A]);
         $this->assertDatabaseHas('routine_execution_action_drafts', ['routine_execution_identifier' => self::DRAFT, 'routine_action_identifier' => self::B]);
         $this->assertDatabaseHas('routine_execution_action_drafts', ['routine_execution_identifier' => self::OTHER_DRAFT, 'routine_action_identifier' => self::A]);
         $this->assertDatabaseHas('routine_execution_drafts', ['routine_execution_identifier' => self::DRAFT, 'routine_execution_memo' => 'memo']);
     }
 
-    public function test_full_partial_and_empty_replacement(): void
+    public function test_successive_checks_and_unchecks_are_idempotent(): void
     {
         $url = '/api/routines/'.self::ROUTINE.'/execution-draft/actions';
-        foreach ([[self::A, self::B], [self::B], [], []] as $ids) {
-            $this->withSession(['account_identifier' => self::ACCOUNT])->patchJson($url, ['executed_routine_action_identifiers' => $ids])->assertNoContent();
+        DB::table('routine_execution_action_drafts')->where('routine_execution_identifier', self::DRAFT)->delete();
+        foreach ([[self::A, true, [self::A]], [self::B, true, [self::A, self::B]], [self::B, true, [self::A, self::B]], [self::A, false, [self::B]], [self::A, false, [self::B]]] as [$id, $executed, $ids]) {
+            $this->withSession(['account_identifier' => self::ACCOUNT])->patchJson($url, ['routine_action_identifier' => $id, 'is_executed' => $executed])->assertNoContent();
             $stored = DB::table('routine_execution_action_drafts')->where('routine_execution_identifier', self::DRAFT)->orderBy('routine_action_identifier')->pluck('routine_action_identifier')->all();
             self::assertSame($ids, $stored);
         }
@@ -94,31 +97,18 @@ final class UpdateRoutineExecutionDraftActionsActionTest extends TestCase
     public function test_invalid_input_and_unrelated_actions_leave_existing_set_unchanged(): void
     {
         $url = '/api/routines/'.self::ROUTINE.'/execution-draft/actions';
-        foreach ([[], ['executed_routine_action_identifiers' => null], ['executed_routine_action_identifiers' => 'bad'], ['executed_routine_action_identifiers' => ['bad']], ['executed_routine_action_identifiers' => [self::A, self::A]], ['executed_routine_action_identifiers' => [self::A, strtoupper(self::A)]], ['executed_routine_action_identifiers' => [self::C]], ['executed_routine_action_identifiers' => ['dddddddd-dddd-4ddd-8ddd-dddddddddddd']]] as $body) {
+        foreach ([[], ['routine_action_identifier' => self::A], ['is_executed' => true], ['routine_action_identifier' => 'bad', 'is_executed' => true], ['routine_action_identifier' => [self::A], 'is_executed' => true], ['routine_action_identifier' => self::A, 'is_executed' => null], ['routine_action_identifier' => self::A, 'is_executed' => 'bad'], ['routine_action_identifier' => self::C, 'is_executed' => true], ['routine_action_identifier' => self::C, 'is_executed' => false], ['routine_action_identifier' => 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', 'is_executed' => true], ['executed_routine_action_identifiers' => [self::A]]] as $body) {
             $this->withSession(['account_identifier' => self::ACCOUNT])->patchJson($url, $body)->assertUnprocessable();
             $this->assertDatabaseHas('routine_execution_action_drafts', ['routine_execution_identifier' => self::DRAFT, 'routine_action_identifier' => self::A]);
             self::assertSame(1, DB::table('routine_execution_action_drafts')->where('routine_execution_identifier', self::DRAFT)->count());
         }
     }
 
-    public function test_json_objects_are_not_accepted_as_action_arrays(): void
-    {
-        $url = '/api/routines/'.self::ROUTINE.'/execution-draft/actions';
-        foreach (['{}', '{"0":"'.self::B.'"}'] as $value) {
-            $this->withSession(['account_identifier' => self::ACCOUNT])->call(
-                'PATCH', $url, [], [], [],
-                ['CONTENT_TYPE' => 'application/json', 'HTTP_ACCEPT' => 'application/json'],
-                '{"executed_routine_action_identifiers":'.$value.'}',
-            )->assertUnprocessable()->assertJsonValidationErrors('executed_routine_action_identifiers');
-            $this->assertDatabaseHas('routine_execution_action_drafts', ['routine_execution_identifier' => self::DRAFT, 'routine_action_identifier' => self::A]);
-            self::assertSame(1, DB::table('routine_execution_action_drafts')->where('routine_execution_identifier', self::DRAFT)->count());
-        }
-    }
-
-    public function test_form_encoded_action_array_remains_supported(): void
+    public function test_form_encoded_request_remains_supported(): void
     {
         $this->withSession(['account_identifier' => self::ACCOUNT])->patch('/api/routines/'.self::ROUTINE.'/execution-draft/actions', [
-            'executed_routine_action_identifiers' => [self::B],
+            'routine_action_identifier' => self::B,
+            'is_executed' => '1',
         ])->assertNoContent();
         $this->assertDatabaseHas('routine_execution_action_drafts', ['routine_execution_identifier' => self::DRAFT, 'routine_action_identifier' => self::B]);
     }
@@ -126,7 +116,7 @@ final class UpdateRoutineExecutionDraftActionsActionTest extends TestCase
     public function test_authentication_and_other_users_draft_are_protected(): void
     {
         $url = '/api/routines/'.self::ROUTINE.'/execution-draft/actions';
-        $body = ['executed_routine_action_identifiers' => [self::B]];
+        $body = ['routine_action_identifier' => self::B, 'is_executed' => true];
         $this->patchJson($url, $body)->assertUnauthorized();
         DB::table('routine_execution_drafts')->where('routine_execution_identifier', self::DRAFT)->delete();
         $this->withSession(['account_identifier' => self::ACCOUNT])->patchJson($url, $body + ['executor_account_identifier' => self::OTHER])->assertNotFound();
@@ -139,19 +129,21 @@ final class UpdateRoutineExecutionDraftActionsActionTest extends TestCase
         $this->withSession(['account_identifier' => self::ACCOUNT])->patchJson('/api/routines/'.self::ROUTINE.'/execution-draft/actions', [
             'executor_account_identifier' => self::OTHER,
             'routine_identifier' => self::OTHER_ROUTINE,
-            'executed_routine_action_identifiers' => [self::B],
+            'routine_action_identifier' => self::B,
+            'is_executed' => true,
         ])->assertNoContent();
         $this->assertDatabaseHas('routine_execution_action_drafts', ['routine_execution_identifier' => self::DRAFT, 'routine_action_identifier' => self::B]);
         $this->assertDatabaseHas('routine_execution_action_drafts', ['routine_execution_identifier' => self::OTHER_DRAFT, 'routine_action_identifier' => self::A]);
     }
 
-    public function test_insert_failure_rolls_back_deletion_and_partial_insert(): void
+    public function test_insert_failure_rolls_back_target_deletion(): void
     {
-        DB::unprepared("CREATE TRIGGER fail_action_insert BEFORE INSERT ON routine_execution_action_drafts WHEN NEW.routine_action_identifier = '".self::B."' BEGIN SELECT RAISE(ABORT, 'test failure'); END");
-        $this->withSession(['account_identifier' => self::ACCOUNT])->patchJson('/api/routines/'.self::ROUTINE.'/execution-draft/actions', ['executed_routine_action_identifiers' => [self::A, self::B]])->assertServerError();
+        DB::table('routine_execution_action_drafts')->insert(['routine_execution_identifier' => self::DRAFT, 'routine_action_identifier' => self::B]);
+        DB::unprepared("CREATE TRIGGER fail_action_insert BEFORE INSERT ON routine_execution_action_drafts WHEN NEW.routine_action_identifier = '".self::A."' BEGIN SELECT RAISE(ABORT, 'test failure'); END");
+        $this->withSession(['account_identifier' => self::ACCOUNT])->patchJson('/api/routines/'.self::ROUTINE.'/execution-draft/actions', ['routine_action_identifier' => self::A, 'is_executed' => true])->assertServerError();
         $this->assertDatabaseHas('routine_execution_action_drafts', ['routine_execution_identifier' => self::DRAFT, 'routine_action_identifier' => self::A]);
-        $this->assertDatabaseMissing('routine_execution_action_drafts', ['routine_execution_identifier' => self::DRAFT, 'routine_action_identifier' => self::B]);
-        self::assertSame(1, DB::table('routine_execution_action_drafts')->where('routine_execution_identifier', self::DRAFT)->count());
+        $this->assertDatabaseHas('routine_execution_action_drafts', ['routine_execution_identifier' => self::DRAFT, 'routine_action_identifier' => self::B]);
+        self::assertSame(2, DB::table('routine_execution_action_drafts')->where('routine_execution_identifier', self::DRAFT)->count());
     }
 
     public function test_repository_restores_actions_and_does_not_update_a_deleted_draft(): void
@@ -162,6 +154,43 @@ final class UpdateRoutineExecutionDraftActionsActionTest extends TestCase
         self::assertSame(self::A, $draft->actions()[0]->routineActionIdentifier()->value());
         DB::table('routine_execution_drafts')->where('routine_execution_identifier', self::DRAFT)->delete();
         $this->expectException(RoutineExecutionDraftNotFoundException::class);
-        $repository->updateActions($draft);
+        $repository->updateAction($draft, new RoutineActionIdentifier(self::A));
+    }
+
+    public function test_repository_saves_only_the_selected_action_from_entity_state(): void
+    {
+        $repository = $this->app->make(RoutineExecutionDraftRepositoryInterface::class);
+        $draft = $repository->find(new AccountIdentifier(self::ACCOUNT), new RoutineIdentifier(self::ROUTINE));
+        self::assertNotNull($draft);
+        $a = new RoutineActionIdentifier(self::A);
+        $b = new RoutineActionIdentifier(self::B);
+        $draft->changeAction(new RoutineExecutionAction($draft->routineExecutionIdentifier(), $a), false);
+        $draft->changeAction(new RoutineExecutionAction($draft->routineExecutionIdentifier(), $b), true);
+
+        $repository->updateAction($draft, $a);
+        $this->assertDatabaseMissing('routine_execution_action_drafts', ['routine_execution_identifier' => self::DRAFT, 'routine_action_identifier' => self::A]);
+        $this->assertDatabaseMissing('routine_execution_action_drafts', ['routine_execution_identifier' => self::DRAFT, 'routine_action_identifier' => self::B]);
+        $repository->updateAction($draft, $b);
+        $this->assertDatabaseHas('routine_execution_action_drafts', ['routine_execution_identifier' => self::DRAFT, 'routine_action_identifier' => self::B]);
+    }
+
+    public function test_stale_entity_save_preserves_unrelated_action_row(): void
+    {
+        $repository = $this->app->make(RoutineExecutionDraftRepositoryInterface::class);
+        $draft = $repository->find(new AccountIdentifier(self::ACCOUNT), new RoutineIdentifier(self::ROUTINE));
+        self::assertNotNull($draft);
+        DB::table('routine_execution_action_drafts')->insert([
+            'routine_execution_identifier' => self::DRAFT,
+            'routine_action_identifier' => self::B,
+            'created_at' => '2020-01-01 00:00:00',
+            'updated_at' => '2020-01-01 00:00:00',
+        ]);
+        $a = new RoutineActionIdentifier(self::A);
+        $draft->changeAction(new RoutineExecutionAction($draft->routineExecutionIdentifier(), $a), false);
+        $repository->updateAction($draft, $a);
+
+        $this->assertDatabaseMissing('routine_execution_action_drafts', ['routine_execution_identifier' => self::DRAFT, 'routine_action_identifier' => self::A]);
+        $this->assertDatabaseHas('routine_execution_action_drafts', ['routine_execution_identifier' => self::DRAFT, 'routine_action_identifier' => self::B, 'created_at' => '2020-01-01 00:00:00', 'updated_at' => '2020-01-01 00:00:00']);
+        $this->assertDatabaseHas('routine_execution_action_drafts', ['routine_execution_identifier' => self::OTHER_DRAFT, 'routine_action_identifier' => self::A]);
     }
 }

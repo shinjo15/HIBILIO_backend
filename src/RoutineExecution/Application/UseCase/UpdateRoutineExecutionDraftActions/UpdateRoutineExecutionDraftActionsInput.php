@@ -10,8 +10,7 @@ use Src\Shared\Domain\ValueObject\Identifier\RoutineIdentifier;
 
 final readonly class UpdateRoutineExecutionDraftActionsInput implements UpdateRoutineExecutionDraftActionsInputPort
 {
-    /** @param list<RoutineActionIdentifier> $actions */
-    public function __construct(private AccountIdentifier $account, private RoutineIdentifier $routine, private array $actions) {}
+    public function __construct(private AccountIdentifier $account, private RoutineIdentifier $routine, private RoutineActionIdentifier $action, private bool $executed) {}
 
     public function executorAccountIdentifier(): AccountIdentifier
     {
@@ -23,8 +22,13 @@ final readonly class UpdateRoutineExecutionDraftActionsInput implements UpdateRo
         return $this->routine;
     }
 
-    public function executedRoutineActionIdentifiers(): array
+    public function routineActionIdentifier(): RoutineActionIdentifier
     {
-        return $this->actions;
+        return $this->action;
+    }
+
+    public function isExecuted(): bool
+    {
+        return $this->executed;
     }
 }

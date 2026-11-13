@@ -76,9 +76,9 @@ final class RoutineExecutionDraftRepository implements RoutineExecutionDraftRepo
         });
     }
 
-    public function updateActions(RoutineExecutionDraft $routineExecutionDraft): void
+    public function updateAction(RoutineExecutionDraft $routineExecutionDraft, RoutineActionIdentifier $actionIdentifier): void
     {
-        DB::transaction(function () use ($routineExecutionDraft): void {
+        DB::transaction(function () use ($routineExecutionDraft, $actionIdentifier): void {
             $draft = DB::table('routine_execution_drafts')
                 ->where('routine_execution_identifier', $routineExecutionDraft->routineExecutionIdentifier()->value())
                 ->where('executor_account_identifier', $routineExecutionDraft->executorAccountIdentifier()->value())
@@ -88,11 +88,14 @@ final class RoutineExecutionDraftRepository implements RoutineExecutionDraftRepo
                 throw new RoutineExecutionDraftNotFoundException;
             }
 
-            DB::table('routine_execution_action_drafts')->where('routine_execution_identifier', $routineExecutionDraft->routineExecutionIdentifier()->value())->delete();
-            foreach ($routineExecutionDraft->actions() as $action) {
+            DB::table('routine_execution_action_drafts')
+                ->where('routine_execution_identifier', $routineExecutionDraft->routineExecutionIdentifier()->value())
+                ->where('routine_action_identifier', $actionIdentifier->value())
+                ->delete();
+            if ($routineExecutionDraft->hasAction($actionIdentifier)) {
                 DB::table('routine_execution_action_drafts')->insert([
-                    'routine_execution_identifier' => $action->routineExecutionIdentifier()->value(),
-                    'routine_action_identifier' => $action->routineActionIdentifier()->value(),
+                    'routine_execution_identifier' => $routineExecutionDraft->routineExecutionIdentifier()->value(),
+                    'routine_action_identifier' => $actionIdentifier->value(),
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
