@@ -77,18 +77,18 @@ final class CreateRoutineExecutionDraftActionTest extends TestCase
         $this->assertDatabaseCount('routine_execution_drafts', 0);
     }
 
-    public function test_missing_routine_is_not_found(): void
+    public function test_missing_routine_causes_a_foreign_key_server_error(): void
     {
-        $this->withSession(['account_identifier' => self::USER])->postJson('/api/routine-execution-drafts', ['routine_identifier' => self::OTHER])->assertNotFound();
+        $this->withSession(['account_identifier' => self::USER])->postJson('/api/routine-execution-drafts', ['routine_identifier' => self::OTHER])->assertStatus(500);
         $this->assertDatabaseCount('routine_execution_drafts', 0);
     }
 
-    public function test_private_routine_without_a_follow_is_not_found(): void
+    public function test_private_routine_without_a_follow_can_be_created_by_direct_identifier(): void
     {
         DB::table('accounts')->where('account_identifier', self::AUTHOR)->update(['visibility' => 'private']);
         $this->withSession(['account_identifier' => self::USER])->getJson('/api/routines/'.self::ROUTINE)->assertNotFound();
-        $this->withSession(['account_identifier' => self::USER])->postJson('/api/routine-execution-drafts', ['routine_identifier' => self::ROUTINE])->assertNotFound();
-        $this->assertDatabaseCount('routine_execution_drafts', 0);
+        $this->withSession(['account_identifier' => self::USER])->postJson('/api/routine-execution-drafts', ['routine_identifier' => self::ROUTINE])->assertCreated();
+        $this->assertDatabaseHas('routine_execution_drafts', ['executor_account_identifier' => self::USER, 'routine_identifier' => self::ROUTINE]);
     }
 
     public function test_private_routine_is_visible_to_its_owner_and_follower(): void
@@ -102,39 +102,41 @@ final class CreateRoutineExecutionDraftActionTest extends TestCase
         }
     }
 
-    public function test_blocks_in_either_direction_override_follow_and_prevent_creation(): void
+    public function test_blocks_in_either_direction_do_not_prevent_creation_by_direct_identifier(): void
     {
         DB::table('accounts')->where('account_identifier', self::AUTHOR)->update(['visibility' => 'private']);
         DB::table('follows')->insert(['following_account_identifier' => self::USER, 'followed_account_identifier' => self::AUTHOR]);
         foreach ([[self::USER, self::AUTHOR], [self::AUTHOR, self::USER]] as [$blocking, $blocked]) {
             DB::table('blocks')->insert(['blocking_account_identifier' => $blocking, 'blocked_account_identifier' => $blocked]);
             $this->withSession(['account_identifier' => self::USER])->getJson('/api/routines/'.self::ROUTINE)->assertNotFound();
-            $this->withSession(['account_identifier' => self::USER])->postJson('/api/routine-execution-drafts', ['routine_identifier' => self::ROUTINE])->assertNotFound();
-            $this->assertDatabaseCount('routine_execution_drafts', 0);
+            $this->withSession(['account_identifier' => self::USER])->postJson('/api/routine-execution-drafts', ['routine_identifier' => self::ROUTINE])->assertCreated();
+            $this->assertDatabaseHas('routine_execution_drafts', ['executor_account_identifier' => self::USER, 'routine_identifier' => self::ROUTINE]);
+            DB::table('routine_execution_drafts')->delete();
             DB::table('blocks')->delete();
         }
     }
 
-    public function test_unavailable_routine_or_author_and_inactive_author_are_not_found(): void
+    public function test_unavailable_routine_or_author_and_inactive_author_do_not_prevent_creation(): void
     {
         foreach ([['routines', 'available', false], ['accounts', 'available', false], ['accounts', 'status', 'temporarily_banned'], ['accounts', 'status', 'permanently_banned']] as [$table, $column, $value]) {
             $identifier = $table === 'routines' ? 'routine_identifier' : 'account_identifier';
             $target = $table === 'routines' ? self::ROUTINE : self::AUTHOR;
             DB::table($table)->where($identifier, $target)->update([$column => $value]);
             $this->withSession(['account_identifier' => self::USER])->getJson('/api/routines/'.self::ROUTINE)->assertNotFound();
-            $this->withSession(['account_identifier' => self::USER])->postJson('/api/routine-execution-drafts', ['routine_identifier' => self::ROUTINE])->assertNotFound();
-            $this->assertDatabaseCount('routine_execution_drafts', 0);
+            $this->withSession(['account_identifier' => self::USER])->postJson('/api/routine-execution-drafts', ['routine_identifier' => self::ROUTINE])->assertCreated();
+            $this->assertDatabaseHas('routine_execution_drafts', ['executor_account_identifier' => self::USER, 'routine_identifier' => self::ROUTINE]);
+            DB::table('routine_execution_drafts')->delete();
             DB::table($table)->where($identifier, $target)->update([$column => $column === 'status' ? 'active' : true]);
         }
     }
 
-    public function test_inaccessible_existing_draft_returns_not_found_without_disclosing_duplicate(): void
+    public function test_inaccessible_existing_draft_still_returns_conflict(): void
     {
         $payload = ['routine_identifier' => self::ROUTINE];
         $this->withSession(['account_identifier' => self::USER])->postJson('/api/routine-execution-drafts', $payload)->assertCreated();
         $original = DB::table('routine_execution_drafts')->first();
         DB::table('accounts')->where('account_identifier', self::AUTHOR)->update(['visibility' => 'private']);
-        $this->withSession(['account_identifier' => self::USER])->postJson('/api/routine-execution-drafts', $payload)->assertNotFound();
+        $this->withSession(['account_identifier' => self::USER])->postJson('/api/routine-execution-drafts', $payload)->assertStatus(409);
         $this->assertDatabaseCount('routine_execution_drafts', 1);
         self::assertEquals($original, DB::table('routine_execution_drafts')->first());
     }

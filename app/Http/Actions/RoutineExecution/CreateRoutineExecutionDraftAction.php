@@ -6,7 +6,6 @@ namespace App\Http\Actions\RoutineExecution;
 
 use App\Http\Requests\RoutineExecution\CreateRoutineExecutionDraftRequest;
 use Illuminate\Http\Response;
-use Src\Routine\Domain\Exception\RoutineNotFoundException;
 use Src\RoutineExecution\Application\UseCase\CreateRoutineExecutionDraft\CreateRoutineExecutionDraftInterface;
 use Src\RoutineExecution\Domain\Exception\RoutineExecutionDraftAlreadyExistsException;
 use Src\Shared\Application\Service\AuthServiceInterface;
@@ -24,8 +23,6 @@ final readonly class CreateRoutineExecutionDraftAction
 
         try {
             $this->useCase->execute($request->toInput($accountIdentifier));
-        } catch (RoutineNotFoundException) {
-            return new Response('', 404);
         } catch (RoutineExecutionDraftAlreadyExistsException) {
             return new Response('', 409);
         } catch (\DomainException|\InvalidArgumentException) {

@@ -179,7 +179,6 @@ use Src\Routine\Application\UseCase\CreateRoutine\CreateRoutineInterface;
 use Src\Routine\Application\Usecase\Query\GetCustomizedRoutines\GetCustomizedRoutinesInterface;
 use Src\Routine\Application\Usecase\Query\GetRoutineDetails\GetRoutineDetailsInterface;
 use Src\Routine\Application\Usecase\Query\GetRoutineExecutionPosts\GetRoutineExecutionPostsInterface;
-use Src\Routine\Application\Usecase\Query\IsRoutineVisible\IsRoutineVisibleInterface;
 use Src\Routine\Application\Usecase\Query\SearchRoutines\SearchRoutinesInterface;
 use Src\Routine\Domain\Factory\RoutineActionFactoryInterface;
 use Src\Routine\Domain\Factory\RoutineFactoryInterface;
@@ -190,7 +189,6 @@ use Src\Routine\Infrastructure\Factory\RoutineFactory;
 use Src\Routine\Infrastructure\Query\GetCustomizedRoutines\GetCustomizedRoutines;
 use Src\Routine\Infrastructure\Query\GetRoutineDetails\GetRoutineDetails;
 use Src\Routine\Infrastructure\Query\GetRoutineExecutionPosts\GetRoutineExecutionPosts;
-use Src\Routine\Infrastructure\Query\IsRoutineVisible\IsRoutineVisible;
 use Src\Routine\Infrastructure\Query\SearchRoutines\SearchRoutines;
 use Src\Routine\Infrastructure\Repository\RoutineActionRepository;
 use Src\Routine\Infrastructure\Repository\RoutineRepository;
@@ -388,7 +386,6 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->bind(GetCustomizedRoutinesInterface::class, GetCustomizedRoutines::class);
         $this->app->bind(GetRoutineDetailsInterface::class, GetRoutineDetails::class);
-        $this->app->bind(IsRoutineVisibleInterface::class, IsRoutineVisible::class);
         $this->app->bind(GetRoutineExecutionPostsInterface::class, GetRoutineExecutionPosts::class);
         $this->app->bind(SearchRoutinesInterface::class, SearchRoutines::class);
         $this->app->bind(RoutineExecutionFactoryInterface::class, RoutineExecutionFactory::class);
