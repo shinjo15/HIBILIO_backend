@@ -75,4 +75,14 @@ final class CreateListeningContentActionTest extends TestCase
         }
         $this->assertDatabaseCount('listening_contents', 0);
     }
+
+    public function test_invalid_url_returns_validation_message(): void
+    {
+        $this->withSession(['account_identifier' => self::USER])
+            ->postJson('/api/my/listening-contents', ['url' => 'not-a-url'])
+            ->assertUnprocessable()
+            ->assertJsonPath('errors.url', ['コンテンツのURLは有効な形式である必要があります。']);
+
+        $this->assertDatabaseCount('listening_contents', 0);
+    }
 }

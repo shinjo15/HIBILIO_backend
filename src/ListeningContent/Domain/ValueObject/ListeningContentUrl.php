@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Src\ListeningContent\Domain\ValueObject;
 
+use Src\ListeningContent\Domain\Exception\InvalidListeningContentUrlException;
 use Src\Shared\Domain\ValueObject\Base\StringValueObject;
 
 final readonly class ListeningContentUrl extends StringValueObject
@@ -13,7 +14,7 @@ final readonly class ListeningContentUrl extends StringValueObject
         parent::validate($value);
 
         if (filter_var($value, FILTER_VALIDATE_URL) === false) {
-            throw new \InvalidArgumentException('コンテンツのURLは有効な形式である必要があります。');
+            throw new InvalidListeningContentUrlException;
         }
     }
 }
