@@ -90,15 +90,34 @@ final class GetMyRoutineExecutionDraftsActionTest extends TestCase
 
         $this->withSession(['account_identifier' => self::USER])->getJson('/api/my/routine-execution-drafts?account_identifier='.self::OTHER)
             ->assertOk()->assertExactJson(['items' => [
-                ['routine_execution_identifier' => self::DRAFT, 'routine_identifier' => self::ROUTINE, 'executed_at' => '2026-01-01T12:00:00.000000+00:00', 'routine_execution_memo' => 'memo', 'executed_routine_action_identifiers' => [self::A, self::B]],
-                ['routine_execution_identifier' => self::DRAFT2, 'routine_identifier' => self::ROUTINE2, 'executed_at' => '2026-01-02T12:00:00.000000+00:00', 'routine_execution_memo' => null, 'executed_routine_action_identifiers' => [self::C]],
-                ['routine_execution_identifier' => self::EMPTY_DRAFT, 'routine_identifier' => self::ROUTINE3, 'executed_at' => '2026-01-04T12:00:00.000000+00:00', 'routine_execution_memo' => null, 'executed_routine_action_identifiers' => []],
+                ['routine_execution_identifier' => self::DRAFT, 'routine_identifier' => self::ROUTINE, 'routine_name' => 'One', 'executed_at' => '2026-01-01T12:00:00.000000+00:00', 'routine_execution_memo' => 'memo', 'executed_routine_action_identifiers' => [self::A, self::B]],
+                ['routine_execution_identifier' => self::DRAFT2, 'routine_identifier' => self::ROUTINE2, 'routine_name' => 'Two', 'executed_at' => '2026-01-02T12:00:00.000000+00:00', 'routine_execution_memo' => null, 'executed_routine_action_identifiers' => [self::C]],
+                ['routine_execution_identifier' => self::EMPTY_DRAFT, 'routine_identifier' => self::ROUTINE3, 'routine_name' => 'Three', 'executed_at' => '2026-01-04T12:00:00.000000+00:00', 'routine_execution_memo' => null, 'executed_routine_action_identifiers' => []],
             ], 'total' => 3]);
     }
 
     public function test_requires_authentication(): void
     {
         $this->getJson('/api/my/routine-execution-drafts')->assertUnauthorized();
+    }
+
+    public function test_reads_the_current_routine_name_without_domain_validation(): void
+    {
+        DB::table('routine_execution_drafts')->insert([
+            'routine_execution_identifier' => self::DRAFT, 'executor_account_identifier' => self::USER,
+            'routine_identifier' => self::ROUTINE, 'executed_at' => '2026-01-01 12:00:00',
+        ]);
+        DB::table('routines')->where('routine_identifier', self::ROUTINE)->update(['routine_name' => '']);
+
+        $this->withSession(['account_identifier' => self::USER])->getJson('/api/my/routine-execution-drafts')
+            ->assertOk()->assertExactJson(['items' => [[
+                'routine_execution_identifier' => self::DRAFT,
+                'routine_identifier' => self::ROUTINE,
+                'routine_name' => '',
+                'executed_at' => '2026-01-01T12:00:00.000000+00:00',
+                'routine_execution_memo' => null,
+                'executed_routine_action_identifiers' => [],
+            ]], 'total' => 1]);
     }
 
     public function test_authentication_failure_is_not_converted_to_unauthorized(): void
@@ -140,5 +159,9 @@ final class GetMyRoutineExecutionDraftsActionTest extends TestCase
         self::assertCount(1, $queries);
         self::assertStringContainsString('left join', strtolower($queries[0]));
         self::assertStringContainsString('routine_execution_action_drafts', strtolower($queries[0]));
+        $queries = [];
+        $result = $this->app->make(GetMyRoutineExecutionDraftsInterface::class)->execute(new GetMyRoutineExecutionDraftsInput(self::OTHER));
+        self::assertSame(0, $result->total());
+        self::assertCount(1, $queries);
     }
 }

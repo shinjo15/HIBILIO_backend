@@ -17,11 +17,12 @@ final class GetMyRoutineExecutionDrafts implements GetMyRoutineExecutionDraftsIn
     public function execute(GetMyRoutineExecutionDraftsInputPort $input): GetMyRoutineExecutionDraftsOutputPort
     {
         $rows = DB::table('routine_execution_drafts as drafts')
+            ->join('routines', 'drafts.routine_identifier', '=', 'routines.routine_identifier')
             ->leftJoin('routine_execution_action_drafts as actions', 'drafts.routine_execution_identifier', '=', 'actions.routine_execution_identifier')
             ->where('drafts.executor_account_identifier', $input->accountIdentifier())
             ->orderBy('drafts.routine_execution_identifier')
             ->orderBy('actions.routine_action_identifier')
-            ->get(['drafts.routine_execution_identifier', 'drafts.routine_identifier', 'drafts.executed_at', 'drafts.routine_execution_memo', 'actions.routine_action_identifier']);
+            ->get(['drafts.routine_execution_identifier', 'drafts.routine_identifier', 'routines.routine_name', 'drafts.executed_at', 'drafts.routine_execution_memo', 'actions.routine_action_identifier']);
 
         $items = [];
         foreach ($rows as $row) {
@@ -30,6 +31,7 @@ final class GetMyRoutineExecutionDrafts implements GetMyRoutineExecutionDraftsIn
                 $items[$identifier] = [
                     'routineExecutionIdentifier' => $identifier,
                     'routineIdentifier' => (string) $row->routine_identifier,
+                    'routineName' => (string) $row->routine_name,
                     'executedAt' => (new DateTimeImmutable((string) $row->executed_at, new DateTimeZone('UTC')))->format('Y-m-d\TH:i:s.uP'),
                     'routineExecutionMemo' => $row->routine_execution_memo === null ? null : (string) $row->routine_execution_memo,
                     'executedRoutineActionIdentifiers' => [],
