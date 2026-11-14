@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Src\Account\Application\Usecase\Command\RegisterListeningContent;
+namespace Src\ListeningContent\Application\UseCase\CreateListeningContent;
 
-use Src\Account\Domain\ValueObject\ListeningContentUrl;
+use Src\ListeningContent\Domain\ValueObject\ListeningContentUrl;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
-interface RegisterListeningContentInputPort
+interface CreateListeningContentInputPort
 {
     public function accountIdentifier(): AccountIdentifier;
 

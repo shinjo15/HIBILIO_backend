@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Src\Account\Application\Usecase\Command\RegisterListeningContent;
+namespace Src\ListeningContent\Application\UseCase\CreateListeningContent;
 
-use Src\Account\Domain\ValueObject\ListeningContentUrl;
+use Src\ListeningContent\Domain\ValueObject\ListeningContentUrl;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
-final readonly class RegisterListeningContentInput implements RegisterListeningContentInputPort
+final readonly class CreateListeningContentInput implements CreateListeningContentInputPort
 {
     public function __construct(private AccountIdentifier $accountIdentifier, private ListeningContentUrl $url) {}
 

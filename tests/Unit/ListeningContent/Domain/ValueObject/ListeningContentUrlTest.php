@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Account\Domain\ValueObject;
+namespace Tests\Unit\ListeningContent\Domain\ValueObject;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Src\Account\Domain\ValueObject\ListeningContentUrl;
+use Src\ListeningContent\Domain\ValueObject\ListeningContentUrl;
 
 final class ListeningContentUrlTest extends TestCase
 {

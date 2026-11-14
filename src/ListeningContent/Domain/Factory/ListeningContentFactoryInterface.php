@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Src\Account\Domain\Factory;
+namespace Src\ListeningContent\Domain\Factory;
 
-use Src\Account\Domain\Entity\ListeningContent;
-use Src\Account\Domain\ValueObject\ListeningContentUrl;
+use Src\ListeningContent\Domain\Entity\ListeningContent;
+use Src\ListeningContent\Domain\ValueObject\ListeningContentUrl;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
 interface ListeningContentFactoryInterface

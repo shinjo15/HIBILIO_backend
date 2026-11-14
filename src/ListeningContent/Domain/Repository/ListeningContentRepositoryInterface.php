@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Src\Account\Domain\Repository;
+namespace Src\ListeningContent\Domain\Repository;
 
-use Src\Account\Domain\Entity\ListeningContent;
+use Src\ListeningContent\Domain\Entity\ListeningContent;
 
 interface ListeningContentRepositoryInterface
 {

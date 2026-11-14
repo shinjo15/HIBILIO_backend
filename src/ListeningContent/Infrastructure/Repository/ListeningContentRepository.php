@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Src\Account\Infrastructure\Repository;
+namespace Src\ListeningContent\Infrastructure\Repository;
 
 use App\Models\ListeningContentModel;
-use Src\Account\Domain\Entity\ListeningContent;
-use Src\Account\Domain\Repository\ListeningContentRepositoryInterface;
+use Src\ListeningContent\Domain\Entity\ListeningContent;
+use Src\ListeningContent\Domain\Repository\ListeningContentRepositoryInterface;
 
 final class ListeningContentRepository implements ListeningContentRepositoryInterface
 {

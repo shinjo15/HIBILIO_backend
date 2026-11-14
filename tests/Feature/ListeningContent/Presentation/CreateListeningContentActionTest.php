@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Tests\Feature\Account\Presentation;
+namespace Tests\Feature\ListeningContent\Presentation;
 
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
-final class RegisterListeningContentActionTest extends TestCase
+final class CreateListeningContentActionTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -42,7 +42,7 @@ final class RegisterListeningContentActionTest extends TestCase
         $this->assertDatabaseCount('listening_contents', 0);
     }
 
-    public function test_registers_multiple_urls_for_the_session_account_ignoring_spoofed_account(): void
+    public function test_creates_multiple_urls_for_the_session_account_ignoring_spoofed_account(): void
     {
         $urls = ['https://open.spotify.com/track/example', 'https://music.apple.com/jp/album/example', 'spotify://track/123', 'https://open.spotify.com/track/example'];
         foreach ($urls as $url) {
@@ -59,7 +59,7 @@ final class RegisterListeningContentActionTest extends TestCase
         $this->assertSame(2, DB::table('listening_contents')->where('account_identifier', self::USER)->where('url', $urls[0])->count());
     }
 
-    public function test_another_account_can_register_the_same_url(): void
+    public function test_another_account_can_create_the_same_url(): void
     {
         foreach ([self::USER, self::OTHER] as $account) {
             $this->withSession(['account_identifier' => $account])->postJson('/api/my/listening-contents', ['url' => 'https://example.com/audio'])->assertNoContent();

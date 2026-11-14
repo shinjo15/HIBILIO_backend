@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Requests\Account;
+namespace App\Http\Requests\ListeningContent;
 
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
-use Src\Account\Application\Usecase\Command\RegisterListeningContent\RegisterListeningContentInput;
-use Src\Account\Domain\ValueObject\ListeningContentUrl;
+use Src\ListeningContent\Application\UseCase\CreateListeningContent\CreateListeningContentInput;
+use Src\ListeningContent\Domain\ValueObject\ListeningContentUrl;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
-final class RegisterListeningContentRequest extends FormRequest
+final class CreateListeningContentRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -28,9 +28,9 @@ final class RegisterListeningContentRequest extends FormRequest
         ];
     }
 
-    public function toInput(string $accountIdentifier): RegisterListeningContentInput
+    public function toInput(string $accountIdentifier): CreateListeningContentInput
     {
-        return new RegisterListeningContentInput(
+        return new CreateListeningContentInput(
             new AccountIdentifier($accountIdentifier),
             new ListeningContentUrl($this->validated('url')),
         );

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Src\Account\Domain\Entity;
+namespace Src\ListeningContent\Domain\Entity;
 
-use Src\Account\Domain\ValueObject\ListeningContentIdentifier;
-use Src\Account\Domain\ValueObject\ListeningContentUrl;
+use Src\ListeningContent\Domain\ValueObject\ListeningContentIdentifier;
+use Src\ListeningContent\Domain\ValueObject\ListeningContentUrl;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
 final readonly class ListeningContent
