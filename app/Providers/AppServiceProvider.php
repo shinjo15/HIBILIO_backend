@@ -204,6 +204,8 @@ use Src\RoutineExecution\Application\UseCase\CreateRoutineExecution\CreateRoutin
 use Src\RoutineExecution\Application\UseCase\CreateRoutineExecution\CreateRoutineExecutionInterface;
 use Src\RoutineExecution\Application\UseCase\CreateRoutineExecutionDraft\CreateRoutineExecutionDraft;
 use Src\RoutineExecution\Application\UseCase\CreateRoutineExecutionDraft\CreateRoutineExecutionDraftInterface;
+use Src\RoutineExecution\Application\UseCase\DeleteRoutineExecutionDraft\DeleteRoutineExecutionDraft;
+use Src\RoutineExecution\Application\UseCase\DeleteRoutineExecutionDraft\DeleteRoutineExecutionDraftInterface;
 use Src\RoutineExecution\Application\Usecase\Query\GetAccountRoutineExecutions\GetAccountRoutineExecutionsInterface;
 use Src\RoutineExecution\Application\Usecase\Query\GetMostExecutedRoutines\GetMostExecutedRoutinesInterface;
 use Src\RoutineExecution\Application\Usecase\Query\GetMyRoutineExecutionDrafts\GetMyRoutineExecutionDraftsInterface;
@@ -408,6 +410,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(RoutineExecutionRepositoryInterface::class, RoutineExecutionRepository::class);
         $this->app->bind(RoutineExecutionDraftRepositoryInterface::class, RoutineExecutionDraftRepository::class);
         $this->app->bind(CompleteRoutineExecutionDraftInterface::class, CompleteRoutineExecutionDraft::class);
+        $this->app->bind(DeleteRoutineExecutionDraftInterface::class, DeleteRoutineExecutionDraft::class);
         $this->app->bind(CreateRoutineExecutionDraftInterface::class, CreateRoutineExecutionDraft::class);
         $this->app->bind(UpdateRoutineExecutionDraftMemoInterface::class, UpdateRoutineExecutionDraftMemo::class);
         $this->app->bind(UpdateRoutineExecutionDraftActionsInterface::class, UpdateRoutineExecutionDraftActions::class);
