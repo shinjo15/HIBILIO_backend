@@ -40,6 +40,7 @@ use App\Http\Actions\Like\CreateLikeAction;
 use App\Http\Actions\Like\GetAccountLikedRoutinePostsAction;
 use App\Http\Actions\Like\GetMyLikedRoutinePostsAction;
 use App\Http\Actions\Like\RemoveLikeAction;
+use App\Http\Actions\ListeningContent\CreateListeningContentAction;
 use App\Http\Actions\Notification\GetAnnouncementsAction;
 use App\Http\Actions\Notification\GetMyNotificationsAction;
 use App\Http\Actions\Notification\GetMyUnreadNotificationCountAction;
@@ -84,6 +85,7 @@ Route::middleware('web')->group(static function (): void {
     Route::get('/accounts/{account_identifier}/routines', GetAccountRoutinePostsAction::class)->whereUuid('account_identifier');
     Route::get('/accounts/{account_identifier}/routine-executions', GetAccountRoutineExecutionsAction::class);
     Route::get('/my/account', GetMyAccountAction::class);
+    Route::post('/my/listening-contents', CreateListeningContentAction::class);
     Route::get('/my/following', GetMyFollowingAccountsAction::class);
     Route::get('/my/blocks', GetMyBlocksAction::class);
     Route::get('/my/follow-requests', GetReceivedFollowRequestsAction::class);

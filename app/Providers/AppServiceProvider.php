@@ -154,6 +154,12 @@ use Src\Like\Infrastructure\Factory\LikeNotificationFactory;
 use Src\Like\Infrastructure\Query\GetLikedRoutinePosts\GetLikedRoutinePosts;
 use Src\Like\Infrastructure\Repository\LikeNotificationRepository;
 use Src\Like\Infrastructure\Repository\LikeRepository;
+use Src\ListeningContent\Application\UseCase\CreateListeningContent\CreateListeningContent;
+use Src\ListeningContent\Application\UseCase\CreateListeningContent\CreateListeningContentInterface;
+use Src\ListeningContent\Domain\Factory\ListeningContentFactoryInterface;
+use Src\ListeningContent\Domain\Repository\ListeningContentRepositoryInterface;
+use Src\ListeningContent\Infrastructure\Factory\ListeningContentFactory;
+use Src\ListeningContent\Infrastructure\Repository\ListeningContentRepository;
 use Src\Notification\Application\Usecase\Command\MarkPersonalNotificationAsRead\MarkPersonalNotificationAsRead;
 use Src\Notification\Application\Usecase\Command\MarkPersonalNotificationAsRead\MarkPersonalNotificationAsReadInterface;
 use Src\Notification\Application\Usecase\Query\GetAnnouncements\GetAnnouncementsInterface;
@@ -319,6 +325,9 @@ class AppServiceProvider extends ServiceProvider
                 : LocalStorageService::class,
         );
         $this->app->bind(CreateAccountInterface::class, CreateAccount::class);
+        $this->app->bind(ListeningContentFactoryInterface::class, ListeningContentFactory::class);
+        $this->app->bind(ListeningContentRepositoryInterface::class, ListeningContentRepository::class);
+        $this->app->bind(CreateListeningContentInterface::class, CreateListeningContent::class);
         $this->app->bind(UpdateAccountProfileInterface::class, UpdateAccountProfile::class);
         $this->app->bind(ChangeAccountStatusInterface::class, ChangeAccountStatus::class);
         $this->app->bind(ChangeAccountVisibilityInterface::class, ChangeAccountVisibility::class);
