@@ -25,6 +25,7 @@ final readonly class GetMyRoutineExecutionDraftsAction
         return new JsonResponse(['items' => array_map(static fn (array $item): array => [
             'routine_execution_identifier' => $item['routineExecutionIdentifier'],
             'routine_identifier' => $item['routineIdentifier'],
+            'routine_name' => $item['routineName'],
             'executed_at' => $item['executedAt'],
             'routine_execution_memo' => $item['routineExecutionMemo'],
             'executed_routine_action_identifiers' => $item['executedRoutineActionIdentifiers'],
