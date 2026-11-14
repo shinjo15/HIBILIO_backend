@@ -5,15 +5,20 @@ declare(strict_types=1);
 namespace Src\ListeningContent\Infrastructure\Query\GetAccountListeningContents;
 
 use Illuminate\Support\Facades\DB;
+use Src\ListeningContent\Application\UseCase\Query\GetAccountListeningContents\GetAccountListeningContentsInputPort;
 use Src\ListeningContent\Application\UseCase\Query\GetAccountListeningContents\GetAccountListeningContentsInterface;
+use Src\ListeningContent\Application\UseCase\Query\GetAccountListeningContents\GetAccountListeningContentsOutput;
+use Src\ListeningContent\Application\UseCase\Query\GetAccountListeningContents\GetAccountListeningContentsOutputPort;
 use Src\Shared\Domain\Exception\BlockedAccountVisibilityException;
 use Src\Shared\Infrastructure\Query\Account\PrivateAccountVisibility;
 use Src\Shared\Infrastructure\Query\Block\BlockVisibility;
 
 final class GetAccountListeningContents implements GetAccountListeningContentsInterface
 {
-    public function execute(string $accountIdentifier, ?string $viewerAccountIdentifier): ?array
+    public function execute(GetAccountListeningContentsInputPort $input): ?GetAccountListeningContentsOutputPort
     {
+        $accountIdentifier = $input->accountIdentifier();
+        $viewerAccountIdentifier = $input->viewerAccountIdentifier();
         $account = DB::table('accounts')->where('account_identifier', $accountIdentifier)
             ->where('available', true)->where('status', 'active');
         if (! $account->exists()) {
@@ -26,7 +31,7 @@ final class GetAccountListeningContents implements GetAccountListeningContentsIn
 
         PrivateAccountVisibility::exclude($account, $viewerAccountIdentifier, 'accounts.account_identifier', 'accounts.visibility');
         if (! $account->exists()) {
-            return [];
+            return new GetAccountListeningContentsOutput([]);
         }
 
         $contents = DB::table('listening_contents')
@@ -39,7 +44,7 @@ final class GetAccountListeningContents implements GetAccountListeningContentsIn
             BlockVisibility::exclude($contents, $viewerAccountIdentifier, 'accounts.account_identifier');
         }
 
-        return $contents
+        $items = $contents
             ->orderBy('listening_contents.created_at')
             ->orderBy('listening_contents.listening_content_identifier')
             ->get(['listening_contents.listening_content_identifier', 'listening_contents.url'])
@@ -47,5 +52,7 @@ final class GetAccountListeningContents implements GetAccountListeningContentsIn
                 'listening_content_identifier' => $content->listening_content_identifier,
                 'url' => $content->url,
             ])->all();
+
+        return new GetAccountListeningContentsOutput($items);
     }
 }

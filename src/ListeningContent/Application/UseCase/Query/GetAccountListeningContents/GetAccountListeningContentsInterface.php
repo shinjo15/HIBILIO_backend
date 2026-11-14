@@ -6,6 +6,5 @@ namespace Src\ListeningContent\Application\UseCase\Query\GetAccountListeningCont
 
 interface GetAccountListeningContentsInterface
 {
-    /** @return list<array{listening_content_identifier: string, url: string}>|null */
-    public function execute(string $accountIdentifier, ?string $viewerAccountIdentifier): ?array;
+    public function execute(GetAccountListeningContentsInputPort $input): ?GetAccountListeningContentsOutputPort;
 }

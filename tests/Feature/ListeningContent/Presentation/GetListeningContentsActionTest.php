@@ -8,6 +8,9 @@ use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Src\ListeningContent\Application\UseCase\Query\GetAccountListeningContents\GetAccountListeningContentsInput;
+use Src\ListeningContent\Application\UseCase\Query\GetAccountListeningContents\GetAccountListeningContentsInterface;
+use Src\ListeningContent\Application\UseCase\Query\GetAccountListeningContents\GetAccountListeningContentsOutputPort;
 use Tests\TestCase;
 
 final class GetListeningContentsActionTest extends TestCase
@@ -42,6 +45,26 @@ final class GetListeningContentsActionTest extends TestCase
     public function test_my_endpoint_requires_authentication(): void
     {
         $this->getJson('/api/my/listening-contents')->assertUnauthorized();
+    }
+
+    public function test_query_returns_output_port_or_null_for_missing_account(): void
+    {
+        $query = $this->app->make(GetAccountListeningContentsInterface::class);
+        $output = $query->execute(new GetAccountListeningContentsInput(self::USER, null));
+
+        $this->assertInstanceOf(GetAccountListeningContentsOutputPort::class, $output);
+        $this->assertSame([], $output->items());
+
+        DB::table('listening_contents')->insert(['listening_content_identifier' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'account_identifier' => self::USER, 'url' => 'https://example.com/content']);
+        $output = $query->execute(new GetAccountListeningContentsInput(self::USER, self::OTHER));
+        $this->assertInstanceOf(GetAccountListeningContentsOutputPort::class, $output);
+        $this->assertSame([['listening_content_identifier' => 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'url' => 'https://example.com/content']], $output->items());
+
+        DB::table('accounts')->where('account_identifier', self::USER)->update(['visibility' => 'private']);
+        $output = $query->execute(new GetAccountListeningContentsInput(self::USER, self::OTHER));
+        $this->assertInstanceOf(GetAccountListeningContentsOutputPort::class, $output);
+        $this->assertSame([], $output->items());
+        $this->assertNull($query->execute(new GetAccountListeningContentsInput(self::MISSING, null)));
     }
 
     public function test_lists_distinct_registrations_and_isolates_accounts(): void
