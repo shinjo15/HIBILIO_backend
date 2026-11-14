@@ -24,6 +24,7 @@ use App\Http\Actions\Account\GetMyRoutinePostsAction;
 use App\Http\Actions\Account\GetPopularRoutinePostsAction;
 use App\Http\Actions\Account\GetReceivedFollowRequestsAction;
 use App\Http\Actions\Account\GetSentFollowRequestsAction;
+use App\Http\Actions\Account\RegisterListeningContentAction;
 use App\Http\Actions\Account\RejectFollowRequestAction;
 use App\Http\Actions\Account\RemoveBlockAction;
 use App\Http\Actions\Account\RemoveFollowRequestAction;
@@ -84,6 +85,7 @@ Route::middleware('web')->group(static function (): void {
     Route::get('/accounts/{account_identifier}/routines', GetAccountRoutinePostsAction::class)->whereUuid('account_identifier');
     Route::get('/accounts/{account_identifier}/routine-executions', GetAccountRoutineExecutionsAction::class);
     Route::get('/my/account', GetMyAccountAction::class);
+    Route::post('/my/listening-contents', RegisterListeningContentAction::class);
     Route::get('/my/following', GetMyFollowingAccountsAction::class);
     Route::get('/my/blocks', GetMyBlocksAction::class);
     Route::get('/my/follow-requests', GetReceivedFollowRequestsAction::class);
