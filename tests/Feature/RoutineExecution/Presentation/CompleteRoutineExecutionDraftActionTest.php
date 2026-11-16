@@ -63,6 +63,37 @@ final class CompleteRoutineExecutionDraftActionTest extends TestCase
         $this->assertDatabaseCount('routine_execution_action_drafts', 0);
     }
 
+    public function test_direct_execution_post_is_unavailable_while_execution_get_routes_remain(): void
+    {
+        $this->withSession(['account_identifier' => self::ACCOUNT])->postJson('/api/routine-executions', [
+            'routine_identifier' => self::ROUTINE,
+        ])->assertNotFound();
+
+        $this->postJson('/api/routines/'.self::ROUTINE.'/execution-draft/complete')->assertCreated();
+        $this->getJson('/api/routine-executions/'.self::DRAFT)->assertOk();
+        $this->getJson('/api/accounts/'.self::ACCOUNT.'/routine-executions')->assertOk()->assertJsonPath('total', 1);
+        $this->getJson('/api/my/routine-executions')->assertOk()->assertJsonPath('total', 1);
+        $this->getJson('/api/my/routine-executions/history?start=2026-01-01T00:00:00Z&end=2027-01-01T00:00:00Z')->assertOk()->assertJsonPath('total', 1);
+    }
+
+    public function test_draft_creation_progress_completion_and_history(): void
+    {
+        DB::table('routine_execution_drafts')->delete();
+
+        $this->withSession(['account_identifier' => self::ACCOUNT])->postJson('/api/routine-execution-drafts', ['routine_identifier' => self::ROUTINE])->assertCreated();
+        $draft = DB::table('routine_execution_drafts')->where('executor_account_identifier', self::ACCOUNT)->value('routine_execution_identifier');
+        self::assertNotNull($draft);
+        $url = '/api/routines/'.self::ROUTINE.'/execution-draft';
+        $this->patchJson($url.'/actions', ['routine_action_identifier' => self::ACTION, 'is_executed' => true])->assertNoContent();
+        $this->patchJson($url.'/memo', ['routine_execution_memo' => '完了'])->assertNoContent();
+        $this->postJson($url.'/complete')->assertCreated();
+
+        $this->assertDatabaseHas('routine_executions', ['routine_execution_identifier' => $draft, 'routine_execution_memo' => '完了']);
+        $this->assertDatabaseHas('routine_execution_actions', ['routine_execution_identifier' => $draft, 'routine_action_identifier' => self::ACTION]);
+        $this->assertDatabaseMissing('routine_execution_drafts', ['routine_execution_identifier' => $draft]);
+        $this->getJson('/api/my/routine-executions/history?start=2000-01-01T00:00:00Z&end=2100-01-01T00:00:00Z')->assertOk()->assertJsonPath('total', 1);
+    }
+
     public function test_repeat_missing_and_other_accounts_cannot_complete_the_draft(): void
     {
         $url = '/api/routines/'.self::ROUTINE.'/execution-draft/complete';
