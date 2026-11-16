@@ -1,5 +1,6 @@
 """Real external adapters for the manual coordinator; never run by local simulations."""
 import hashlib
+import functools
 import importlib.util
 import ipaddress
 import json
@@ -19,6 +20,27 @@ from coordinate import (BACKEND, FRONTEND, SELECTION, WORK, WRANGLER, Firewall,
 
 INSTANCE = 'hibilio-production-api'
 REGION = 'ap-northeast-1'
+
+DIAGNOSTIC_STAGES = frozenset({
+    'credentials', 'version-validation', 'version-availability', 'backend-main',
+    'frontend-main', 'backend-ci', 'images-ci', 'frontend-ci', 'cloudflare-pages',
+    'compose-hashes', 'images', 'selection-write', 'selection-read',
+    'backend-ancestry', 'frontend-ancestry', 'compose-verification',
+    'frontend-marker', 'frontend-build', 'wrangler', 'aws-credentials',
+    'lightsail-instance', 'firewall-state', 'runner-address',
+})
+
+
+def diagnose_preflight(method):
+    @functools.wraps(method)
+    def wrapped(self, *args, **kwargs):
+        self.diagnostic_failure = None
+        try:
+            return method(self, *args, **kwargs)
+        except Exception as error:
+            self.diagnostic_failure = (error, self.diagnostic_stage)
+            raise
+    return wrapped
 
 
 class ApiError(RuntimeError):
@@ -146,7 +168,10 @@ class Services:
         guard = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(guard)
         for package in guard.PACKAGES:
-            guard.check_package(package, self.env['GH_TOKEN'], phase='pre')
+            try:
+                guard.check_package(package, self.env['GH_TOKEN'], phase='pre')
+            except guard.PackageHttpError as error:
+                raise ApiError(error.status) from None
         digests = {}
         with tempfile.TemporaryDirectory() as directory:
             env = clean_env(directory)
@@ -160,25 +185,42 @@ class Services:
                 digests[service + '_digest'] = image_digest(metadata, service, sha)
         return digests
 
+    @diagnose_preflight
     def prepare(self):
+        self.diagnostic_stage = 'credentials'
         self.credentials()
+        self.diagnostic_stage = 'version-validation'
         version = self.env.get('RELEASE_VERSION', '')
         validate_version(version)
+        self.diagnostic_stage = 'version-availability'
         self.absent_version(version)
-        backend, frontend = self.resolve(BACKEND), self.resolve(FRONTEND)
-        runs = {'backend': self.ci(BACKEND, backend, 'ci.yml', 'Backend checks'),
-                'images': self.ci(BACKEND, backend, 'production-images.yml', 'publish'),
-                'frontend': self.ci(FRONTEND, frontend, 'frontend.yml', 'Verify frontend')}
+        self.diagnostic_stage = 'backend-main'
+        backend = self.resolve(BACKEND)
+        self.diagnostic_stage = 'frontend-main'
+        frontend = self.resolve(FRONTEND)
+        self.diagnostic_stage = 'backend-ci'
+        backend_ci = self.ci(BACKEND, backend, 'ci.yml', 'Backend checks')
+        self.diagnostic_stage = 'images-ci'
+        images_ci = self.ci(BACKEND, backend, 'production-images.yml', 'publish')
+        self.diagnostic_stage = 'frontend-ci'
+        frontend_ci = self.ci(FRONTEND, frontend, 'frontend.yml', 'Verify frontend')
+        runs = {'backend': backend_ci, 'images': images_ci, 'frontend': frontend_ci}
+        self.diagnostic_stage = 'cloudflare-pages'
         project = self.cf()
         validate_pages(project)
         canonical = project.get('canonical_deployment')
         if not canonical or not canonical.get('id'):
             raise ValueError('Existing production Pages deployment required')
+        self.diagnostic_stage = 'compose-hashes'
+        hashes = {name: hashlib.sha256(remote.fetch(
+            f'https://raw.githubusercontent.com/{BACKEND}/{backend}/{name}')).hexdigest()
+            for name in remote.FILES}
+        self.diagnostic_stage = 'images'
+        digests = self.images(backend)
         selection = dict(version=version, backend_sha=backend, frontend_sha=frontend,
                          ci_runs=runs, previous_pages_deployment_id=canonical['id'],
-                         compose_hashes={name: hashlib.sha256(remote.fetch(
-                             f'https://raw.githubusercontent.com/{BACKEND}/{backend}/{name}')).hexdigest()
-                             for name in remote.FILES}, **self.images(backend))
+                         compose_hashes=hashes, **digests)
+        self.diagnostic_stage = 'selection-write'
         write_json(SELECTION, selection)
         return selection
 
@@ -192,15 +234,21 @@ class Services:
             args += ['--port-info', json.dumps(port)]
         return json.loads(run(args))
 
+    @diagnose_preflight
     def preflight(self):
+        self.diagnostic_stage = 'credentials'
         self.credentials()
+        self.diagnostic_stage = 'selection-read'
         manifest = json.loads(SELECTION.read_text())
+        self.diagnostic_stage = 'version-validation'
         if manifest['version'] != self.env.get('RELEASE_VERSION'):
             raise ValueError('Version changed after preparation')
         validate_version(manifest['version'])
+        self.diagnostic_stage = 'version-availability'
         self.absent_version(manifest['version'])
         # Frozen SHAs remain valid if main advances. Force-pushed-away commits fail closed.
         for repo, key in ((BACKEND, 'backend_sha'), (FRONTEND, 'frontend_sha')):
+            self.diagnostic_stage = 'backend-ancestry' if repo == BACKEND else 'frontend-ancestry'
             sha = manifest[key]
             if not remote.matches(remote.SHA, sha):
                 raise ValueError('Invalid frozen SHA')
@@ -209,33 +257,46 @@ class Services:
                     or comparison.get('base_commit', {}).get('sha') != sha
                     or comparison.get('merge_base_commit', {}).get('sha') != sha):
                 raise ValueError('Frozen SHA no longer trusted main ancestry')
+        self.diagnostic_stage = 'backend-ci'
         self.ci(BACKEND, manifest['backend_sha'], 'ci.yml', 'Backend checks')
+        self.diagnostic_stage = 'images-ci'
         self.ci(BACKEND, manifest['backend_sha'], 'production-images.yml', 'publish')
+        self.diagnostic_stage = 'frontend-ci'
         self.ci(FRONTEND, manifest['frontend_sha'], 'frontend.yml', 'Verify frontend')
+        self.diagnostic_stage = 'images'
         if self.images(manifest['backend_sha']) != {key: manifest[key] for key in ('app_digest', 'nginx_digest')}:
             raise ValueError('Registry tag changed since prebuild')
+        self.diagnostic_stage = 'compose-verification'
         remote.trusted_compose(manifest['backend_sha'], manifest['compose_hashes'])
+        self.diagnostic_stage = 'cloudflare-pages'
         project = self.cf()
         validate_pages(project)
         if project['canonical_deployment']['id'] != manifest['previous_pages_deployment_id']:
             raise ValueError('Pages production changed during preflight')
+        self.diagnostic_stage = 'frontend-marker'
         marker = json.loads((WORK / 'frontend/dist/release.json').read_text())
         if marker != release_marker(manifest):
             raise ValueError('Prebuilt release marker mismatch')
+        self.diagnostic_stage = 'frontend-build'
         build = json.loads((WORK / 'build.json').read_text())
         if (build['dist_digest'] != dist_digest(WORK / 'frontend/dist')
                 or build['frontend_sha'] != manifest['frontend_sha'] or build['wrangler_version'] != WRANGLER):
             raise ValueError('Prebuilt assets changed')
         manifest.update(build)
+        self.diagnostic_stage = 'wrangler'
         if not (WORK / 'tools/node_modules/wrangler/bin/wrangler.js').is_file():
             raise ValueError('Pinned Wrangler missing')
+        self.diagnostic_stage = 'aws-credentials'
         if any(not self.env.get(name) for name in ('AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_SESSION_TOKEN')):
             raise ValueError('OIDC temporary credentials missing')
+        self.diagnostic_stage = 'lightsail-instance'
         instance = self.aws('get-instance')['instance']
         if (instance['name'] != INSTANCE or instance['publicIpAddress'] != self.env['DEPLOY_HOST']
                 or instance['state']['name'] != 'running' or instance['location']['regionName'] != REGION):
             raise ValueError('Unexpected Lightsail instance/state/address')
+        self.diagnostic_stage = 'firewall-state'
         rule_atoms(self.firewall.read())
+        self.diagnostic_stage = 'runner-address'
         with urllib.request.urlopen('https://checkip.amazonaws.com', timeout=20) as response:
             self.address = str(ipaddress.IPv4Address(response.read(64).decode().strip()))
         return manifest
