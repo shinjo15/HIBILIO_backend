@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\DB;
-use Src\RoutineExecution\Application\UseCase\CreateRoutineExecution\CreateRoutineExecutionInput;
-use Src\RoutineExecution\Application\UseCase\CreateRoutineExecution\CreateRoutineExecutionInterface;
+use Src\RoutineExecution\Application\UseCase\CompleteRoutineExecutionDraft\CompleteRoutineExecutionDraftInput;
+use Src\RoutineExecution\Application\UseCase\CompleteRoutineExecutionDraft\CompleteRoutineExecutionDraftInterface;
 use Src\RoutineExecution\Domain\Entity\Account;
 use Src\RoutineExecution\Domain\Repository\AccountRepositoryInterface;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
-use Src\Shared\Domain\ValueObject\Identifier\RoutineActionIdentifier;
 use Src\Shared\Domain\ValueObject\Identifier\RoutineIdentifier;
 use Tests\Support\PostgresDatabaseGuard;
 
@@ -29,12 +28,7 @@ $app->instance(AccountRepositoryInterface::class, new class($repository, $mode) 
 
     public function find(AccountIdentifier $id): ?Account
     {
-        return $this->inner->find($id);
-    }
-
-    public function findForUpdate(AccountIdentifier $id): ?Account
-    {
-        $account = $this->inner->findForUpdate($id);
+        $account = $this->inner->find($id);
         if ($this->mode !== 'contend') {
             fwrite(STDOUT, "LOCKED\n");
             fflush(STDOUT);
@@ -44,6 +38,11 @@ $app->instance(AccountRepositoryInterface::class, new class($repository, $mode) 
         }
 
         return $account;
+    }
+
+    public function findForUpdate(AccountIdentifier $id): ?Account
+    {
+        return $this->inner->findForUpdate($id);
     }
 
     public function save(Account $account): void
@@ -58,11 +57,9 @@ $app->instance(AccountRepositoryInterface::class, new class($repository, $mode) 
 fwrite(STDOUT, 'PID '.DB::selectOne('select pg_backend_pid() as pid')->pid."\n");
 fflush(STDOUT);
 try {
-    $app->make(CreateRoutineExecutionInterface::class)->execute(new CreateRoutineExecutionInput(
+    $app->make(CompleteRoutineExecutionDraftInterface::class)->execute(new CompleteRoutineExecutionDraftInput(
         new AccountIdentifier('11111111-1111-4111-8111-111111111111'),
-        new RoutineIdentifier('22222222-2222-4222-8222-222222222222'),
-        [new RoutineActionIdentifier('33333333-3333-4333-8333-333333333333')],
-        null,
+        new RoutineIdentifier($mode === 'contend' ? '22222222-2222-4222-8222-222222222223' : '22222222-2222-4222-8222-222222222222'),
     ));
     fwrite(STDOUT, "COMMITTED\n");
 } catch (Throwable $exception) {

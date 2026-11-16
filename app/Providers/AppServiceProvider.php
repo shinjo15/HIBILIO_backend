@@ -202,8 +202,6 @@ use Src\Routine\Infrastructure\Repository\RoutineActionRepository;
 use Src\Routine\Infrastructure\Repository\RoutineRepository;
 use Src\RoutineExecution\Application\UseCase\CompleteRoutineExecutionDraft\CompleteRoutineExecutionDraft;
 use Src\RoutineExecution\Application\UseCase\CompleteRoutineExecutionDraft\CompleteRoutineExecutionDraftInterface;
-use Src\RoutineExecution\Application\UseCase\CreateRoutineExecution\CreateRoutineExecution;
-use Src\RoutineExecution\Application\UseCase\CreateRoutineExecution\CreateRoutineExecutionInterface;
 use Src\RoutineExecution\Application\UseCase\CreateRoutineExecutionDraft\CreateRoutineExecutionDraft;
 use Src\RoutineExecution\Application\UseCase\CreateRoutineExecutionDraft\CreateRoutineExecutionDraftInterface;
 use Src\RoutineExecution\Application\UseCase\DeleteRoutineExecutionDraft\DeleteRoutineExecutionDraft;
@@ -419,7 +417,6 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(UpdateRoutineExecutionDraftActionsInterface::class, UpdateRoutineExecutionDraftActions::class);
         $this->app->bind(RoutineExecutionActionRepositoryInterface::class, RoutineExecutionActionRepository::class);
         $this->app->bind(RoutineExecutionActionDraftRepositoryInterface::class, RoutineExecutionActionDraftRepository::class);
-        $this->app->bind(CreateRoutineExecutionInterface::class, CreateRoutineExecution::class);
         $this->app->bind(GetAccountRoutineExecutionsInterface::class, GetAccountRoutineExecutions::class);
         $this->app->bind(GetMyRoutineExecutionHistoryInterface::class, GetMyRoutineExecutionHistory::class);
         $this->app->bind(GetMyRoutineExecutionDraftsInterface::class, GetMyRoutineExecutionDrafts::class);
