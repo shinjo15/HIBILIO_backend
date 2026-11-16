@@ -10,6 +10,12 @@ REPOSITORY = 'shinjo15/HIBILIO_backend'
 PACKAGES = ('hibilio-backend-app', 'hibilio-backend-nginx')
 
 
+class PackageHttpError(RuntimeError):
+    def __init__(self, package, status):
+        self.status = status
+        super().__init__(f'{package}: metadata HTTP {status}; publication blocked')
+
+
 class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         return None
@@ -29,11 +35,11 @@ def check_package(package, token, api_url='https://api.github.com', phase='post'
     try:
         with urllib.request.build_opener(NoRedirect).open(request, timeout=20) as response:
             if response.status != 200:
-                raise RuntimeError(f'{package}: unexpected metadata status')
+                raise PackageHttpError(package, response.status)
             metadata = json.load(response)
     except urllib.error.HTTPError as error:
         error.close()
-        raise RuntimeError(f'{package}: metadata HTTP {error.code}; publication blocked') from None
+        raise PackageHttpError(package, error.code) from None
     except (urllib.error.URLError, OSError, ValueError):
         raise RuntimeError(f'{package}: metadata unavailable or invalid; publication blocked') from None
 

@@ -71,6 +71,14 @@ class VisibilityTest(unittest.TestCase):
                     with self.assertRaises(RuntimeError):
                         self.check(phase=phase)
 
+    def test_http_failure_exposes_numeric_status_without_response_body(self):
+        self.status = 403
+        self.body = b'secret-response-body'
+        with self.assertRaises(RuntimeError) as caught:
+            self.check()
+        self.assertEqual(caught.exception.status, 403)
+        self.assertNotIn('secret-response-body', str(caught.exception))
+
     def test_private_exact_package_is_accepted(self):
         for phase in ('pre', 'post'):
             self.assertTrue(self.check(phase=phase))

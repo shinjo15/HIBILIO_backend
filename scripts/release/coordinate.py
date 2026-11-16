@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import sys
 import time
+import urllib.error
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import remote_deploy as remote
@@ -223,8 +224,9 @@ def dist_digest(directory):
 
 def main():
     import signal
-    from services import Services, build
+    from services import ApiError, DIAGNOSTIC_STAGES, Services, build
     os.umask(0o077)
+    service = None
     def interrupted(signum, frame):
         raise RuntimeError('Release interrupted; cleanup required')
     signal.signal(signal.SIGTERM, interrupted)
@@ -235,9 +237,11 @@ def main():
             if mode == 'build':
                 build()
             elif mode == 'prepare':
-                Services().prepare()
+                service = Services()
+                service.prepare()
             elif mode == 'deploy':
-                coordinate(Services())
+                service = Services()
+                coordinate(service)
             elif mode == 'cleanup':
                 Services().cleanup()
             elif mode != 'export-recovery':
@@ -246,9 +250,26 @@ def main():
             export_firewall_recovery(WORK / 'firewall.json')
         return 0
     except Exception as error:
-        print('Release stopped: ' + type(error).__name__ + '; inspect manifest and docs/release.md', file=sys.stderr)
+        error_type = type(error)
+        kind = next((name for cls, name in ((ValueError, 'ValueError'), (RuntimeError, 'RuntimeError'),
+                                             (ApiError, 'ApiError')) if error_type is cls), 'Error')
+        details = ''
+        failure = getattr(service, 'diagnostic_failure', None)
+        if isinstance(failure, tuple) and len(failure) == 2 and failure[0] is error:
+            stage = failure[1]
+            if type(stage) is str and stage in DIAGNOSTIC_STAGES:
+                details += '; stage=' + stage
+        status = None
+        if error_type is ApiError:
+            status = vars(error).get('status')
+        elif error_type is urllib.error.HTTPError:
+            status = vars(error).get('code')
+        if type(status) is int and 100 <= status <= 599:
+            details += '; HTTP status=' + str(status)
+        print('Release stopped: ' + kind + details + '; inspect manifest and docs/release.md', file=sys.stderr)
         return 1
 
 
 if __name__ == '__main__':
+    sys.modules['coordinate'] = sys.modules[__name__]
     raise SystemExit(main())

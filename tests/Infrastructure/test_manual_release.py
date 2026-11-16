@@ -7,11 +7,13 @@ import re
 import subprocess
 import tempfile
 import os
+import sys
+import textwrap
 import http.server
 import threading
 from pathlib import Path
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -443,11 +445,233 @@ class CoordinatorTests(unittest.TestCase):
         with self.assertRaises(ValueError): self.module.image_digest(image, 'app', 'a' * 40)
 
 
+class CliBoundaryTests(unittest.TestCase):
+    def test_actual_cli_import_identity_and_http_diagnostics(self):
+        fixture = textwrap.dedent('''
+            import builtins, io, os, socket, subprocess, sys, urllib.error, urllib.request
+            real_import = builtins.__import__
+            scenario = os.environ['FIXTURE_SCENARIO']
+            def blocked(*args, **kwargs):
+                raise AssertionError('unexpected external operation')
+            socket.socket.connect = blocked
+            subprocess.run = blocked
+            class Opener:
+                def open(self, request, timeout=None):
+                    expected = ('/users/shinjo15/packages/container/hibilio-backend-app' if scenario == 'guard'
+                                else '/repos/shinjo15/HIBILIO_backend/git/ref/tags/v1.2.3')
+                    if urllib.request.urlparse(request.full_url).path != expected:
+                        raise AssertionError('unexpected request')
+                    status = 403 if scenario == 'guard' else 429
+                    raise urllib.error.HTTPError(request.full_url, status, 'secret-response-body', {},
+                                                 io.BytesIO(b'secret-response-body'))
+            urllib.request.build_opener = lambda *args: Opener()
+            def importing(name, *args, **kwargs):
+                module = real_import(name, *args, **kwargs)
+                if name == 'services':
+                    def credentials(self):
+                        if module.Firewall is not sys.modules['__main__'].Firewall:
+                            raise RuntimeError('identity mismatch')
+                    module.Services.credentials = credentials
+                    module.Services.resolve = lambda self, repo: 'a' * 40
+                    module.Services.ci = lambda self, *args: 1
+                    module.Services.cf = lambda self: {
+                        'name': 'hibilio-web', 'production_branch': 'main',
+                        'source': {'type': 'github', 'config': {
+                            'production_branch': 'main', 'production_deployments_enabled': False,
+                            'owner': 'shinjo15', 'repo_name': 'HIBILIO_web_frontend'}},
+                        'canonical_deployment': {'id': 'fixture'}}
+                    module.remote.fetch = lambda url: b'fixture'
+                    if scenario == 'guard':
+                        module.Services.absent_version = lambda self, version: None
+                return module
+            builtins.__import__ = importing
+        ''')
+        for scenario, stage, status in (('api', 'version-availability', 429), ('guard', 'images', 403)):
+            with self.subTest(scenario=scenario), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                (root / 'sitecustomize.py').write_text(fixture)
+                (root / '.github').symlink_to(ROOT / '.github', target_is_directory=True)
+                env = {'PATH': os.defpath, 'PYTHONPATH': directory, 'PYTHONDONTWRITEBYTECODE': '1',
+                       'FIXTURE_SCENARIO': scenario, 'GH_TOKEN': 'fixture-secret-token',
+                       'RELEASE_VERSION': 'v1.2.3'}
+                result = subprocess.run([sys.executable, str(ROOT / 'scripts/release/coordinate.py'), 'prepare'],
+                                        cwd=root, env=env, capture_output=True, text=True, timeout=15)
+                output = result.stdout + result.stderr
+                self.assertEqual(result.returncode, 1, output)
+                self.assertIn('stage=' + stage, output)
+                self.assertIn('HTTP status=' + str(status), output)
+                for forbidden in ('Traceback', 'secret', 'identity mismatch', 'unexpected external operation',
+                                  'api.github.com', 'response-body'):
+                    self.assertNotIn(forbidden, output)
+                self.assertFalse((root / '.release-work').exists())
+
+
 class AdapterTests(unittest.TestCase):
     def setUp(self):
         load('coordinate')
         self.module = load('services')
         self.services = self.module.Services()
+
+    def test_prepare_reports_safe_version_api_status(self):
+        coordinate = __import__('coordinate')
+        services = __import__('services')
+        adapter = services.Services()
+        adapter.env = {'RELEASE_VERSION': 'v1.2.3'}
+        adapter.credentials = lambda: None
+        adapter.gh = lambda *args, **kwargs: (_ for _ in ()).throw(services.ApiError(403))
+        stderr = io.StringIO()
+        with patch.object(services, 'Services', return_value=adapter), \
+             patch.object(coordinate.sys, 'argv', ['coordinate.py', 'prepare']), \
+             patch.object(coordinate.sys, 'stderr', stderr), \
+             patch.object(coordinate, 'export_firewall_recovery'):
+            self.assertEqual(coordinate.main(), 1)
+        self.assertIn('version-availability', stderr.getvalue())
+        self.assertIn('403', stderr.getvalue())
+
+    def test_prepare_diagnostics_cover_stages_without_leaking_untrusted_errors(self):
+        coordinate = __import__('coordinate')
+        services = __import__('services')
+        secret = 'secret-token https://evil.invalid/private /tmp/private ENV_VALUE response-body'
+        project = {'name': 'hibilio-web', 'production_branch': 'main', 'source': {'type': 'github',
+                   'config': {'production_branch': 'main', 'production_deployments_enabled': False,
+                              'owner': 'shinjo15', 'repo_name': 'HIBILIO_web_frontend'}},
+                   'canonical_deployment': {'id': 'fixture'}}
+        for target, stage in [('credentials', 'credentials'), ('resolve-backend', 'backend-main'),
+                              ('resolve-frontend', 'frontend-main'), ('ci-backend', 'backend-ci'),
+                              ('ci-images', 'images-ci'), ('ci-frontend', 'frontend-ci'),
+                              ('cf', 'cloudflare-pages'), ('fetch', 'compose-hashes'),
+                              ('images', 'images')]:
+            with self.subTest(stage=stage):
+                adapter = services.Services()
+                adapter.env = {'RELEASE_VERSION': 'v1.2.3'}
+                def fail_if(name):
+                    if target == name:
+                        raise ValueError(secret)
+                adapter.credentials = lambda: fail_if('credentials')
+                adapter.absent_version = lambda version: None
+                def resolve(repo):
+                    fail_if('resolve-backend' if repo == services.BACKEND else 'resolve-frontend')
+                    return 'a' * 40
+                def ci(repo, sha, workflow, job):
+                    fail_if({'ci.yml': 'ci-backend', 'production-images.yml': 'ci-images',
+                             'frontend.yml': 'ci-frontend'}[workflow])
+                    return 1
+                def cf():
+                    fail_if('cf')
+                    return project
+                def fetch(url):
+                    fail_if('fetch')
+                    return b'fixture'
+                def images(sha):
+                    fail_if('images')
+                    return {}
+                adapter.resolve, adapter.ci, adapter.cf, adapter.images = resolve, ci, cf, images
+                stderr = io.StringIO()
+                with patch.object(services, 'Services', return_value=adapter), \
+                     patch.object(services.remote, 'fetch', fetch), \
+                     patch.object(services, 'write_json') as write, \
+                     patch.object(coordinate.sys, 'argv', ['coordinate.py', 'prepare']), \
+                     patch.object(coordinate.sys, 'stderr', stderr), \
+                     patch.object(coordinate, 'export_firewall_recovery'):
+                    self.assertEqual(coordinate.main(), 1)
+                self.assertIn('stage=' + stage, stderr.getvalue())
+                self.assertNotIn(secret, stderr.getvalue())
+                for part in secret.split():
+                    self.assertNotIn(part, stderr.getvalue())
+                write.assert_not_called()
+
+    def test_deploy_preflight_reports_api_failure_and_never_opens_firewall(self):
+        coordinate = __import__('coordinate')
+        services = __import__('services')
+        adapter = services.Services()
+        adapter.env = {'RELEASE_VERSION': 'v1.2.3'}
+        adapter.credentials = lambda: None
+        adapter.absent_version = lambda version: None
+        adapter.gh = lambda *args, **kwargs: (_ for _ in ()).throw(services.ApiError(429))
+        stderr = io.StringIO()
+        with tempfile.TemporaryDirectory() as directory:
+            selection = Path(directory) / 'selection.json'
+            selection.write_text(json.dumps({'version': 'v1.2.3', 'backend_sha': 'a' * 40}))
+            with patch.object(services, 'SELECTION', selection), \
+                 patch.object(services, 'Services', return_value=adapter), \
+                 patch.object(adapter, 'open_firewall') as firewall, \
+                 patch.object(coordinate.sys, 'argv', ['coordinate.py', 'deploy']), \
+                 patch.object(coordinate.sys, 'stderr', stderr), \
+                 patch.object(coordinate, 'export_firewall_recovery'):
+                self.assertEqual(coordinate.main(), 1)
+                firewall.assert_not_called()
+        self.assertIn('stage=backend-ancestry', stderr.getvalue())
+        self.assertIn('HTTP status=429', stderr.getvalue())
+
+    def test_untrusted_error_details_and_invalid_status_are_never_logged(self):
+        coordinate = __import__('coordinate')
+        services = __import__('services')
+        secret = 'secret-token https://evil.invalid/private /tmp/private ENV_VALUE response-body'
+        unexpected = type('secret_type', (Exception,), {})
+        failures = [(unexpected(secret), None), (services.ApiError(secret), None),
+                    (services.urllib.error.HTTPError('https://evil.invalid/private', 503,
+                                                      secret, {}, None), '503')]
+        for error, status in failures:
+            with self.subTest(status=status):
+                adapter = services.Services()
+                def fail():
+                    raise error
+                adapter.credentials = fail
+                stderr = io.StringIO()
+                with patch.object(services, 'Services', return_value=adapter), \
+                     patch.object(coordinate.sys, 'argv', ['coordinate.py', 'prepare']), \
+                     patch.object(coordinate.sys, 'stderr', stderr), \
+                     patch.object(coordinate, 'export_firewall_recovery'):
+                    self.assertEqual(coordinate.main(), 1)
+                self.assertIn('stage=credentials', stderr.getvalue())
+                for part in secret.split() + ['secret_type']:
+                    self.assertNotIn(part, stderr.getvalue())
+                if status:
+                    self.assertIn('HTTP status=' + status, stderr.getvalue())
+                else:
+                    self.assertNotIn('HTTP status=', stderr.getvalue())
+
+    def test_diagnostics_handle_unhashable_exception_type_and_missing_status(self):
+        coordinate = __import__('coordinate')
+        services = __import__('services')
+        class HostileMeta(type):
+            def __hash__(cls):
+                raise RuntimeError('secret-hash')
+        class HostileError(Exception, metaclass=HostileMeta):
+            pass
+        errors = [HostileError('secret-message'), services.ApiError.__new__(services.ApiError),
+                  services.urllib.error.HTTPError.__new__(services.urllib.error.HTTPError)]
+        for error in errors:
+            with self.subTest(error_type=type(error).__name__):
+                adapter = services.Services()
+                adapter.credentials = MagicMock(side_effect=error)
+                stderr = io.StringIO()
+                with patch.object(services, 'Services', return_value=adapter), \
+                     patch.object(coordinate.sys, 'argv', ['coordinate.py', 'prepare']), \
+                     patch.object(coordinate.sys, 'stderr', stderr), \
+                     patch.object(coordinate, 'export_firewall_recovery'):
+                    self.assertEqual(coordinate.main(), 1)
+                self.assertIn('stage=credentials', stderr.getvalue())
+                self.assertNotIn('secret', stderr.getvalue())
+                self.assertNotIn('Traceback', stderr.getvalue())
+                self.assertNotIn('HTTP status=', stderr.getvalue())
+
+    def test_image_visibility_http_failure_is_reported_without_docker(self):
+        class PackageHttpError(RuntimeError):
+            status = 403
+        guard = MagicMock()
+        guard.PACKAGES = ('fixture',)
+        guard.PackageHttpError = PackageHttpError
+        guard.check_package.side_effect = PackageHttpError('secret-response-body')
+        self.services.env = {'GH_TOKEN': 'fixture-token'}
+        with patch.object(self.module.importlib.util, 'spec_from_file_location', return_value=MagicMock()), \
+             patch.object(self.module.importlib.util, 'module_from_spec', return_value=guard), \
+             patch.object(self.module, 'run') as command:
+            with self.assertRaises(self.module.ApiError) as caught:
+                self.services.images('a' * 40)
+        self.assertEqual(caught.exception.status, 403)
+        self.assertNotIn('secret-response-body', str(caught.exception))
+        command.assert_not_called()
 
     def test_actual_adapter_missing_credentials_fails_without_api_or_commands(self):
         self.services.env = {}
