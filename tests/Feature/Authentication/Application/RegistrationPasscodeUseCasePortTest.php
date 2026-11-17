@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Feature\Authentication\Application;
 
 use ReflectionMethod;
-use Src\Account\Domain\ValueObject\EmailAddress;
 use Src\Authentication\Application\UseCase\GenerateRegistrationPasscode\GenerateRegistrationPasscode;
 use Src\Authentication\Application\UseCase\GenerateRegistrationPasscode\GenerateRegistrationPasscodeInput;
 use Src\Authentication\Application\UseCase\GenerateRegistrationPasscode\GenerateRegistrationPasscodeInputPort;
@@ -20,6 +19,7 @@ use Src\Authentication\Application\UseCase\VerifyRegistrationPasscode\VerifyRegi
 use Src\Authentication\Application\UseCase\VerifyRegistrationPasscode\VerifyRegistrationPasscodeOutputPort;
 use Src\Authentication\Domain\ValueObject\LoginPasscode;
 use Src\Authentication\Domain\ValueObject\RegistrationPasscodeChallengeIdentifier;
+use Src\Shared\Domain\ValueObject\EmailAddress;
 use Tests\TestCase;
 
 final class RegistrationPasscodeUseCasePortTest extends TestCase

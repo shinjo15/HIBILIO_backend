@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Src\Contact\Infrastructure\Repository;
 
 use App\Models\AccountModel;
-use Src\Account\Domain\ValueObject\EmailAddress;
 use Src\Contact\Domain\Repository\AccountRepositoryInterface;
+use Src\Shared\Domain\ValueObject\EmailAddress;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
 final class AccountRepository implements AccountRepositoryInterface

@@ -6,11 +6,11 @@ namespace Tests\Unit\Authentication\Domain;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
-use Src\Account\Domain\ValueObject\EmailAddress;
 use Src\Authentication\Domain\Entity\LoginPasscodeChallenge;
 use Src\Authentication\Domain\ValueObject\LoginPasscode;
 use Src\Authentication\Domain\ValueObject\LoginPasscodeChallengeIdentifier;
 use Src\Authentication\Domain\ValueObject\LoginPasscodeHash;
+use Src\Shared\Domain\ValueObject\EmailAddress;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
 final class LoginPasscodeChallengeTest extends TestCase

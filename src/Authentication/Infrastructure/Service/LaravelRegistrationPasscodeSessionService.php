@@ -6,8 +6,8 @@ namespace Src\Authentication\Infrastructure\Service;
 
 use Illuminate\Http\Request;
 use RuntimeException;
-use Src\Account\Domain\ValueObject\EmailAddress;
 use Src\Authentication\Application\Service\RegistrationPasscodeSessionServiceInterface;
+use Src\Shared\Domain\ValueObject\EmailAddress;
 
 final readonly class LaravelRegistrationPasscodeSessionService implements RegistrationPasscodeSessionServiceInterface
 {

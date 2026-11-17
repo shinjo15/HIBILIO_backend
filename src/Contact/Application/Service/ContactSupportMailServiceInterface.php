@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Src\Contact\Application\Service;
 
-use Src\Account\Domain\ValueObject\EmailAddress;
 use Src\Contact\Domain\Entity\Contact;
+use Src\Shared\Domain\ValueObject\EmailAddress;
 
 interface ContactSupportMailServiceInterface
 {

@@ -11,10 +11,10 @@ use Illuminate\Support\Facades\Schema;
 use Src\Account\Domain\Entity\Account as ProfileAccount;
 use Src\Account\Domain\ValueObject\AccountName;
 use Src\Account\Domain\ValueObject\AccountUiMode;
-use Src\Account\Domain\ValueObject\EmailAddress;
 use Src\Account\Domain\ValueObject\FavoriteTagIdentifiers;
 use Src\Account\Infrastructure\Repository\AccountRepository as ProfileRepository;
 use Src\RoutineExecution\Domain\Repository\AccountRepositoryInterface;
+use Src\Shared\Domain\ValueObject\EmailAddress;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Tests\TestCase;
 

@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Src\Contact\Infrastructure\Service;
 
 use Illuminate\Support\Facades\Mail;
-use Src\Account\Domain\ValueObject\EmailAddress;
 use Src\Contact\Application\Service\ContactSupportMailServiceInterface;
 use Src\Contact\Domain\Entity\Contact;
 use Src\Contact\Infrastructure\Mail\ContactSupportMail;
+use Src\Shared\Domain\ValueObject\EmailAddress;
 
 final class LaravelContactSupportMailService implements ContactSupportMailServiceInterface
 {

@@ -7,9 +7,9 @@ namespace Src\Account\Domain\Factory;
 use Src\Account\Domain\Entity\Account;
 use Src\Account\Domain\ValueObject\AccountBio;
 use Src\Account\Domain\ValueObject\AccountName;
-use Src\Account\Domain\ValueObject\EmailAddress;
 use Src\Account\Domain\ValueObject\FavoriteTagIdentifiers;
 use Src\Account\Domain\ValueObject\SocialLink;
+use Src\Shared\Domain\ValueObject\EmailAddress;
 
 interface AccountFactoryInterface
 {

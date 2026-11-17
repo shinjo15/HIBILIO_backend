@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Tests\Unit\Authentication\Infrastructure\Factory;
 
 use PHPUnit\Framework\TestCase;
-use Src\Account\Domain\ValueObject\EmailAddress;
 use Src\Authentication\Domain\ValueObject\LoginPasscodeHash;
 use Src\Authentication\Infrastructure\Factory\LoginPasscodeChallengeFactory;
 use Src\Shared\Application\Service\UuidServiceInterface;
+use Src\Shared\Domain\ValueObject\EmailAddress;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
 final class LoginPasscodeChallengeFactoryTest extends TestCase

@@ -7,13 +7,13 @@ namespace Tests\Feature\Contact\Presentation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
-use Src\Account\Domain\ValueObject\EmailAddress;
 use Src\Contact\Application\Service\ContactSupportMailServiceInterface;
 use Src\Contact\Domain\Entity\Contact;
 use Src\Contact\Domain\Repository\AccountRepositoryInterface as ContactAccountRepositoryInterface;
 use Src\Contact\Domain\Repository\ContactRepositoryInterface;
 use Src\Contact\Domain\ValueObject\ContactIdentifier;
 use Src\Contact\Infrastructure\Repository\ContactRepository;
+use Src\Shared\Domain\ValueObject\EmailAddress;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Tests\TestCase;
 

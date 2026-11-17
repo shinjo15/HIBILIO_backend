@@ -17,9 +17,9 @@ use Src\Account\Domain\ValueObject\AccountBio;
 use Src\Account\Domain\ValueObject\AccountHeader;
 use Src\Account\Domain\ValueObject\AccountIcon;
 use Src\Account\Domain\ValueObject\AccountName;
-use Src\Account\Domain\ValueObject\EmailAddress;
 use Src\Account\Domain\ValueObject\FavoriteTagIdentifiers;
 use Src\Shared\Application\Transaction\TransactionManagerInterface;
+use Src\Shared\Domain\ValueObject\EmailAddress;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
 final class CreateAccountTest extends TestCase

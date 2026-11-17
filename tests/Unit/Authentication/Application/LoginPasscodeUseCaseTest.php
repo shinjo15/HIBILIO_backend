@@ -8,7 +8,6 @@ use PHPUnit\Framework\TestCase;
 use Src\Account\Domain\Entity\Account;
 use Src\Account\Domain\Repository\AccountRepositoryInterface;
 use Src\Account\Domain\ValueObject\AccountName;
-use Src\Account\Domain\ValueObject\EmailAddress;
 use Src\Account\Domain\ValueObject\FavoriteTagIdentifiers;
 use Src\Authentication\Application\Service\LoginPasscodeGeneratorServiceInterface;
 use Src\Authentication\Application\Service\LoginPasscodeHashServiceInterface;
@@ -27,6 +26,7 @@ use Src\Authentication\Domain\Factory\LoginPasscodeChallengeFactoryInterface;
 use Src\Authentication\Domain\ValueObject\LoginPasscode;
 use Src\Authentication\Domain\ValueObject\LoginPasscodeChallengeIdentifier;
 use Src\Authentication\Domain\ValueObject\LoginPasscodeHash;
+use Src\Shared\Domain\ValueObject\EmailAddress;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
 final class LoginPasscodeUseCaseTest extends TestCase

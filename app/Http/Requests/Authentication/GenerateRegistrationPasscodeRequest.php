@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Requests\Authentication;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Src\Account\Domain\ValueObject\EmailAddress;
 use Src\Authentication\Application\UseCase\GenerateRegistrationPasscode\GenerateRegistrationPasscodeInput;
+use Src\Shared\Domain\ValueObject\EmailAddress;
 
 final class GenerateRegistrationPasscodeRequest extends FormRequest
 {

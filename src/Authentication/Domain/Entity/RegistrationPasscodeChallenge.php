@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Src\Authentication\Domain\Entity;
 
-use Src\Account\Domain\ValueObject\EmailAddress;
 use Src\Authentication\Domain\ValueObject\LoginPasscodeHash;
 use Src\Authentication\Domain\ValueObject\RegistrationPasscodeChallengeIdentifier;
+use Src\Shared\Domain\ValueObject\EmailAddress;
 
 final readonly class RegistrationPasscodeChallenge
 {

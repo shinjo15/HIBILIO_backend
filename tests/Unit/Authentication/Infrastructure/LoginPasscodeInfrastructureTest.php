@@ -7,13 +7,13 @@ namespace Tests\Unit\Authentication\Infrastructure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
-use Src\Account\Domain\ValueObject\EmailAddress;
 use Src\Authentication\Domain\ValueObject\LoginPasscode;
 use Src\Authentication\Infrastructure\Mail\LoginPasscodeMail;
 use Src\Authentication\Infrastructure\Service\LaravelPasscodeSessionService;
 use Src\Authentication\Infrastructure\Service\LoginPasscodeGeneratorService;
 use Src\Authentication\Infrastructure\Service\LoginPasscodeHashService;
 use Src\Authentication\Infrastructure\Service\LoginPasscodeMailService;
+use Src\Shared\Domain\ValueObject\EmailAddress;
 use Tests\TestCase;
 
 final class LoginPasscodeInfrastructureTest extends TestCase
