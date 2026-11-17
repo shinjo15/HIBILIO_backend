@@ -17,7 +17,7 @@ return new class extends Migration
 
         Schema::create('permission_groups', function (Blueprint $table): void {
             $table->uuid('permission_group_identifier')->primary();
-            $table->longText('permission_group_name');
+            $table->string('permission_group_name', 50);
         });
 
         Schema::create('admin_permission_group', function (Blueprint $table): void {

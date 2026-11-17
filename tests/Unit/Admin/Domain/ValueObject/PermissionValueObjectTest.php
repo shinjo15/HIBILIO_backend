@@ -39,12 +39,25 @@ final class PermissionValueObjectTest extends TestCase
         new $class('invalid-uuid');
     }
 
-    #[DataProvider('nameClasses')]
-    public function test_name_accepts_nonblank_value_without_length_limit(string $class): void
+    public function test_function_name_accepts_nonblank_value_without_length_limit(): void
     {
         $value = str_repeat('あ', 256);
 
-        self::assertSame($value, (new $class($value))->value());
+        self::assertSame($value, (new AdminFunctionName($value))->value());
+    }
+
+    public function test_group_name_accepts_50_multibyte_characters(): void
+    {
+        $value = str_repeat('あ', 50);
+
+        self::assertSame($value, (new PermissionGroupName($value))->value());
+    }
+
+    public function test_group_name_rejects_51_multibyte_characters(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        new PermissionGroupName(str_repeat('あ', 51));
     }
 
     #[DataProvider('nameClasses')]

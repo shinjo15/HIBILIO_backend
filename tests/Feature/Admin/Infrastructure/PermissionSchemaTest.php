@@ -113,14 +113,17 @@ final class PermissionSchemaTest extends TestCase
         }
     }
 
-    public function test_names_are_not_subject_to_an_arbitrary_short_limit(): void
+    public function test_function_name_is_not_subject_to_an_arbitrary_short_limit(): void
     {
         $name = str_repeat('a', 300);
         DB::table('functions')->insert(['function_identifier' => self::FUNCTION, 'function_name' => $name]);
-        DB::table('permission_groups')->insert(['permission_group_identifier' => self::GROUP, 'permission_group_name' => $name]);
 
         self::assertSame($name, DB::table('functions')->value('function_name'));
-        self::assertSame($name, DB::table('permission_groups')->value('permission_group_name'));
+    }
+
+    public function test_group_name_column_is_a_string(): void
+    {
+        self::assertSame('varchar', Schema::getColumnType('permission_groups', 'permission_group_name'));
     }
 
     private function insertRecords(): void
