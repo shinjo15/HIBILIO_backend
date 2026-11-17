@@ -8,10 +8,10 @@ use Src\Account\Domain\ValueObject\AccountBio;
 use Src\Account\Domain\ValueObject\AccountHeader;
 use Src\Account\Domain\ValueObject\AccountIcon;
 use Src\Account\Domain\ValueObject\AccountName;
-use Src\Account\Domain\ValueObject\EmailAddress;
 use Src\Account\Domain\ValueObject\FavoriteTagIdentifiers;
 use Src\Account\Domain\ValueObject\SocialLink;
 use Src\Authentication\Domain\ValueObject\PendingSocialRegistration;
+use Src\Shared\Domain\ValueObject\EmailAddress;
 
 final readonly class CreateAccountInput implements CreateAccountInputPort
 {

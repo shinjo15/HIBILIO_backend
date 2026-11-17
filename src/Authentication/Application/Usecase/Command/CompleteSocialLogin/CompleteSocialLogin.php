@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Src\Authentication\Application\Usecase\Command\CompleteSocialLogin;
 
 use Src\Account\Domain\Repository\AccountRepositoryInterface;
-use Src\Account\Domain\ValueObject\EmailAddress;
 use Src\Authentication\Application\Service\SocialLoginServiceInterface;
 use Src\Authentication\Application\UseCase\GeneratePersistentLoginToken\GeneratePersistentLoginTokenInput;
 use Src\Authentication\Application\UseCase\GeneratePersistentLoginToken\GeneratePersistentLoginTokenInterface;
@@ -13,6 +12,7 @@ use Src\Authentication\Domain\Entity\SocialLoginConnection;
 use Src\Authentication\Domain\Repository\SocialLoginConnectionRepositoryInterface;
 use Src\Authentication\Domain\ValueObject\PendingSocialRegistration;
 use Src\Shared\Application\Transaction\TransactionManagerInterface;
+use Src\Shared\Domain\ValueObject\EmailAddress;
 
 final readonly class CompleteSocialLogin implements CompleteSocialLoginInterface
 {

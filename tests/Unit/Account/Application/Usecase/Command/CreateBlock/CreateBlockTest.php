@@ -16,9 +16,9 @@ use Src\Account\Domain\Factory\BlockFactoryInterface;
 use Src\Account\Domain\Repository\AccountRepositoryInterface;
 use Src\Account\Domain\Repository\BlockRepositoryInterface;
 use Src\Account\Domain\ValueObject\AccountName;
-use Src\Account\Domain\ValueObject\EmailAddress;
 use Src\Account\Domain\ValueObject\FavoriteTagIdentifiers;
 use Src\Shared\Application\Transaction\TransactionManagerInterface;
+use Src\Shared\Domain\ValueObject\EmailAddress;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
 final class CreateBlockTest extends TestCase

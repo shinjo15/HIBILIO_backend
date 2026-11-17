@@ -10,7 +10,6 @@ use Src\Account\Domain\Entity\Account;
 use Src\Account\Domain\Repository\AccountRepositoryInterface;
 use Src\Account\Domain\ValueObject\AccountName;
 use Src\Account\Domain\ValueObject\AccountStatus;
-use Src\Account\Domain\ValueObject\EmailAddress;
 use Src\Account\Domain\ValueObject\FavoriteTagIdentifiers;
 use Src\Authentication\Application\UseCase\AuthenticateWithPersistentLoginToken\AuthenticateWithPersistentLoginToken;
 use Src\Authentication\Application\UseCase\AuthenticateWithPersistentLoginToken\AuthenticateWithPersistentLoginTokenInput;
@@ -23,6 +22,7 @@ use Src\Authentication\Domain\ValueObject\PersistentLoginSelector;
 use Src\Authentication\Domain\ValueObject\PersistentLoginValidatorHash;
 use Src\Shared\Application\Service\HashServiceInterface;
 use Src\Shared\Application\Transaction\TransactionManagerInterface;
+use Src\Shared\Domain\ValueObject\EmailAddress;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
 final class AuthenticateWithPersistentLoginTokenTest extends TestCase

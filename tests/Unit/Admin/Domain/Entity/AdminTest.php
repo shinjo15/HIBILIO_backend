@@ -8,7 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Src\Admin\Domain\Entity\Admin;
 use Src\Admin\Domain\ValueObject\AdminIdentifier;
 use Src\Admin\Domain\ValueObject\AdminName;
-use Src\Admin\Domain\ValueObject\EmailAddress;
+use Src\Shared\Domain\ValueObject\EmailAddress;
 
 final class AdminTest extends TestCase
 {

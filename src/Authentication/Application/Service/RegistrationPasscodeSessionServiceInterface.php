@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Src\Authentication\Application\Service;
 
-use Src\Account\Domain\ValueObject\EmailAddress;
+use Src\Shared\Domain\ValueObject\EmailAddress;
 
 interface RegistrationPasscodeSessionServiceInterface
 {

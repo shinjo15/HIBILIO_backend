@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Tests\Feature\Authentication\Infrastructure;
 
 use Illuminate\Support\Facades\Redis;
-use Src\Account\Domain\ValueObject\EmailAddress;
 use Src\Authentication\Domain\Entity\LoginPasscodeChallenge;
 use Src\Authentication\Domain\ValueObject\LoginPasscodeChallengeIdentifier;
 use Src\Authentication\Domain\ValueObject\LoginPasscodeHash;
 use Src\Authentication\Infrastructure\Service\RedisLoginPasscodeStateService;
+use Src\Shared\Domain\ValueObject\EmailAddress;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Tests\TestCase;
 

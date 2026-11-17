@@ -9,8 +9,8 @@ use PHPUnit\Framework\TestCase;
 use Src\Account\Domain\Entity\Account;
 use Src\Account\Domain\ValueObject\AccountName;
 use Src\Account\Domain\ValueObject\AccountStatus;
-use Src\Account\Domain\ValueObject\EmailAddress;
 use Src\Account\Domain\ValueObject\FavoriteTagIdentifiers;
+use Src\Shared\Domain\ValueObject\EmailAddress;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
 final class AccountStatusTest extends TestCase

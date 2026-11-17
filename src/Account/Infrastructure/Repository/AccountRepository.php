@@ -15,11 +15,11 @@ use Src\Account\Domain\ValueObject\AccountName;
 use Src\Account\Domain\ValueObject\AccountStatus;
 use Src\Account\Domain\ValueObject\AccountUiMode;
 use Src\Account\Domain\ValueObject\AccountVisibility;
-use Src\Account\Domain\ValueObject\EmailAddress;
 use Src\Account\Domain\ValueObject\FavoriteTagIdentifiers;
 use Src\Account\Domain\ValueObject\SocialLink;
 use Src\Account\Domain\ValueObject\SocialType;
 use Src\Account\Domain\ValueObject\SocialUrl;
+use Src\Shared\Domain\ValueObject\EmailAddress;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 use Src\Shared\Domain\ValueObject\Identifier\TagIdentifier;
 

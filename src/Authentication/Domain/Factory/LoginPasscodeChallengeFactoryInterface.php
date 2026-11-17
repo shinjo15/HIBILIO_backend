@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Src\Authentication\Domain\Factory;
 
-use Src\Account\Domain\ValueObject\EmailAddress;
 use Src\Authentication\Domain\Entity\LoginPasscodeChallenge;
 use Src\Authentication\Domain\ValueObject\LoginPasscodeHash;
+use Src\Shared\Domain\ValueObject\EmailAddress;
 use Src\Shared\Domain\ValueObject\Identifier\AccountIdentifier;
 
 interface LoginPasscodeChallengeFactoryInterface

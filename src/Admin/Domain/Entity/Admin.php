@@ -6,7 +6,7 @@ namespace Src\Admin\Domain\Entity;
 
 use Src\Admin\Domain\ValueObject\AdminIdentifier;
 use Src\Admin\Domain\ValueObject\AdminName;
-use Src\Admin\Domain\ValueObject\EmailAddress;
+use Src\Shared\Domain\ValueObject\EmailAddress;
 
 final readonly class Admin
 {

@@ -7,11 +7,11 @@ namespace Src\Authentication\Infrastructure\Service;
 use Illuminate\Support\Facades\Redis;
 use JsonException;
 use RuntimeException;
-use Src\Account\Domain\ValueObject\EmailAddress;
 use Src\Authentication\Application\Service\RegistrationPasscodeStateServiceInterface;
 use Src\Authentication\Domain\Entity\RegistrationPasscodeChallenge;
 use Src\Authentication\Domain\ValueObject\LoginPasscodeHash;
 use Src\Authentication\Domain\ValueObject\RegistrationPasscodeChallengeIdentifier;
+use Src\Shared\Domain\ValueObject\EmailAddress;
 
 final class RedisRegistrationPasscodeStateService implements RegistrationPasscodeStateServiceInterface
 {

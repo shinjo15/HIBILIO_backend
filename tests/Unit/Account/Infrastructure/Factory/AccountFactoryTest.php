@@ -8,10 +8,10 @@ use PHPUnit\Framework\TestCase;
 use Src\Account\Domain\ValueObject\AccountName;
 use Src\Account\Domain\ValueObject\AccountUiMode;
 use Src\Account\Domain\ValueObject\AccountVisibility;
-use Src\Account\Domain\ValueObject\EmailAddress;
 use Src\Account\Domain\ValueObject\FavoriteTagIdentifiers;
 use Src\Account\Infrastructure\Factory\AccountFactory;
 use Src\Shared\Application\Service\UuidServiceInterface;
+use Src\Shared\Domain\ValueObject\EmailAddress;
 
 final class AccountFactoryTest extends TestCase
 {
