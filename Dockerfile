@@ -1,4 +1,4 @@
-FROM php:8.4.27-fpm AS php-base
+FROM php:8.4.28-fpm AS php-base
 
 RUN apt-get update \
     && apt-get install --yes --no-install-recommends libjpeg62-turbo-dev libonig-dev libpng-dev libpq-dev libsqlite3-dev libwebp-dev libzip-dev \
